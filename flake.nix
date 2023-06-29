@@ -72,7 +72,7 @@
           name = "coreOTA";
           src = ./.;
           nativeBuildInputs = with pkgs; [ cmake ];
-          buildInputs = with pkgs; [ openssl_1_1 jansson ];
+          buildInputs = with pkgs; [ openssl_1_1 ];
           hardeningDisable = [ "fortify" ];
           cmakeFlags = getFetchContentFlags
             (builtins.readFile ./CMakeLists.txt);

@@ -11,20 +11,14 @@ set(BUILD_SHARED_LIBS OFF)
 set(CMAKE_BUILD_TYPE Debug)
 
 find_package(OpenSSL REQUIRED)
-find_package(jansson)
 
 include(FetchContent)
 
 FetchContent_Declare(
-  FreeRTOS_Kernel
-  # hash: sha256-UXge9cJcbTaMlaCbrAVQ03AwQ2WQll5aL8BqFlN4Q/Y=
-  GIT_REPOSITORY https://github.com/FreeRTOS/FreeRTOS-Kernel.git
-  GIT_TAG 6d65558ba01141d7c50ff6f93a4054cc5f16940e)
-FetchContent_Declare(
   coreMQTT
-  # hash: sha256-uIX8FFrTlzfyGY4ViQo7ylbtAW6uubazfK+5hAWNfwA=
+  # hash: sha256-iT+mjlduomUTWYEdpoRwoLxJzI0daPjypxlXlXie7nc=
   GIT_REPOSITORY https://github.com/FreeRTOS/coreMQTT.git
-  GIT_TAG ec3380e5f1a0d7b0cdcf5e023a4adbeac571fc2b)
+  GIT_TAG d41f4572ff4e91d1d3116093331aa23936038f35)
 FetchContent_Declare(
   backoffAlgorithm
   # hash: sha256-R5UqyC431OmQG5NM/hh4QOUdo6T60x+CNv1Zuxfjzhw=
@@ -40,12 +34,6 @@ FetchContent_Declare(
   # hash: sha256-otueOD8tkzbHHVuOBI6krewYoeteRGAAQWSf0r19P5s=
   GIT_REPOSITORY https://github.com/intel/tinycbor.git
   GIT_TAG 9924cfed3b95ad6de299ae675064430fdb886216)
-FetchContent_Declare(
-  mbedtls
-  # hash: sha256-+M36NvFe4gw2PRbld/2JV3yBGrqK6soWcmrSEkUNcrc=
-  GIT_REPOSITORY https://github.com/Mbed-TLS/mbedtls.git
-  GIT_TAG v3.2.1
-  SOURCE_SUBDIR cmake)
 
 # FreeRTOS-Kernel build options
 add_library(freertos_config INTERFACE)
@@ -60,22 +48,8 @@ set(FREERTOS_PORT
     "GCC_POSIX"
     CACHE STRING "" FORCE)
 
-# mbedTLS build options
-set(ENABLE_TESTING
-    OFF
-    CACHE INTERNAL "" FORCE)
-set(ENABLE_PROGRAMS
-    OFF
-    CACHE INTERNAL "" FORCE)
-
-FetchContent_MakeAvailable(FreeRTOS_Kernel coreMQTT backoffAlgorithm coreJSON
+FetchContent_MakeAvailable(coreMQTT backoffAlgorithm coreJSON
                            tinycbor)
-
-FetchContent_GetProperties(mbedtls)
-if(NOT mbedtls_POPULATED)
-  FetchContent_Populate(mbedtls)
-  add_subdirectory(${mbedtls_SOURCE_DIR} ${mbedtls_BINARY_DIR} EXCLUDE_FROM_ALL)
-endif()
 
 # coreMQTT
 include("${coremqtt_SOURCE_DIR}/mqttFilePaths.cmake")
@@ -107,7 +81,7 @@ target_include_directories(tinycbor PUBLIC "${tinycbor_SOURCE_DIR}/src")
 
 add_executable(
   coreOTA ./source/main.c ./source/transport/openssl_posix.c
-          ./source/transport/sockets_posix.c ./source/transport/transport.c)
+          ./source/transport/sockets_posix.c ./source/transport/transport.c ./source/utils/clock_posix.c)
 
 target_include_directories(coreOTA PUBLIC "${CMAKE_CURRENT_LIST_DIR}/source"
                                           "${CMAKE_CURRENT_LIST_DIR}/cfg")
@@ -115,12 +89,10 @@ target_include_directories(coreOTA PUBLIC "${CMAKE_CURRENT_LIST_DIR}/source"
 target_link_libraries(
   coreOTA
   PRIVATE coreMQTT
-          freertos_kernel
           OpenSSL::SSL
           coreJSON
           tinycbor
-          backoffAlgorithm
-          MbedTLS::mbedx509)
+          backoffAlgorithm)
 
 find_library(LIBRT rt)
 if(LIBRT)

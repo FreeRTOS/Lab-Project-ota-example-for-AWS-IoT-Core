@@ -5,40 +5,14 @@
 #include <stdio.h>
 #include <time.h>
 
-#include "FreeRTOS.h"
-#include "task.h"
-
 #include "core_mqtt.h"
 #include "transport/transport.h"
-
-#define NANOSECONDS_PER_MILLISECOND \
-    ( 1000000L ) /**< @brief Nanoseconds per millisecond. */
-#define MILLISECONDS_PER_SECOND \
-    ( 1000L ) /**< @brief Milliseconds per second. */
+#include "utils/clock.h"
 
 static TransportInterface_t transport = { 0 };
 static bool sessionPresent = false;
 static MQTTContext_t mqttContext = { 0 };
 static uint8_t networkBuffer[ 5000U ];
-
-static uint32_t Clock_GetTimeMs( void )
-{
-    int64_t timeMs;
-    struct timespec timeSpec;
-
-    /* Get the MONOTONIC time. */
-    ( void ) clock_gettime( CLOCK_MONOTONIC, &timeSpec );
-
-    /* Calculate the milliseconds from timespec. */
-    timeMs = ( timeSpec.tv_sec * MILLISECONDS_PER_SECOND ) +
-             ( timeSpec.tv_nsec / NANOSECONDS_PER_MILLISECOND );
-
-    /* Libraries need only the lower 32 bits of the time in milliseconds, since
-     * this function is used only for calculating the time difference.
-     * Also, the possible overflows of this time value are handled by the
-     * libraries. */
-    return ( uint32_t ) timeMs;
-}
 
 static void mqttEventCallback( MQTTContext_t * mqttContext,
                                MQTTPacketInfo_t * packetInfo,
@@ -97,7 +71,7 @@ int main( int argc, char * argv[] )
     assert( mqttResult == MQTTSuccess );
     printf( "Successfully connected to IoT Core\n" );
 
-    MQTT_ProcessLoop( &mqttContext, 10000U );
+    MQTT_ProcessLoop( &mqttContext );
 
     return 0;
 }
