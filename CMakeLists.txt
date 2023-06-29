@@ -81,7 +81,7 @@ target_include_directories(tinycbor PUBLIC "${tinycbor_SOURCE_DIR}/src")
 add_executable(
   coreOTA
   ./source/main.c ./source/transport/openssl_posix.c
-  ./source/transport/sockets_posix.c ./source/transport/transport.c
+  ./source/transport/sockets_posix.c ./source/transport_wrapper.c
   ./source/utils/clock_posix.c)
 
 target_include_directories(coreOTA PUBLIC "${CMAKE_CURRENT_LIST_DIR}/source"

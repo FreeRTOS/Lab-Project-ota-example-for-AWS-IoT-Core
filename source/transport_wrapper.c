@@ -8,7 +8,7 @@
 
 /* Transport includes. */
 #include "transport/openssl_posix.h"
-#include "transport/transport.h"
+#include "transport_wrapper.h"
 
 static NetworkContext_t networkContext = { 0 };
 static OpensslParams_t opensslParams = { 0 };
