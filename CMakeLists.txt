@@ -15,6 +15,11 @@ find_package(OpenSSL REQUIRED)
 include(FetchContent)
 
 FetchContent_Declare(
+  FreeRTOS_Kernel
+  # hash: sha256-UXge9cJcbTaMlaCbrAVQ03AwQ2WQll5aL8BqFlN4Q/Y=
+  GIT_REPOSITORY https://github.com/FreeRTOS/FreeRTOS-Kernel.git
+  GIT_TAG 6d65558ba01141d7c50ff6f93a4054cc5f16940e)
+FetchContent_Declare(
   coreMQTT
   # hash: sha256-iT+mjlduomUTWYEdpoRwoLxJzI0daPjypxlXlXie7nc=
   GIT_REPOSITORY https://github.com/FreeRTOS/coreMQTT.git
@@ -48,7 +53,7 @@ set(FREERTOS_PORT
     "GCC_POSIX"
     CACHE STRING "" FORCE)
 
-FetchContent_MakeAvailable(coreMQTT backoffAlgorithm coreJSON tinycbor)
+FetchContent_MakeAvailable(FreeRTOS_Kernel coreMQTT backoffAlgorithm coreJSON tinycbor)
 
 # coreMQTT
 include("${coremqtt_SOURCE_DIR}/mqttFilePaths.cmake")
@@ -82,13 +87,13 @@ add_executable(
   coreOTA
   ./source/main.c ./source/transport/openssl_posix.c
   ./source/transport/sockets_posix.c ./source/transport_wrapper.c
-  ./source/utils/clock_posix.c)
+  ./source/utils/clock_posix.c ./source/freertos_hooks.c)
 
 target_include_directories(coreOTA PUBLIC "${CMAKE_CURRENT_LIST_DIR}/source"
                                           "${CMAKE_CURRENT_LIST_DIR}/cfg")
 
 target_link_libraries(coreOTA PRIVATE coreMQTT OpenSSL::SSL coreJSON tinycbor
-                                      backoffAlgorithm)
+                                      backoffAlgorithm freertos_kernel)
 
 find_library(LIBRT rt)
 if(LIBRT)
