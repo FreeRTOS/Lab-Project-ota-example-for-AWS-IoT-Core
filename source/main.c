@@ -9,6 +9,8 @@
 
 #include "transport/transport.h"
 
+static TransportInterface_t transport = { 0 };
+
 int main( int argc, char * argv[] )
 {
     if( argc != 6 )
@@ -26,6 +28,7 @@ int main( int argc, char * argv[] )
     char * thingName = argv[ 5 ];
     ( void ) thingName;
 
+    transport_tlsInit( &transport );
     bool result = transport_tlsConnect( certificateFilePath,
                                         privateKeyFilePath,
                                         rootCAFilePath,
