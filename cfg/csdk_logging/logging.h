@@ -1,13 +1,5 @@
-/*
- * Copyright of Amazon Web Services, Inc. (AWS) 2022
- *
- * This code is licensed under the AWS Intellectual Property License, which can
- * be found here: https://aws.amazon.com/legal/aws-ip-license-terms/; provided
- * that AWS grants you a limited, royalty-free, revocable, non-exclusive,
- * non-sublicensable, non-transferrable license to modify the code for internal
- * testing purposes. Your receipt of this code is subject to any non-disclosure
- * (or similar) agreement between you and AWS.
- */
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: MIT
 
 #include <stdio.h>
 

@@ -1,11 +1,5 @@
-# Copyright of Amazon Web Services, Inc. (AWS) 2022
-#
-# This code is licensed under the AWS Intellectual Property License, which can
-# be found here: https://aws.amazon.com/legal/aws-ip-license-terms/; provided
-# that AWS grants you a limited, royalty-free, revocable, non-exclusive,
-# non-sublicensable, non-transferrable license to modify the code for internal
-# testing purposes. Your receipt of this code is subject to any non-disclosure
-# (or similar) agreement between you and AWS.
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: MIT
 
 cmake_minimum_required(VERSION 3.16)
 
@@ -110,12 +104,12 @@ add_library(
   "${tinycbor_SOURCE_DIR}/src/cborencoder_close_container_checked.c")
 target_include_directories(tinycbor PUBLIC "${tinycbor_SOURCE_DIR}/src")
 
-add_executable(coreOTA ./source/main.c)
+add_executable(coreOTA ./source/main.c ./source/transport/transport.c ./source/transport/openssl_posix.c ./source/transport/sockets_posix.c)
 
-target_include_directories(coreOTA PUBLIC "${CMAKE_CURRENT_LIST_DIR}/source")
+target_include_directories(coreOTA PUBLIC "${CMAKE_CURRENT_LIST_DIR}/source" "${CMAKE_CURRENT_LIST_DIR}/cfg")
 
 target_link_libraries(
-  coreOTA PRIVATE freertos_kernel OpenSSL::SSL coreJSON tinycbor
+  coreOTA PRIVATE coreMQTT freertos_kernel OpenSSL::SSL coreJSON tinycbor
                   backoffAlgorithm MbedTLS::mbedx509)
 
 find_library(LIBRT rt)
