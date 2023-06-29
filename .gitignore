@@ -1,0 +1,9 @@
+result
+build/
+
+# Ignore certificate files
+*.pem
+*.crt
+
+# Ignore build artifacts
+*.o
