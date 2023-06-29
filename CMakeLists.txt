@@ -48,8 +48,7 @@ set(FREERTOS_PORT
     "GCC_POSIX"
     CACHE STRING "" FORCE)
 
-FetchContent_MakeAvailable(coreMQTT backoffAlgorithm coreJSON
-                           tinycbor)
+FetchContent_MakeAvailable(coreMQTT backoffAlgorithm coreJSON tinycbor)
 
 # coreMQTT
 include("${coremqtt_SOURCE_DIR}/mqttFilePaths.cmake")
@@ -80,19 +79,16 @@ add_library(
 target_include_directories(tinycbor PUBLIC "${tinycbor_SOURCE_DIR}/src")
 
 add_executable(
-  coreOTA ./source/main.c ./source/transport/openssl_posix.c
-          ./source/transport/sockets_posix.c ./source/transport/transport.c ./source/utils/clock_posix.c)
+  coreOTA
+  ./source/main.c ./source/transport/openssl_posix.c
+  ./source/transport/sockets_posix.c ./source/transport/transport.c
+  ./source/utils/clock_posix.c)
 
 target_include_directories(coreOTA PUBLIC "${CMAKE_CURRENT_LIST_DIR}/source"
                                           "${CMAKE_CURRENT_LIST_DIR}/cfg")
 
-target_link_libraries(
-  coreOTA
-  PRIVATE coreMQTT
-          OpenSSL::SSL
-          coreJSON
-          tinycbor
-          backoffAlgorithm)
+target_link_libraries(coreOTA PRIVATE coreMQTT OpenSSL::SSL coreJSON tinycbor
+                                      backoffAlgorithm)
 
 find_library(LIBRT rt)
 if(LIBRT)
