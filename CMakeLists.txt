@@ -11,6 +11,7 @@ set(BUILD_SHARED_LIBS OFF)
 set(CMAKE_BUILD_TYPE Debug)
 
 find_package(OpenSSL REQUIRED)
+find_package(jansson)
 
 include(FetchContent)
 
@@ -104,13 +105,22 @@ add_library(
   "${tinycbor_SOURCE_DIR}/src/cborencoder_close_container_checked.c")
 target_include_directories(tinycbor PUBLIC "${tinycbor_SOURCE_DIR}/src")
 
-add_executable(coreOTA ./source/main.c ./source/transport/transport.c ./source/transport/openssl_posix.c ./source/transport/sockets_posix.c)
+add_executable(
+  coreOTA ./source/main.c ./source/transport/openssl_posix.c
+          ./source/transport/sockets_posix.c ./source/transport/transport.c)
 
-target_include_directories(coreOTA PUBLIC "${CMAKE_CURRENT_LIST_DIR}/source" "${CMAKE_CURRENT_LIST_DIR}/cfg")
+target_include_directories(coreOTA PUBLIC "${CMAKE_CURRENT_LIST_DIR}/source"
+                                          "${CMAKE_CURRENT_LIST_DIR}/cfg")
 
 target_link_libraries(
-  coreOTA PRIVATE coreMQTT freertos_kernel OpenSSL::SSL coreJSON tinycbor
-                  backoffAlgorithm MbedTLS::mbedx509)
+  coreOTA
+  PRIVATE coreMQTT
+          freertos_kernel
+          OpenSSL::SSL
+          coreJSON
+          tinycbor
+          backoffAlgorithm
+          MbedTLS::mbedx509)
 
 find_library(LIBRT rt)
 if(LIBRT)

@@ -5,7 +5,10 @@
 
 void transport_tlsInit( TransportInterface_t * transport );
 
-bool transport_tlsConnect( const char * endpoint, size_t endpointLength );
+bool transport_tlsConnect( char * certificateFilePath,
+                           char * privateKeyFilePath,
+                           char * rootCAFilePath,
+                           char * endpoint );
 
 void transport_tlsDisconnect( void );
 

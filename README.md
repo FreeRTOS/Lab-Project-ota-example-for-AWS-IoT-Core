@@ -1,12 +1,22 @@
-## My Project
+## coreOTA
 
-TODO: Fill this README out!
+### Usage
 
-Be sure to:
+```
+nix build
+./result certificateFilePath privateKeyFilePath rootCAFilePath endpoint thingName
+```
 
-- Change the title in this README
-- Edit your repository description on GitHub
-- Write in your license below and create a LICENSE file
+or
+
+```
+nix develop
+mkdir build
+cd build
+cmake ..
+make
+./coreOTA certificateFilePath privateKeyFilePath rootCAFilePath endpoint thingName
+```
 
 ## Security
 
