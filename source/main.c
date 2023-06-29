@@ -75,16 +75,6 @@ static MQTTStatus_t mqttConnect( char * thingName )
                          &sessionPresent );
 }
 
-static void mqttEventCallback( MQTTContext_t * mqttContext,
-                               MQTTPacketInfo_t * packetInfo,
-                               MQTTDeserializedInfo_t * deserializedInfo )
-{
-    ( void ) mqttContext;
-    ( void ) packetInfo;
-    ( void ) deserializedInfo;
-    printf( "MQTT event callback triggered\n" );
-}
-
 static void mqttProcessLoopTask( void * parameters )
 {
     ( void ) parameters;
@@ -102,6 +92,56 @@ static void mqttProcessLoopTask( void * parameters )
             }
         }
         vTaskDelay( 10 );
+    }
+}
+
+static void mqttEventCallback( MQTTContext_t * mqttContext,
+                               MQTTPacketInfo_t * packetInfo,
+                               MQTTDeserializedInfo_t * deserializedInfo )
+{
+    ( void ) mqttContext;
+    printf( "MQTT event callback triggered\n" );
+
+    if( ( packetInfo->type & 0xF0U ) == MQTT_PACKET_TYPE_PUBLISH )
+    {
+        assert( deserializedInfo->pPublishInfo != NULL );
+        char * topic = ( char * ) deserializedInfo->pPublishInfo->pTopicName;
+        size_t topicLength = deserializedInfo->pPublishInfo->topicNameLength;
+        uint8_t * message = ( uint8_t * )
+                                deserializedInfo->pPublishInfo->pPayload;
+        size_t messageLength = deserializedInfo->pPublishInfo->payloadLength;
+
+        printf( "PUBLISH received with packet id: %u, on topic: %.*s\n",
+                ( unsigned int ) deserializedInfo->packetIdentifier,
+                ( unsigned int ) topicLength,
+                topic );
+        // TODO: Do something with the message
+        ( void ) message;
+        ( void ) messageLength;
+    }
+    else
+    {
+        /* Handle other packets. */
+        switch( packetInfo->type )
+        {
+            case MQTT_PACKET_TYPE_PUBACK:
+                printf( "PUBACK received with packet id: %u\n",
+                        ( unsigned int ) deserializedInfo->packetIdentifier );
+                break;
+
+            case MQTT_PACKET_TYPE_SUBACK:
+                printf( "SUBACK received with packet id: %u\n",
+                        ( unsigned int ) deserializedInfo->packetIdentifier );
+                break;
+
+            case MQTT_PACKET_TYPE_UNSUBACK:
+                printf( "UNSUBACK received with packet id: %u\n",
+                        ( unsigned int ) deserializedInfo->packetIdentifier );
+                break;
+            default:
+                printf( "Error: Unknown packet type received:(%02x).\n",
+                        packetInfo->type );
+        }
     }
 }
 

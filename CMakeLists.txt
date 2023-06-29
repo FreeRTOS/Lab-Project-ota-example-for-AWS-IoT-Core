@@ -53,7 +53,8 @@ set(FREERTOS_PORT
     "GCC_POSIX"
     CACHE STRING "" FORCE)
 
-FetchContent_MakeAvailable(FreeRTOS_Kernel coreMQTT backoffAlgorithm coreJSON tinycbor)
+FetchContent_MakeAvailable(FreeRTOS_Kernel coreMQTT backoffAlgorithm coreJSON
+                           tinycbor)
 
 # coreMQTT
 include("${coremqtt_SOURCE_DIR}/mqttFilePaths.cmake")
@@ -85,9 +86,9 @@ target_include_directories(tinycbor PUBLIC "${tinycbor_SOURCE_DIR}/src")
 
 add_executable(
   coreOTA
-  ./source/main.c ./source/transport/openssl_posix.c
+  ./source/freertos_hooks.c ./source/main.c ./source/transport/openssl_posix.c
   ./source/transport/sockets_posix.c ./source/transport_wrapper.c
-  ./source/utils/clock_posix.c ./source/freertos_hooks.c)
+  ./source/utils/clock_posix.c)
 
 target_include_directories(coreOTA PUBLIC "${CMAKE_CURRENT_LIST_DIR}/source"
                                           "${CMAKE_CURRENT_LIST_DIR}/cfg")
