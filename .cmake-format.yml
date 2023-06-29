@@ -1,0 +1,15 @@
+parse:
+  additional_commands:
+    idf_component_register:
+      kwargs:
+        SRCS: "*"
+        INCLUDE_DIRS: "*"
+        PRIV_INCLUDE_DIRS: "*"
+        REQUIRES: "*"
+        PRIV_REQUIRES: "*"
+format:
+  autosort: true
+lint:
+  disabled_codes:
+    - C0301
+  internal_var_pattern: (_[A-Z][0-9A-Z_]+|ENABLE_TESTING|ENABLE_PROGRAMS)
