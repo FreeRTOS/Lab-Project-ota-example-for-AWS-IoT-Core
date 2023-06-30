@@ -29,6 +29,11 @@ static void mqttEventCallback( MQTTContext_t * mqttContext,
 
 static MQTTStatus_t mqttConnect( char * thingName );
 
+static void handleIncomingMQTTMessage( char * topic,
+                                       size_t topicLength,
+                                       uint8_t * message,
+                                       size_t messageLength );
+
 int main( int argc, char * argv[] )
 {
     if( argc != 6 )
@@ -100,8 +105,6 @@ static void mqttEventCallback( MQTTContext_t * mqttContext,
                                MQTTDeserializedInfo_t * deserializedInfo )
 {
     ( void ) mqttContext;
-    printf( "MQTT event callback triggered\n" );
-
     if( ( packetInfo->type & 0xF0U ) == MQTT_PACKET_TYPE_PUBLISH )
     {
         assert( deserializedInfo->pPublishInfo != NULL );
@@ -110,14 +113,7 @@ static void mqttEventCallback( MQTTContext_t * mqttContext,
         uint8_t * message = ( uint8_t * )
                                 deserializedInfo->pPublishInfo->pPayload;
         size_t messageLength = deserializedInfo->pPublishInfo->payloadLength;
-
-        printf( "PUBLISH received with packet id: %u, on topic: %.*s\n",
-                ( unsigned int ) deserializedInfo->packetIdentifier,
-                ( unsigned int ) topicLength,
-                topic );
-        // TODO: Do something with the message
-        ( void ) message;
-        ( void ) messageLength;
+        handleIncomingMQTTMessage( topic, topicLength, message, messageLength );
     }
     else
     {
@@ -142,6 +138,24 @@ static void mqttEventCallback( MQTTContext_t * mqttContext,
                 printf( "Error: Unknown packet type received:(%02x).\n",
                         packetInfo->type );
         }
+    }
+}
+
+static void handleIncomingMQTTMessage( char * topic,
+                                       size_t topicLength,
+                                       uint8_t * message,
+                                       size_t messageLength )
+
+{
+    bool messageHandled = false;
+    if( !messageHandled )
+    {
+        printf( "Unhandled incoming PUBLISH received on topic, message: "
+                "%.*s\n%.*s\n",
+                ( unsigned int ) topicLength,
+                topic,
+                ( unsigned int ) messageLength,
+                ( char * ) message );
     }
 }
 
