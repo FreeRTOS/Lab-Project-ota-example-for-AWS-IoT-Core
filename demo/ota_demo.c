@@ -7,7 +7,7 @@
 #define CONFIG_BLOCK_SIZE    256U
 #define CONFIG_MAX_FILE_SIZE 65536U
 
-static uint8_t downloadedDataBase64[ CONFIG_MAX_FILE_SIZE ] = { 0 };
+static uint8_t downloadedData[ CONFIG_MAX_FILE_SIZE ] = { 0 };
 
 void otaDemo_start( void )
 {
