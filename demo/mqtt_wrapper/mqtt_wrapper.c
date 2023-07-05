@@ -4,18 +4,18 @@
 
 static MQTTContext_t * globalCoreMqttContext = NULL;
 
-void initDemoGlobals( MQTTContext_t * mqttContext )
+void setCoreMqttContext( MQTTContext_t * mqttContext )
 {
     globalCoreMqttContext = mqttContext;
 }
 
-MQTTContext_t * getCoreMqttContext()
+MQTTContext_t * getCoreMqttContext( void )
 {
     assert( globalCoreMqttContext != NULL );
     return globalCoreMqttContext;
 }
 
-MQTTStatus_t mqttConnect( char * thingName )
+bool mqttConnect( char * thingName )
 {
     assert( globalCoreMqttContext != NULL );
     MQTTConnectInfo_t connectInfo = { 0 };
@@ -28,19 +28,29 @@ MQTTStatus_t mqttConnect( char * thingName )
     connectInfo.passwordLength = 0U;
     connectInfo.keepAliveSeconds = 60U;
     connectInfo.cleanSession = true;
-    return MQTT_Connect( globalCoreMqttContext,
-                         &connectInfo,
-                         NULL,
-                         5000U,
-                         &sessionPresent );
+    return MQTTSuccess == MQTT_Connect( globalCoreMqttContext,
+                                        &connectInfo,
+                                        NULL,
+                                        5000U,
+                                        &sessionPresent );
 }
 
-void mqttPublish( char * topic,
+bool isMqttConnected( void )
+{
+    assert( globalCoreMqttContext != NULL );
+    return globalCoreMqttContext->connectStatus == MQTTConnected;
+}
+
+bool mqttPublish( char * topic,
                   size_t topicLength,
                   uint8_t * message,
                   size_t messageLength )
 {
     assert( globalCoreMqttContext != NULL );
+    if( !isMqttConnected() )
+    {
+        return false;
+    }
     MQTTPublishInfo_t pubInfo = { .qos = 0,
                                   .retain = false,
                                   .dup = false,
@@ -48,19 +58,25 @@ void mqttPublish( char * topic,
                                   .topicNameLength = topicLength,
                                   .pPayload = message,
                                   .payloadLength = messageLength };
-    MQTT_Publish( globalCoreMqttContext,
-                  &pubInfo,
-                  MQTT_GetPacketId( globalCoreMqttContext ) );
+    return MQTTSuccess ==
+           MQTT_Publish( globalCoreMqttContext,
+                         &pubInfo,
+                         MQTT_GetPacketId( globalCoreMqttContext ) );
 }
 
-void mqttSubscribe( char * topic, size_t topicLength )
+bool mqttSubscribe( char * topic, size_t topicLength )
 {
     assert( globalCoreMqttContext != NULL );
+    if( !isMqttConnected() )
+    {
+        return false;
+    }
     MQTTSubscribeInfo_t subscribeInfo = { .qos = 0,
                                           .pTopicFilter = topic,
                                           .topicFilterLength = topicLength };
-    MQTT_Subscribe( globalCoreMqttContext,
-                    &subscribeInfo,
-                    1,
-                    MQTT_GetPacketId( globalCoreMqttContext ) );
+    return MQTTSuccess ==
+           MQTT_Subscribe( globalCoreMqttContext,
+                           &subscribeInfo,
+                           1,
+                           MQTT_GetPacketId( globalCoreMqttContext ) );
 }

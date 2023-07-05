@@ -3,15 +3,19 @@
 
 #include "core_mqtt.h"
 
-void initDemoGlobals( MQTTContext_t * mqttContext );
+void setCoreMqttContext( MQTTContext_t * mqttContext );
 
-MQTTStatus_t mqttConnect( char * thingName );
+MQTTContext_t * getCoreMqttContext( void );
 
-void mqttPublish( char * topic,
+bool mqttConnect( char * thingName );
+
+bool isMqttConnected( void );
+
+bool mqttPublish( char * topic,
                   size_t topicLength,
                   uint8_t * message,
                   size_t messageLength );
 
-void mqttSubscribe( char * topic, size_t topicLength );
+bool mqttSubscribe( char * topic, size_t topicLength );
 
 #endif

@@ -11,7 +11,7 @@ static uint8_t downloadedDataBase64[ CONFIG_MAX_FILE_SIZE ] = { 0 };
 
 void otaDemo_start( void )
 {
-    if( mqtt_isConnected() )
+    if( isMqttConnected() )
     {
         jobs_startNextPendingJob();
     }
