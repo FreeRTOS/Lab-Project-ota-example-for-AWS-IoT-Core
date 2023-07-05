@@ -12,7 +12,7 @@
 #include "task.h"
 
 #include "core_mqtt.h"
-#include "transport_wrapper.h"
+#include "transport/transport_wrapper.h"
 #include "utils/clock.h"
 
 static TransportInterface_t transport = { 0 };

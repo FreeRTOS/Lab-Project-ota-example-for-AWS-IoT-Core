@@ -86,9 +86,13 @@ target_include_directories(tinycbor PUBLIC "${tinycbor_SOURCE_DIR}/src")
 
 add_executable(
   coreOTA
-  ./source/freertos_hooks.c ./source/main.c ./source/transport/openssl_posix.c
-  ./source/transport/sockets_posix.c ./source/transport_wrapper.c
-  ./source/utils/clock_posix.c)
+  ./source/main.c
+  ./source/utils/freertos_hooks.c
+  ./source/utils/clock_posix.c
+  ./source/transport/openssl_posix.c
+  ./source/transport/sockets_posix.c
+  ./source/transport/transport_wrapper.c
+  )
 
 target_include_directories(coreOTA PUBLIC "${CMAKE_CURRENT_LIST_DIR}/source"
                                           "${CMAKE_CURRENT_LIST_DIR}/cfg")
