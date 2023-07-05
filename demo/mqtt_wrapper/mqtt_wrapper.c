@@ -11,6 +11,7 @@ void initDemoGlobals( MQTTContext_t * mqttContext )
 
 MQTTContext_t * getCoreMqttContext()
 {
+    assert( globalCoreMqttContext != NULL );
     return globalCoreMqttContext;
 }
 
