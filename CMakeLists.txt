@@ -85,22 +85,21 @@ add_library(
 target_include_directories(tinycbor PUBLIC "${tinycbor_SOURCE_DIR}/src")
 
 add_executable(
-  coreOTA
-  ./source/main.c
-  ./source/utils/freertos_hooks.c
-  ./source/utils/clock_posix.c
-  ./source/transport/openssl_posix.c
-  ./source/transport/sockets_posix.c
-  ./source/transport/transport_wrapper.c
-  )
+  coreOTA_Demo
+  ./demo/main.c ./source/transport/openssl_posix.c
+  ./source/transport/sockets_posix.c ./source/transport/transport_wrapper.c
+  ./source/utils/clock_posix.c ./source/utils/freertos_hooks.c)
 
-target_include_directories(coreOTA PUBLIC "${CMAKE_CURRENT_LIST_DIR}/source"
-                                          "${CMAKE_CURRENT_LIST_DIR}/cfg")
+target_include_directories(
+  coreOTA_Demo
+  PUBLIC "${CMAKE_CURRENT_LIST_DIR}/source" "${CMAKE_CURRENT_LIST_DIR}/demo"
+         "${CMAKE_CURRENT_LIST_DIR}/cfg")
 
-target_link_libraries(coreOTA PRIVATE coreMQTT OpenSSL::SSL coreJSON tinycbor
-                                      backoffAlgorithm freertos_kernel)
+target_link_libraries(
+  coreOTA_Demo PRIVATE coreMQTT OpenSSL::SSL coreJSON tinycbor backoffAlgorithm
+                       freertos_kernel)
 
 find_library(LIBRT rt)
 if(LIBRT)
-  target_link_libraries(coreOTA PRIVATE rt)
+  target_link_libraries(coreOTA_Demo PRIVATE rt)
 endif()

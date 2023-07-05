@@ -200,5 +200,6 @@ static void otaAgentTask( void * parameters )
 
     while( true )
     {
+        vTaskDelay( portMAX_DELAY );
     }
 }
