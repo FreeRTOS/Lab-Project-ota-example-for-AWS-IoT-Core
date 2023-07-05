@@ -1,23 +1,35 @@
-// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-// SPDX-License-Identifier: MIT
+/*
+ * Copyright Amazon.com, Inc. and its affiliates. All Rights Reserved.
+ * SPDX-License-Identifier: MIT
+ *
+ * Licensed under the MIT License. See the LICENSE accompanying this file
+ * for the specific language governing permissions and limitations under
+ * the License.
+ */
 
 #include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
 
 #include "FreeRTOS.h"
+#include "semphr.h"
 #include "task.h"
 
 #include "core_mqtt.h"
+#include "mqtt_wrapper/mqtt_wrapper.h"
 #include "transport/transport_wrapper.h"
 #include "utils/clock.h"
 
 static TransportInterface_t transport = { 0 };
 static MQTTContext_t mqttContext = { 0 };
 static uint8_t networkBuffer[ 5000U ];
+
+static StaticSemaphore_t MQTTAgentLockBuffer;
+static StaticSemaphore_t MQTTStateUpdateLockBuffer;
+SemaphoreHandle_t MQTTAgentLock = NULL;
+SemaphoreHandle_t MQTTStateUpdateLock = NULL;
 
 static void otaAgentTask( void * parameters );
 
@@ -26,8 +38,6 @@ static void mqttProcessLoopTask( void * parameters );
 static void mqttEventCallback( MQTTContext_t * mqttContext,
                                MQTTPacketInfo_t * packetInfo,
                                MQTTDeserializedInfo_t * deserializedInfo );
-
-static MQTTStatus_t mqttConnect( char * thingName );
 
 static void handleIncomingMQTTMessage( char * topic,
                                        size_t topicLength,
@@ -44,6 +54,11 @@ int main( int argc, char * argv[] )
         return 1;
     }
 
+    MQTTAgentLock = xSemaphoreCreateRecursiveMutexStatic(
+        &MQTTAgentLockBuffer );
+    MQTTStateUpdateLock = xSemaphoreCreateMutexStatic(
+        &MQTTStateUpdateLockBuffer );
+
     MQTTFixedBuffer_t fixedBuffer = { .pBuffer = networkBuffer, .size = 5000U };
     transport_tlsInit( &transport );
     MQTTStatus_t mqttResult = MQTT_Init( &mqttContext,
@@ -56,28 +71,11 @@ int main( int argc, char * argv[] )
     xTaskCreate( otaAgentTask, "T_OTA", 6000, ( void * ) argv, 1, NULL );
     xTaskCreate( mqttProcessLoopTask, "T_PROCESS", 6000, NULL, 2, NULL );
 
+    setCoreMqttContext( &mqttContext );
+
     vTaskStartScheduler();
 
     return 0;
-}
-
-static MQTTStatus_t mqttConnect( char * thingName )
-{
-    MQTTConnectInfo_t connectInfo = { 0 };
-    bool sessionPresent = false;
-    connectInfo.pClientIdentifier = thingName;
-    connectInfo.clientIdentifierLength = ( uint16_t ) sizeof( thingName );
-    connectInfo.pUserName = NULL;
-    connectInfo.userNameLength = 0U;
-    connectInfo.pPassword = NULL;
-    connectInfo.passwordLength = 0U;
-    connectInfo.keepAliveSeconds = 60U;
-    connectInfo.cleanSession = true;
-    return MQTT_Connect( &mqttContext,
-                         &connectInfo,
-                         NULL,
-                         5000U,
-                         &sessionPresent );
 }
 
 static void mqttProcessLoopTask( void * parameters )
@@ -86,7 +84,7 @@ static void mqttProcessLoopTask( void * parameters )
 
     while( true )
     {
-        if( mqttContext.connectStatus == MQTTConnected )
+        if( isMqttConnected() )
         {
             MQTTStatus_t status = MQTT_ProcessLoop( &mqttContext );
 
@@ -174,31 +172,18 @@ static void otaAgentTask( void * parameters )
                                         endpoint );
     assert( result );
 
-    MQTTStatus_t mqttResult = mqttConnect( thingName );
-    assert( mqttResult == MQTTSuccess );
+    result = mqttConnect( thingName );
+    assert( result );
     printf( "Successfully connected to IoT Core\n" );
 
-    MQTTPublishInfo_t pubInfo = {
-        .qos = 0,
-        .retain = false,
-        .dup = false,
-        .pTopicName = "test_topic_publish",
-        .topicNameLength = strlen( "test_topic_publish" ),
-        .pPayload = "This is my payload!",
-        .payloadLength = strlen( "This is my payload!" )
-    };
-    MQTT_Publish( &mqttContext, &pubInfo, MQTT_GetPacketId( &mqttContext ) );
+    mqttPublish( "test_topic_publish",
+                 strlen( "test_topic_publish" ),
+                 ( uint8_t * ) "This is my payload!",
+                 strlen( "This is my payload!" ) );
 
-    MQTTSubscribeInfo_t subscribeInfo = { .qos = 0,
-                                          .pTopicFilter = "test_topic",
-                                          .topicFilterLength = strlen(
-                                              "test_topic" ) };
-    MQTT_Subscribe( &mqttContext,
-                    &subscribeInfo,
-                    1,
-                    MQTT_GetPacketId( &mqttContext ) );
+    mqttSubscribe( "test_topic", strlen( "test_topic" ) );
 
-    while( true )
+    for( ;; )
     {
         vTaskDelay( portMAX_DELAY );
     }
