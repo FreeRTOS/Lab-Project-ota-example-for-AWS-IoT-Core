@@ -16,6 +16,7 @@ MQTTContext_t * getCoreMqttContext()
 
 MQTTStatus_t mqttConnect( char * thingName )
 {
+    assert( globalCoreMqttContext != NULL );
     MQTTConnectInfo_t connectInfo = { 0 };
     bool sessionPresent = false;
     connectInfo.pClientIdentifier = thingName;
