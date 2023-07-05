@@ -64,6 +64,7 @@ target_include_directories(
   PUBLIC ${MQTT_INCLUDE_PUBLIC_DIRS}
   PRIVATE "${CMAKE_CURRENT_LIST_DIR}/cfg/coreMQTT"
   INTERFACE "${CMAKE_CURRENT_LIST_DIR}/cfg/coreMQTT/api_cfg")
+target_link_libraries(coreMQTT PRIVATE freertos_kernel)
 
 # backoffAlgorithm
 include("${backoffalgorithm_SOURCE_DIR}/backoffAlgorithmFilePaths.cmake")
@@ -86,9 +87,13 @@ target_include_directories(tinycbor PUBLIC "${tinycbor_SOURCE_DIR}/src")
 
 add_executable(
   coreOTA_Demo
-  ./demo/main.c ./source/transport/openssl_posix.c
-  ./source/transport/sockets_posix.c ./source/transport/transport_wrapper.c
-  ./source/utils/clock_posix.c ./source/utils/freertos_hooks.c)
+  ./demo/main.c
+  ./demo/mqtt_wrapper/mqtt_wrapper.c
+  ./source/transport/openssl_posix.c
+  ./source/transport/sockets_posix.c
+  ./source/transport/transport_wrapper.c
+  ./source/utils/clock_posix.c
+  ./source/utils/freertos_hooks.c)
 
 target_include_directories(
   coreOTA_Demo

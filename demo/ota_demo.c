@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "mqtt_wrapper/mqtt_wrapper.h"
 #include "ota_demo.h"
 
 #define CONFIG_BLOCK_SIZE    256U
