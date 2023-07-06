@@ -1,3 +1,12 @@
+/*
+ * Copyright Amazon.com, Inc. and its affiliates. All Rights Reserved.
+ * SPDX-License-Identifier: MIT
+ *
+ * Licensed under the MIT License. See the LICENSE accompanying this file
+ * for the specific language governing permissions and limitations under
+ * the License.
+ */
+
 #include <assert.h>
 
 #include "mqtt_wrapper/mqtt_wrapper.h"
@@ -19,6 +28,7 @@ bool mqttConnect( char * thingName )
 {
     assert( globalCoreMqttContext != NULL );
     MQTTConnectInfo_t connectInfo = { 0 };
+    MQTTStatus_t mqttStatus = MQTTSuccess;
     bool sessionPresent = false;
     connectInfo.pClientIdentifier = thingName;
     connectInfo.clientIdentifierLength = ( uint16_t ) sizeof( thingName );
@@ -28,17 +38,19 @@ bool mqttConnect( char * thingName )
     connectInfo.passwordLength = 0U;
     connectInfo.keepAliveSeconds = 60U;
     connectInfo.cleanSession = true;
-    return MQTTSuccess == MQTT_Connect( globalCoreMqttContext,
-                                        &connectInfo,
-                                        NULL,
-                                        5000U,
-                                        &sessionPresent );
+    mqttStatus = MQTT_Connect( globalCoreMqttContext,
+                                &connectInfo,
+                                NULL,
+                                5000U,
+                                &sessionPresent );
+    return mqttStatus == MQTTSuccess;
 }
 
 bool isMqttConnected( void )
 {
     assert( globalCoreMqttContext != NULL );
-    return globalCoreMqttContext->connectStatus == MQTTConnected;
+    bool isConnected = globalCoreMqttContext->connectStatus == MQTTConnected;
+    return isConnected;
 }
 
 bool mqttPublish( char * topic,
@@ -47,36 +59,41 @@ bool mqttPublish( char * topic,
                   size_t messageLength )
 {
     assert( globalCoreMqttContext != NULL );
-    if( !isMqttConnected() )
+    bool success = isMqttConnected();
+    if( success )
     {
-        return false;
+        MQTTStatus_t mqttStatus = MQTTSuccess;
+        MQTTPublishInfo_t pubInfo = { .qos = 0,
+                                      .retain = false,
+                                      .dup = false,
+                                      .pTopicName = topic,
+                                      .topicNameLength = topicLength,
+                                      .pPayload = message,
+                                      .payloadLength = messageLength };
+        mqttStatus = MQTT_Publish( globalCoreMqttContext,
+                                   &pubInfo,
+                                   MQTT_GetPacketId( globalCoreMqttContext ) );
+        success = mqttStatus == MQTTSuccess;
     }
-    MQTTPublishInfo_t pubInfo = { .qos = 0,
-                                  .retain = false,
-                                  .dup = false,
-                                  .pTopicName = topic,
-                                  .topicNameLength = topicLength,
-                                  .pPayload = message,
-                                  .payloadLength = messageLength };
-    return MQTTSuccess ==
-           MQTT_Publish( globalCoreMqttContext,
-                         &pubInfo,
-                         MQTT_GetPacketId( globalCoreMqttContext ) );
+    return success;
 }
 
 bool mqttSubscribe( char * topic, size_t topicLength )
 {
     assert( globalCoreMqttContext != NULL );
-    if( !isMqttConnected() )
+    bool success = isMqttConnected();
+    if( success )
     {
-        return false;
+        MQTTStatus_t mqttStatus = MQTTSuccess;
+        MQTTSubscribeInfo_t subscribeInfo = { .qos = 0,
+                                              .pTopicFilter = topic,
+                                              .topicFilterLength = topicLength };
+        mqttStatus = MQTT_Subscribe( globalCoreMqttContext,
+                                     &subscribeInfo,
+                                     1,
+                                     MQTT_GetPacketId(
+                                         globalCoreMqttContext ) );
+        success = mqttStatus == MQTTSuccess;
     }
-    MQTTSubscribeInfo_t subscribeInfo = { .qos = 0,
-                                          .pTopicFilter = topic,
-                                          .topicFilterLength = topicLength };
-    return MQTTSuccess ==
-           MQTT_Subscribe( globalCoreMqttContext,
-                           &subscribeInfo,
-                           1,
-                           MQTT_GetPacketId( globalCoreMqttContext ) );
+    return success;
 }

@@ -1,5 +1,11 @@
-// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-// SPDX-License-Identifier: MIT
+/*
+ * Copyright Amazon.com, Inc. and its affiliates. All Rights Reserved.
+ * SPDX-License-Identifier: MIT
+ *
+ * Licensed under the MIT License. See the LICENSE accompanying this file
+ * for the specific language governing permissions and limitations under
+ * the License.
+ */
 
 #include <assert.h>
 #include <stdbool.h>
@@ -21,7 +27,6 @@ static TransportInterface_t transport = { 0 };
 static MQTTContext_t mqttContext = { 0 };
 static uint8_t networkBuffer[ 5000U ];
 
-// Mutexes for coreMQTT
 static StaticSemaphore_t MQTTAgentLockBuffer;
 static StaticSemaphore_t MQTTStateUpdateLockBuffer;
 SemaphoreHandle_t MQTTAgentLock = NULL;
@@ -179,7 +184,7 @@ static void otaAgentTask( void * parameters )
 
     mqttSubscribe( "test_topic", strlen( "test_topic" ) );
 
-    while( true )
+    for( ;; )
     {
         vTaskDelay( portMAX_DELAY );
     }

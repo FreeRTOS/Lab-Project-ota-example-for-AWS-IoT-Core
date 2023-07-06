@@ -1,3 +1,12 @@
+/*
+ * Copyright Amazon.com, Inc. and its affiliates. All Rights Reserved.
+ * SPDX-License-Identifier: MIT
+ *
+ * Licensed under the MIT License. See the LICENSE accompanying this file
+ * for the specific language governing permissions and limitations under
+ * the License.
+ */
+
 #include <stdio.h>
 #include <string.h>
 
@@ -17,7 +26,7 @@ void otaDemo_start( void )
     }
 }
 
-// Implemented for use by the MQTT library
+/* Implemented for use by the MQTT library */
 void otaDemo_handleIncomingMQTTMessage( char * topic,
                                         size_t topicLength,
                                         uint8_t * message,
@@ -42,16 +51,16 @@ void otaDemo_handleIncomingMQTTMessage( char * topic,
     }
 }
 
-// TODO: Implement for the Jobs library
+/* TODO: Implement for the Jobs library */
 void otaDemo_handleJobsStartNextAccepted( JobInfo_t jobInfo )
 {
     bool handled = afrOta_parseJobDoc( jobInfo );
 }
 
-// Implemented for the AFR OTA library
+/* Implemented for the AFR OTA library */
 void otaDemo_handleOtaStart( OtaInfo_t otaInfo )
 {
-    // TODO: Populate with the actual MQTT Streams API
+    /* TODO: Populate with the actual MQTT Streams API */
     uint32_t offset = 0;
     uint32_t blockSize = CONFIG_BLOCK_SIZE;
 
@@ -61,11 +70,11 @@ void otaDemo_handleOtaStart( OtaInfo_t otaInfo )
     }
 }
 
-// Implemented for the MQTT Streams library
+/* Implemented for the MQTT Streams library */
 void otaDemo_handleMqttStreamsBlockArrived( MqttStreamDataBlockInfo_t dataBlock )
 {
-    // TODO: Add guardrails, this is vulnerable to buffer overwrites
-    // TODO: How do we know when a block is the final block?
+    /* TODO: Add guardrails, this is vulnerable to buffer overwrites */
+    /* TODO: How do we know when a block is the final block? */
     memcpy( downloadedData + dataBlock.offset,
             dataBlock.payload,
             dataBlock.blockSize );
@@ -82,7 +91,7 @@ void otaDemo_handleMqttStreamsBlockArrived( MqttStreamDataBlockInfo_t dataBlock 
 
 void otaDemo_finishDownload()
 {
-    // TODO: Do something with the completed download
-    // Start the bootloader
+    /* TODO: Do something with the completed download */
+    /* Start the bootloader */
     jobs_reportJobStatusComplete();
 }
