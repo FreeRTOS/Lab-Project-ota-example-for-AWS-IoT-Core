@@ -98,6 +98,7 @@ target_include_directories(aws-iot-core-jobs-afr-ota-handler
 
 add_executable(
   coreOTA_Demo
+  ./demo/jobs/core_jobs.c
   ./demo/main.c
   ./demo/mqtt_wrapper/mqtt_wrapper.c
   ./source/transport/openssl_posix.c

@@ -16,6 +16,10 @@ void setCoreMqttContext( MQTTContext_t * mqttContext );
 
 MQTTContext_t * getCoreMqttContext( void );
 
+void setThingName( char * thingName );
+
+void getThingName( char * thingNameBuffer, size_t thingNameBufferLength );
+
 bool mqttConnect( char * thingName );
 
 bool isMqttConnected( void );

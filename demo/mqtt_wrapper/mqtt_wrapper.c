@@ -8,10 +8,14 @@
  */
 
 #include <assert.h>
+#include <string.h>
 
 #include "mqtt_wrapper/mqtt_wrapper.h"
 
 static MQTTContext_t * globalCoreMqttContext = NULL;
+
+#define MAX_THING_NAME_SIZE 128U
+static char globalThingName[ MAX_THING_NAME_SIZE ];
 
 void setCoreMqttContext( MQTTContext_t * mqttContext )
 {
@@ -22,6 +26,17 @@ MQTTContext_t * getCoreMqttContext( void )
 {
     assert( globalCoreMqttContext != NULL );
     return globalCoreMqttContext;
+}
+
+void setThingName( char * thingName )
+{
+    strncpy( globalThingName, thingName, MAX_THING_NAME_SIZE );
+}
+
+void getThingName( char * thingNameBuffer, size_t thingNameBufferLength )
+{
+    assert( globalThingName[ 0 ] != 0 );
+    strncpy( thingNameBuffer, globalThingName, thingNameBufferLength );
 }
 
 bool mqttConnect( char * thingName )
@@ -39,10 +54,10 @@ bool mqttConnect( char * thingName )
     connectInfo.keepAliveSeconds = 60U;
     connectInfo.cleanSession = true;
     mqttStatus = MQTT_Connect( globalCoreMqttContext,
-                                &connectInfo,
-                                NULL,
-                                5000U,
-                                &sessionPresent );
+                               &connectInfo,
+                               NULL,
+                               5000U,
+                               &sessionPresent );
     return mqttStatus == MQTTSuccess;
 }
 

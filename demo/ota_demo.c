@@ -19,7 +19,15 @@
 #define CONFIG_BLOCK_SIZE    256U
 #define CONFIG_MAX_FILE_SIZE 65536U
 
+#define MAX_JOB_ID_LENGTH    64U
+
+bool otaDemo_handleJobsStartNextAccepted( const char * jobId,
+                                          const size_t jobIdLength,
+                                          const char * jobDoc,
+                                          const size_t jobDocLength );
+
 static uint8_t downloadedData[ CONFIG_MAX_FILE_SIZE ] = { 0 };
+char globalJobId[ MAX_JOB_ID_LENGTH ] = { 0 };
 
 void otaDemo_start( void )
 {
@@ -35,12 +43,12 @@ void otaDemo_handleIncomingMQTTMessage( char * topic,
                                         uint8_t * message,
                                         size_t messageLength )
 {
-    /* TODO - Switch to coreJobs and pass in handler chain array pointer */
-    bool handled = jobs_handleIncomingMessage( topic,
-                                               topicLength,
-                                               message,
-                                               messageLength );
-
+    bool handled = coreJobsMQTTAPI_handleIncomingMQTTMessage(
+        &otaDemo_handleJobsStartNextAccepted,
+        topic,
+        topicLength,
+        message,
+        messageLength );
     handled = handled && mqttStreams_handleIncomingMessage( topic,
                                                             topicLength,
                                                             message,
@@ -58,9 +66,18 @@ void otaDemo_handleIncomingMQTTMessage( char * topic,
 }
 
 /* TODO: Implement for the Jobs library */
-void otaDemo_handleJobsStartNextAccepted( JobInfo_t jobInfo )
+bool otaDemo_handleJobsStartNextAccepted( const char * jobId,
+                                          const size_t jobIdLength,
+                                          const char * jobDoc,
+                                          const size_t jobDocLength )
 {
-    bool handled = handleJobDoc( jobInfo.jobId, jobInfo.jobIdLength, jobInfo.jobDoc, jobInfo.jobDocLength );
+    bool handled = false;
+    if( globalJobId[ 0 ] == 0 )
+    {
+        strncpy( globalJobId, jobId, jobIdLength );
+        handled = handleJobDoc( jobId, jobIdLength, jobDoc, jobDocLength );
+    }
+    return handled;
 }
 
 /* AFR OTA library callback */
