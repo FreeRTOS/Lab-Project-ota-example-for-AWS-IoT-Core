@@ -39,6 +39,11 @@ FetchContent_Declare(
   # hash: sha256-otueOD8tkzbHHVuOBI6krewYoeteRGAAQWSf0r19P5s=
   GIT_REPOSITORY https://github.com/intel/tinycbor.git
   GIT_TAG 9924cfed3b95ad6de299ae675064430fdb886216)
+FetchContent_Declare(
+  aws-iot-core-jobs-afr-ota-handler
+  # hash: sha256-otueOD8tkzbHHVuOBI6krewYoeteRGAAQWSf0r19P5s=
+  GIT_REPOSITORY https://github.com/aws/aws-iot-core-jobs-afr-ota-handler/
+  GIT_TAG fa93651af02fe84eb063f454edf43ab47c7c56ed)
 
 # FreeRTOS-Kernel build options
 add_library(freertos_config INTERFACE)
@@ -54,7 +59,7 @@ set(FREERTOS_PORT
     CACHE STRING "" FORCE)
 
 FetchContent_MakeAvailable(FreeRTOS_Kernel coreMQTT backoffAlgorithm coreJSON
-                           tinycbor)
+                           tinycbor aws-iot-core-jobs-afr-ota-handler)
 
 # coreMQTT
 include("${coremqtt_SOURCE_DIR}/mqttFilePaths.cmake")
@@ -85,6 +90,13 @@ add_library(
   "${tinycbor_SOURCE_DIR}/src/cborencoder_close_container_checked.c")
 target_include_directories(tinycbor PUBLIC "${tinycbor_SOURCE_DIR}/src")
 
+#afr-ota-handler
+include("${aws-iot-core-jobs-afr-ota-handler_SOURCE_DIR}/otaJobsFilePaths.cmake")
+add_library(aws-iot-core-jobs-afr-ota-handler ${JOBS_HANDLER_SOURCES})
+target_link_libraries(aws-iot-core-jobs-afr-ota-handler PUBLIC coreJSON)
+target_include_directories(aws-iot-core-jobs-afr-ota-handler
+ PUBLIC ${JOBS_HANDLER_INCLUDES})
+
 add_executable(
   coreOTA_Demo
   ./demo/main.c
@@ -102,9 +114,10 @@ target_include_directories(
 
 target_link_libraries(
   coreOTA_Demo PRIVATE coreMQTT OpenSSL::SSL coreJSON tinycbor backoffAlgorithm
-                       freertos_kernel)
+                       freertos_kernel aws-iot-core-jobs-afr-ota-handler)
 
 find_library(LIBRT rt)
 if(LIBRT)
   target_link_libraries(coreOTA_Demo PRIVATE rt)
 endif()
+

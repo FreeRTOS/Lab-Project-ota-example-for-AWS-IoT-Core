@@ -13,10 +13,16 @@
 #include "mqtt_wrapper/mqtt_wrapper.h"
 #include "ota_demo.h"
 
+#include "ota_job_handler.h"
+#include "ota_job_processor.h"
+
 #define CONFIG_BLOCK_SIZE    256U
 #define CONFIG_MAX_FILE_SIZE 65536U
+#define CONFIG_MAX_JOB_HANDLERS 1U
 
 static uint8_t downloadedData[ CONFIG_MAX_FILE_SIZE ] = { 0 };
+
+static const IncomingJobDocHandler_t* handlerChain[CONFIG_MAX_JOB_HANDLERS] = { &handleJobDoc };
 
 void otaDemo_start( void )
 {
@@ -32,14 +38,20 @@ void otaDemo_handleIncomingMQTTMessage( char * topic,
                                         uint8_t * message,
                                         size_t messageLength )
 {
+    // TODO - Switch to coreJobs and pass in handler chain array pointer
     bool handled = jobs_handleIncomingMessage( topic,
                                                topicLength,
                                                message,
                                                messageLength );
-    handled = handled && mqttStreams_handleIncomingMessage( topic,
+
+    if ( !handled )
+    {
+        handled = handled && mqttStreams_handleIncomingMessage( topic,
                                                             topicLength,
                                                             message,
                                                             messageLength );
+    }
+
     if( !handled )
     {
         printf( "Unrecognized incoming MQTT message received on topic: "
@@ -51,22 +63,16 @@ void otaDemo_handleIncomingMQTTMessage( char * topic,
     }
 }
 
-/* TODO: Implement for the Jobs library */
-void otaDemo_handleJobsStartNextAccepted( JobInfo_t jobInfo )
+/* AFR OTA library callback */
+void applicationSuppliedFunction_processAfrOtaDocument( AfrOtaJobDocumentFields_t * params )
 {
-    bool handled = afrOta_parseJobDoc( jobInfo );
-}
+    // Set to 0 if the filesize is perfectly divisible by the block size
+    uint32_t finalBlockSize = (params->fileSize % CONFIG_BLOCK_SIZE > 0) ? 1 : 0;
+    uint32_t totalBlocks = params->fileSize/CONFIG_BLOCK_SIZE + finalBlockSize;
 
-/* Implemented for the AFR OTA library */
-void otaDemo_handleOtaStart( OtaInfo_t otaInfo )
-{
-    /* TODO: Populate with the actual MQTT Streams API */
-    uint32_t offset = 0;
-    uint32_t blockSize = CONFIG_BLOCK_SIZE;
-
-    for( int i = 0; i < NUMBER_OF_BLOCKS; i++ )
+    for( int i = 0; i < totalBlocks; i++ )
     {
-        mqttStreams_getBlock( otaInfo.streamId, i * blockSize, blockSize );
+        mqttStreams_getBlock( params->imageRef, i * CONFIG_BLOCK_SIZE, CONFIG_BLOCK_SIZE );
     }
 }
 
