@@ -41,7 +41,6 @@ FetchContent_Declare(
   GIT_TAG 9924cfed3b95ad6de299ae675064430fdb886216)
 FetchContent_Declare(
   aws-iot-core-jobs-afr-ota-handler
-  # hash: sha256-otueOD8tkzbHHVuOBI6krewYoeteRGAAQWSf0r19P5s=
   GIT_REPOSITORY https://github.com/aws/aws-iot-core-jobs-afr-ota-handler/
   GIT_TAG fa93651af02fe84eb063f454edf43ab47c7c56ed)
 
@@ -90,7 +89,7 @@ add_library(
   "${tinycbor_SOURCE_DIR}/src/cborencoder_close_container_checked.c")
 target_include_directories(tinycbor PUBLIC "${tinycbor_SOURCE_DIR}/src")
 
-#afr-ota-handler
+# afr-ota-handler
 include("${aws-iot-core-jobs-afr-ota-handler_SOURCE_DIR}/otaJobsFilePaths.cmake")
 add_library(aws-iot-core-jobs-afr-ota-handler ${JOBS_HANDLER_SOURCES})
 target_link_libraries(aws-iot-core-jobs-afr-ota-handler PUBLIC coreJSON)

@@ -18,11 +18,8 @@
 
 #define CONFIG_BLOCK_SIZE    256U
 #define CONFIG_MAX_FILE_SIZE 65536U
-#define CONFIG_MAX_JOB_HANDLERS 1U
 
 static uint8_t downloadedData[ CONFIG_MAX_FILE_SIZE ] = { 0 };
-
-static const IncomingJobDocHandler_t* handlerChain[CONFIG_MAX_JOB_HANDLERS] = { &handleJobDoc };
 
 void otaDemo_start( void )
 {
@@ -38,19 +35,16 @@ void otaDemo_handleIncomingMQTTMessage( char * topic,
                                         uint8_t * message,
                                         size_t messageLength )
 {
-    // TODO - Switch to coreJobs and pass in handler chain array pointer
+    /* TODO - Switch to coreJobs and pass in handler chain array pointer */
     bool handled = jobs_handleIncomingMessage( topic,
                                                topicLength,
                                                message,
                                                messageLength );
 
-    if ( !handled )
-    {
-        handled = handled && mqttStreams_handleIncomingMessage( topic,
+    handled = handled && mqttStreams_handleIncomingMessage( topic,
                                                             topicLength,
                                                             message,
                                                             messageLength );
-    }
 
     if( !handled )
     {
@@ -63,10 +57,16 @@ void otaDemo_handleIncomingMQTTMessage( char * topic,
     }
 }
 
+/* TODO: Implement for the Jobs library */
+void otaDemo_handleJobsStartNextAccepted( JobInfo_t jobInfo )
+{
+    bool handled = handleJobDoc( jobInfo.jobId, jobInfo.jobIdLength, jobInfo.jobDoc, jobInfo.jobDocLength );
+}
+
 /* AFR OTA library callback */
 void applicationSuppliedFunction_processAfrOtaDocument( AfrOtaJobDocumentFields_t * params )
 {
-    // Set to 0 if the filesize is perfectly divisible by the block size
+    /* Set to 0 if the filesize is perfectly divisible by the block size */
     uint32_t finalBlockSize = (params->fileSize % CONFIG_BLOCK_SIZE > 0) ? 1 : 0;
     uint32_t totalBlocks = params->fileSize/CONFIG_BLOCK_SIZE + finalBlockSize;
 
