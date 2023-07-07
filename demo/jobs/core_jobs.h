@@ -5,7 +5,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
-typedef enum JobStatus {
+typedef enum JobStatus
+{
     Queued,
     InProgress,
     Failed,
@@ -26,7 +27,7 @@ bool coreJobs_checkForJobs();
 
 /**
  * @brief Starts the next pending job vended by IoT core
- * 
+ *
  * @param thingname IoT 'Thing' name
  * @param thingnameLength IoT 'Thing' name length
  * @param clientToken String used to match correspondence
@@ -34,11 +35,14 @@ bool coreJobs_checkForJobs();
  * @return true Message to start next pending job was published
  * @return false Messsage to start next pending job was not published
  */
-bool startNextPendingJob(char * thingname, size_t thingnameLength, char * clientToken, size_t clientTokenLength);
+bool startNextPendingJob( char * thingname,
+                          size_t thingnameLength,
+                          char * clientToken,
+                          size_t clientTokenLength );
 
 /**
  * @brief Updates the specified job for the thing to the specified status
- * 
+ *
  * @param thingname IoT 'Thing' name
  * @param thingnameLength Thingname length
  * @param jobId IoT Core job identifier
@@ -49,7 +53,13 @@ bool startNextPendingJob(char * thingname, size_t thingnameLength, char * client
  * @return true Message to update job status was published
  * @return false Messsage to update job status was not published
  */
-bool updateJobStatus(char * thingname, size_t thingnameLength, char * jobId, size_t jobIdLength, JobStatus_t status, char * expectedVersion, size_t expectedVersionLength);
+bool updateJobStatus( char * thingname,
+                      size_t thingnameLength,
+                      char * jobId,
+                      size_t jobIdLength,
+                      JobStatus_t status,
+                      char * expectedVersion,
+                      size_t expectedVersionLength );
 
 // ------------------------ MQTT API Functions  --------------------------
 // Called by the platform wrapper, implemented by coreJobs
