@@ -42,7 +42,7 @@ bool getJobStartNextFields( const uint8_t * message,
                                   messageLength,
                                   "execution.jobId",
                                   strlen( "execution.jobId" ),
-                                  &jobId,
+                                  jobId,
                                   jobIdLength );
     }
     if( jsonResult == JSONSuccess )
@@ -51,7 +51,7 @@ bool getJobStartNextFields( const uint8_t * message,
                                   messageLength,
                                   "execution.jobDocument",
                                   strlen( "execution.jobDocument" ),
-                                  &jobDoc,
+                                  jobDoc,
                                   jobDocLength );
     }
     return true;
@@ -77,9 +77,9 @@ bool coreJobsMQTTAPI_handleIncomingMQTTMessage(
     willHandle = isMessageJobStartNextAccepted( topic, topicLength );
     willHandle = willHandle && getJobStartNextFields( message,
                                                       messageLength,
-                                                      jobId,
+                                                      &jobId,
                                                       &jobIdLength,
-                                                      jobDoc,
+                                                      &jobDoc,
                                                       &jobDocLength );
 
     willHandle = willHandle &&

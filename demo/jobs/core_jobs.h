@@ -23,7 +23,7 @@ bool coreJobs_checkForJobs();
 // function parses the Job doc and distributes it through the Jobs chain of
 // responsibilities, then returns true. Returns false otherwise.
 bool coreJobsMQTTAPI_handleIncomingMQTTMessage(
-    const IncomingJobDocHandler_t * jobDocHandler,
+    const IncomingJobDocHandler_t jobDocHandler,
     const char * topic,
     const size_t topicLength,
     const uint8_t * message,

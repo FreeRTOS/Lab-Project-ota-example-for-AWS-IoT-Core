@@ -81,15 +81,20 @@ bool otaDemo_handleJobsStartNextAccepted( const char * jobId,
 }
 
 /* AFR OTA library callback */
-void applicationSuppliedFunction_processAfrOtaDocument( AfrOtaJobDocumentFields_t * params )
+void applicationSuppliedFunction_processAfrOtaDocument(
+    AfrOtaJobDocumentFields_t * params )
 {
     /* Set to 0 if the filesize is perfectly divisible by the block size */
-    uint32_t finalBlockSize = (params->fileSize % CONFIG_BLOCK_SIZE > 0) ? 1 : 0;
-    uint32_t totalBlocks = params->fileSize/CONFIG_BLOCK_SIZE + finalBlockSize;
+    uint32_t finalBlockSize = ( params->fileSize % CONFIG_BLOCK_SIZE > 0 ) ? 1
+                                                                           : 0;
+    uint32_t totalBlocks = params->fileSize / CONFIG_BLOCK_SIZE +
+                           finalBlockSize;
 
     for( int i = 0; i < totalBlocks; i++ )
     {
-        mqttStreams_getBlock( params->imageRef, i * CONFIG_BLOCK_SIZE, CONFIG_BLOCK_SIZE );
+        mqttStreams_getBlock( params->imageRef,
+                              i * CONFIG_BLOCK_SIZE,
+                              CONFIG_BLOCK_SIZE );
     }
 }
 
