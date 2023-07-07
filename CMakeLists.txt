@@ -90,11 +90,12 @@ add_library(
 target_include_directories(tinycbor PUBLIC "${tinycbor_SOURCE_DIR}/src")
 
 # afr-ota-handler
-include("${aws-iot-core-jobs-afr-ota-handler_SOURCE_DIR}/otaJobsFilePaths.cmake")
+include(
+  "${aws-iot-core-jobs-afr-ota-handler_SOURCE_DIR}/otaJobsFilePaths.cmake")
 add_library(aws-iot-core-jobs-afr-ota-handler ${JOBS_HANDLER_SOURCES})
 target_link_libraries(aws-iot-core-jobs-afr-ota-handler PUBLIC coreJSON)
 target_include_directories(aws-iot-core-jobs-afr-ota-handler
- PUBLIC ${JOBS_HANDLER_INCLUDES})
+                           PUBLIC ${JOBS_HANDLER_INCLUDES})
 
 add_executable(
   coreOTA_Demo
@@ -113,11 +114,16 @@ target_include_directories(
          "${CMAKE_CURRENT_LIST_DIR}/cfg")
 
 target_link_libraries(
-  coreOTA_Demo PRIVATE coreMQTT OpenSSL::SSL coreJSON tinycbor backoffAlgorithm
-                       freertos_kernel aws-iot-core-jobs-afr-ota-handler)
+  coreOTA_Demo
+  PRIVATE coreMQTT
+          OpenSSL::SSL
+          coreJSON
+          tinycbor
+          backoffAlgorithm
+          freertos_kernel
+          aws-iot-core-jobs-afr-ota-handler)
 
 find_library(LIBRT rt)
 if(LIBRT)
   target_link_libraries(coreOTA_Demo PRIVATE rt)
 endif()
-
