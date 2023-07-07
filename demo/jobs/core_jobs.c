@@ -29,9 +29,9 @@ bool isMessageJobStartNextAccepted( const char * topic,
 
 bool getJobStartNextFields( const uint8_t * message,
                             const size_t messageLength,
-                            char * jobId,
+                            char ** jobId,
                             size_t * jobIdLength,
-                            char * jobDoc,
+                            char ** jobDoc,
                             size_t * jobDocLength )
 {
     JSONStatus_t jsonResult = JSONNotFound;
@@ -54,7 +54,7 @@ bool getJobStartNextFields( const uint8_t * message,
                                   jobDoc,
                                   jobDocLength );
     }
-    return true;
+    return jsonResult == JSONSuccess;
 }
 
 // Can be called on any incoming MQTT message
@@ -62,7 +62,7 @@ bool getJobStartNextFields( const uint8_t * message,
 // this function parses the Job doc and distributes it through the Jobs
 // chain of responsibilities, then returns true. Returns false otherwise.
 bool coreJobsMQTTAPI_handleIncomingMQTTMessage(
-    const IncomingJobDocHandler_t * jobDocHandler,
+    const IncomingJobDocHandler_t jobDocHandler,
     const char * topic,
     const size_t topicLength,
     const uint8_t * message,
