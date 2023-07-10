@@ -72,6 +72,7 @@ int main( int argc, char * argv[] )
     xTaskCreate( mqttProcessLoopTask, "T_PROCESS", 6000, NULL, 2, NULL );
 
     setCoreMqttContext( &mqttContext );
+    setThingName( argv[ 5 ] );
 
     vTaskStartScheduler();
 
