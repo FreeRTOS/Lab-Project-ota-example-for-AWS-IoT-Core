@@ -22,8 +22,8 @@
 #define CONFIG_BLOCK_SIZE    256U
 #define CONFIG_MAX_FILE_SIZE 65536U
 #define NUM_OF_BLOCKS_REQUESTED 1U
+#define MAX_THING_NAME_SIZE 128U
 
-extern char * thingName;
 uint32_t numOfBlocksRemaining = 0;
 uint32_t currentBlockOffset = 0;
 uint8_t currentFileId = 0;
@@ -76,6 +76,10 @@ void otaDemo_handleJobsStartNextAccepted( JobInfo_t jobInfo )
 /* AFR OTA library callback */
 void applicationSuppliedFunction_processAfrOtaDocument( AfrOtaJobDocumentFields_t * params )
 {
+    char thingName[MAX_THING_NAME_SIZE + 1];
+    memset(thingName, '\0', MAX_THING_NAME_SIZE + 1);
+    getThingName(thingName);
+
     /* Set to 0 if the filesize is perfectly divisible by the block size */
     numOfBlocksRemaining = params->fileSize/CONFIG_BLOCK_SIZE;
     numOfBlocksRemaining += (params->fileSize % CONFIG_BLOCK_SIZE > 0) ? 1 : 0;

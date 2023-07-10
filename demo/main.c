@@ -31,8 +31,6 @@ static StaticSemaphore_t MQTTStateUpdateLockBuffer;
 SemaphoreHandle_t MQTTAgentLock = NULL;
 SemaphoreHandle_t MQTTStateUpdateLock = NULL;
 
-char * thingName = NULL;
-
 static void otaAgentTask( void * parameters );
 
 static void mqttProcessLoopTask( void * parameters );
@@ -74,6 +72,7 @@ int main( int argc, char * argv[] )
     xTaskCreate( mqttProcessLoopTask, "T_PROCESS", 6000, NULL, 2, NULL );
 
     setCoreMqttContext( &mqttContext );
+    setThingName( argv[ 5 ] );
 
     vTaskStartScheduler();
 
@@ -166,7 +165,7 @@ static void otaAgentTask( void * parameters )
     char * privateKeyFilePath = commandLineArgs[ 2 ];
     char * rootCAFilePath = commandLineArgs[ 3 ];
     char * endpoint = commandLineArgs[ 4 ];
-    thingName = commandLineArgs[ 5 ];
+    char * thingName = commandLineArgs[ 5 ];
 
     bool result = transport_tlsConnect( certificateFilePath,
                                         privateKeyFilePath,
