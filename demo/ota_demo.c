@@ -48,7 +48,7 @@ void otaDemo_start( void )
 }
 
 /* Implemented for use by the MQTT library */
-void otaDemo_handleIncomingMQTTMessage( char * topic,
+bool otaDemo_handleIncomingMQTTMessage( char * topic,
                                         size_t topicLength,
                                         uint8_t * message,
                                         size_t messageLength )
@@ -64,7 +64,6 @@ void otaDemo_handleIncomingMQTTMessage( char * topic,
                                                             topicLength,
                                                             message,
                                                             messageLength );
-
     if( !handled )
     {
         printf( "Unrecognized incoming MQTT message received on topic: "
@@ -74,6 +73,7 @@ void otaDemo_handleIncomingMQTTMessage( char * topic,
                 ( unsigned int ) messageLength,
                 ( char * ) message );
     }
+    return handled;
 }
 
 /* TODO: Implement for the Jobs library */

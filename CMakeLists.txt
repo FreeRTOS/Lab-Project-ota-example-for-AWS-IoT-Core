@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.16)
 
 project(aws_iot_core_ota)
 
-set(CMAKE_C_FLAGS "-O3 -Wall -Wextra -Werror")
+set(CMAKE_C_FLAGS "-O3 -Wall -Wextra -Wno-stringop-truncation")
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(BUILD_SHARED_LIBS OFF)
 set(CMAKE_BUILD_TYPE Debug)
@@ -117,6 +117,7 @@ add_executable(
   coreOTA_Demo
   ./demo/jobs/core_jobs.c
   ./demo/main.c
+  ./demo/ota_demo.c
   ./demo/mqtt_wrapper/mqtt_wrapper.c
   ./source/transport/openssl_posix.c
   ./source/transport/sockets_posix.c
