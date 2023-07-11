@@ -21,6 +21,7 @@
 #include "mqtt_wrapper/mqtt_wrapper.h"
 #include "transport/transport_wrapper.h"
 #include "utils/clock.h"
+#include "ota_demo.h"
 
 static TransportInterface_t transport = { 0 };
 static MQTTContext_t mqttContext = { 0 };
@@ -146,7 +147,10 @@ static void handleIncomingMQTTMessage( char * topic,
                                        size_t messageLength )
 
 {
-    bool messageHandled = false;
+    bool messageHandled = otaDemo_handleIncomingMQTTMessage(topic,
+                                       topicLength,
+                                        message,
+                                       messageLength);
     if( !messageHandled )
     {
         printf( "Unhandled incoming PUBLISH received on topic, message: "
@@ -177,12 +181,7 @@ static void otaAgentTask( void * parameters )
     assert( result );
     printf( "Successfully connected to IoT Core\n" );
 
-    mqttPublish( "test_topic_publish",
-                 strlen( "test_topic_publish" ),
-                 ( uint8_t * ) "This is my payload!",
-                 strlen( "This is my payload!" ) );
-
-    mqttSubscribe( "test_topic", strlen( "test_topic" ) );
+    otaDemo_start();
 
     for( ;; )
     {
