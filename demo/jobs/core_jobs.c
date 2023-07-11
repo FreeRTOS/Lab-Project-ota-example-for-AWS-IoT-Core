@@ -46,7 +46,7 @@ bool isMessageJobStartNextAccepted( const char * topic,
     bool isMatch = false;
     char expectedBuffer[ TOPIC_BUFFER_SIZE + 1 ] = { 0 };
     char thingName[ MAX_THING_NAME_LENGTH + 1 ] = { 0 };
-    getThingName( thingName, MAX_THING_NAME_LENGTH );
+    getThingName( thingName );
     snprintf( expectedBuffer,
               TOPIC_BUFFER_SIZE,
               "%s%s%s",
