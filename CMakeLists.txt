@@ -43,6 +43,10 @@ FetchContent_Declare(
   aws-iot-core-jobs-afr-ota-handler
   GIT_REPOSITORY https://github.com/aws/aws-iot-core-jobs-afr-ota-handler/
   GIT_TAG fa93651af02fe84eb063f454edf43ab47c7c56ed)
+FetchContent_Declare(
+  aws-iot-core-mqtt-file-streams-embedded-c
+  GIT_REPOSITORY https://github.com/aws/aws-iot-core-mqtt-file-streams-embedded-c/
+  GIT_TAG 5a034d5cdaf00c76959f927b97264713c91658d8)
 
 # FreeRTOS-Kernel build options
 add_library(freertos_config INTERFACE)
@@ -58,7 +62,7 @@ set(FREERTOS_PORT
     CACHE STRING "" FORCE)
 
 FetchContent_MakeAvailable(FreeRTOS_Kernel coreMQTT backoffAlgorithm coreJSON
-                           tinycbor aws-iot-core-jobs-afr-ota-handler)
+                           tinycbor aws-iot-core-jobs-afr-ota-handler aws-iot-core-mqtt-file-streams-embedded-c)
 
 # coreMQTT
 include("${coremqtt_SOURCE_DIR}/mqttFilePaths.cmake")
@@ -97,6 +101,18 @@ target_link_libraries(aws-iot-core-jobs-afr-ota-handler PUBLIC coreJSON)
 target_include_directories(aws-iot-core-jobs-afr-ota-handler
                            PUBLIC ${JOBS_HANDLER_INCLUDES})
 
+# aws-iot-core-mqtt-file-streams-embedded-c
+add_library(
+  aws-iot-core-mqtt-file-streams-embedded-c 
+  "${aws-iot-core-mqtt-file-streams-embedded-c_SOURCE_DIR}/source/MQTTFileDownloader.c"
+  "${aws-iot-core-mqtt-file-streams-embedded-c_SOURCE_DIR}/source/MQTTFileDownloader_base64.c"
+  "${aws-iot-core-mqtt-file-streams-embedded-c_SOURCE_DIR}/source/MQTTFileDownloader_cbor.c")
+target_link_libraries(aws-iot-core-mqtt-file-streams-embedded-c PUBLIC coreJSON PUBLIC coreMQTT PUBLIC tinycbor)
+target_include_directories(
+  aws-iot-core-mqtt-file-streams-embedded-c
+  PUBLIC "${aws-iot-core-mqtt-file-streams-embedded-c_SOURCE_DIR}/source/include"
+)
+
 add_executable(
   coreOTA_Demo
   ./demo/jobs/core_jobs.c
@@ -121,7 +137,8 @@ target_link_libraries(
           tinycbor
           backoffAlgorithm
           freertos_kernel
-          aws-iot-core-jobs-afr-ota-handler)
+          aws-iot-core-jobs-afr-ota-handler
+          aws-iot-core-mqtt-file-streams-embedded-c)
 
 find_library(LIBRT rt)
 if(LIBRT)

@@ -18,7 +18,7 @@ MQTTContext_t * getCoreMqttContext( void );
 
 void setThingName( char * thingName );
 
-void getThingName( char * thingNameBuffer, size_t thingNameBufferLength );
+void getThingName( char * thingNameBuffer );
 
 bool mqttConnect( char * thingName );
 

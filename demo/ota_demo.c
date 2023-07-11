@@ -9,6 +9,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <assert.h>
 
 #include "mqtt_wrapper/mqtt_wrapper.h"
 #include "ota_demo.h"
@@ -16,8 +17,17 @@
 #include "ota_job_handler.h"
 #include "ota_job_processor.h"
 
+#include "MQTTFileDownloader.h"
+
 #define CONFIG_BLOCK_SIZE    256U
 #define CONFIG_MAX_FILE_SIZE 65536U
+#define NUM_OF_BLOCKS_REQUESTED 1U
+#define MAX_THING_NAME_SIZE 128U
+
+uint32_t numOfBlocksRemaining = 0;
+uint32_t currentBlockOffset = 0;
+uint8_t currentFileId = 0;
+uint32_t totalBytesReceived = 0;
 
 #define MAX_JOB_ID_LENGTH    64U
 
@@ -49,7 +59,8 @@ void otaDemo_handleIncomingMQTTMessage( char * topic,
         topicLength,
         message,
         messageLength );
-    handled = handled && mqttStreams_handleIncomingMessage( topic,
+
+    handled = handled || mqttStreams_handleIncomingMessage( topic,
                                                             topicLength,
                                                             message,
                                                             messageLength );
@@ -84,36 +95,43 @@ bool otaDemo_handleJobsStartNextAccepted( const char * jobId,
 void applicationSuppliedFunction_processAfrOtaDocument(
     AfrOtaJobDocumentFields_t * params )
 {
-    /* Set to 0 if the filesize is perfectly divisible by the block size */
-    uint32_t finalBlockSize = ( params->fileSize % CONFIG_BLOCK_SIZE > 0 ) ? 1
-                                                                           : 0;
-    uint32_t totalBlocks = params->fileSize / CONFIG_BLOCK_SIZE +
-                           finalBlockSize;
+    char thingName[MAX_THING_NAME_SIZE + 1];
+    memset(thingName, '\0', MAX_THING_NAME_SIZE + 1);
+    getThingName(thingName);
 
-    for( int i = 0; i < totalBlocks; i++ )
-    {
-        mqttStreams_getBlock( params->imageRef,
-                              i * CONFIG_BLOCK_SIZE,
-                              CONFIG_BLOCK_SIZE );
-    }
+    numOfBlocksRemaining = params->fileSize/CONFIG_BLOCK_SIZE;
+    numOfBlocksRemaining += (params->fileSize % CONFIG_BLOCK_SIZE > 0) ? 1 : 0;
+    currentFileId = params->fileId;
+    currentBlockOffset = 0;
+    totalBytesReceived = 0;
+    /* Initalize the File downloader */
+    ucMqttFileDownloaderInit(params->imageRef, thingName, DATA_TYPE_CBOR);
+
+    /* Request the first block */
+    ucRequestDataBlock(currentFileId, CONFIG_BLOCK_SIZE, currentBlockOffset, NUM_OF_BLOCKS_REQUESTED);
 }
 
 /* Implemented for the MQTT Streams library */
-void otaDemo_handleMqttStreamsBlockArrived( MqttStreamDataBlockInfo_t dataBlock )
+void otaDemo_handleMqttStreamsBlockArrived( MqttFileDownloaderDataBlockInfo_t *dataBlock )
 {
-    /* TODO: Add guardrails, this is vulnerable to buffer overwrites */
-    /* TODO: How do we know when a block is the final block? */
-    memcpy( downloadedData + dataBlock.offset,
-            dataBlock.payload,
-            dataBlock.blockSize );
+    assert((totalBytesReceived + dataBlock->payloadLength) < CONFIG_MAX_FILE_SIZE);
+        
+    memcpy( downloadedData + totalBytesReceived,
+            dataBlock->payload,
+            dataBlock->payloadLength );
 
-    if( globalNumBlocksRemaining == 0 )
+    totalBytesReceived += dataBlock->payloadLength;
+    numOfBlocksRemaining--;
+
+    if( numOfBlocksRemaining == 0 )
     {
+        printf("Downloaded Data %s \n", (char *) downloadedData);
         otaDemo_finishDownload();
     }
     else
     {
-        globalNumBlocksRemaining--;
+        currentBlockOffset++;
+        ucRequestDataBlock(currentFileId, CONFIG_BLOCK_SIZE, currentBlockOffset, NUM_OF_BLOCKS_REQUESTED);
     }
 }
 
