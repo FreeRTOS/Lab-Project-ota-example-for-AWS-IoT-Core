@@ -118,7 +118,7 @@ bool coreJobsMQTTAPI_handleIncomingMQTTMessage(
     return willHandle;
 }
 
-bool coreJobs_startNextPendingJobdingJob( char * thingname,
+bool coreJobs_startNextPendingJob( char * thingname,
                                           size_t thingnameLength,
                                           char * clientToken,
                                           size_t clientTokenLength )
@@ -211,7 +211,7 @@ static size_t getStartNextPendingJobExecutionMsg( const char * clientToken,
 {
     size_t messageLength = 16U;
     strncpy( buffer, "{\"clientToken\":\"", bufferSize );
-    strncpy( buffer + messageLength, clientToken, bufferSize - messageLength );
+    strncpy( buffer + messageLength, clientToken, clientTokenLength );
     messageLength += clientTokenLength;
     strncpy( buffer + messageLength, "\"}", bufferSize - messageLength );
 
@@ -228,11 +228,11 @@ static size_t getUpdateJobExecutionTopic( char * thingname,
     /* TODO - Assert on buffer size being at least the size of the topic */
     size_t topicLength = 12U;
     strncpy( buffer, "$aws/things/", bufferSize );
-    strncpy( buffer + topicLength, thingname, bufferSize - topicLength );
+    strncpy( buffer + topicLength, thingname, thingnameLength );
     topicLength += thingnameLength;
     strncpy( buffer + topicLength, "/jobs/", bufferSize - topicLength );
     topicLength += 6U;
-    strncpy( buffer + topicLength, jobId, bufferSize - topicLength );
+    strncpy( buffer + topicLength, jobId, jobIdLength );
     topicLength += jobIdLength;
     strncpy( buffer + topicLength, "/update", bufferSize - topicLength );
 
@@ -249,7 +249,7 @@ static size_t getUpdateJobExecutionMsg( JobStatus_t status,
     strncpy( buffer, "{\"status\":\"", bufferSize );
     strncpy( buffer + messageLength,
              jobStatusString[ status ],
-             bufferSize - messageLength );
+             strlen(jobStatusString[status]) );
     messageLength += strlen( jobStatusString[ status ] );
     strncpy( buffer + messageLength,
              "\",\"expectedVersion\":\"",
@@ -257,7 +257,7 @@ static size_t getUpdateJobExecutionMsg( JobStatus_t status,
     messageLength += 21U;
     strncpy( buffer + messageLength,
              expectedVersion,
-             bufferSize - messageLength );
+             expectedVersionLength );
     messageLength += expectedVersionLength;
     strncpy( buffer, "\"}", bufferSize - messageLength );
 
