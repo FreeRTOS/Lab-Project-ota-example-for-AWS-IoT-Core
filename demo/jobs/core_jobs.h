@@ -35,10 +35,10 @@ bool coreJobs_checkForJobs();
  * @return true Message to start next pending job was published
  * @return false Messsage to start next pending job was not published
  */
-bool startNextPendingJob( char * thingname,
-                          size_t thingnameLength,
-                          char * clientToken,
-                          size_t clientTokenLength );
+bool coreJobs_startNextPendingJob( char * thingname,
+                                   size_t thingnameLength,
+                                   char * clientToken,
+                                   size_t clientTokenLength );
 
 /**
  * @brief Updates the specified job for the thing to the specified status
@@ -53,13 +53,13 @@ bool startNextPendingJob( char * thingname,
  * @return true Message to update job status was published
  * @return false Messsage to update job status was not published
  */
-bool updateJobStatus( char * thingname,
-                      size_t thingnameLength,
-                      char * jobId,
-                      size_t jobIdLength,
-                      JobStatus_t status,
-                      char * expectedVersion,
-                      size_t expectedVersionLength );
+bool coreJobs_updateJobStatus( char * thingname,
+                               size_t thingnameLength,
+                               char * jobId,
+                               size_t jobIdLength,
+                               JobStatus_t status,
+                               char * expectedVersion,
+                               size_t expectedVersionLength );
 
 // ------------------------ MQTT API Functions  --------------------------
 // Called by the platform wrapper, implemented by coreJobs
