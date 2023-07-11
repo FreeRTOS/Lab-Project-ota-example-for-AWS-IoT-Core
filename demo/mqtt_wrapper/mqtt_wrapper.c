@@ -56,10 +56,10 @@ bool mqttConnect( char * thingName )
     connectInfo.keepAliveSeconds = 60U;
     connectInfo.cleanSession = true;
     mqttStatus = MQTT_Connect( globalCoreMqttContext,
-                                &connectInfo,
-                                NULL,
-                                5000U,
-                                &sessionPresent );
+                               &connectInfo,
+                               NULL,
+                               5000U,
+                               &sessionPresent );
     return mqttStatus == MQTTSuccess;
 }
 
