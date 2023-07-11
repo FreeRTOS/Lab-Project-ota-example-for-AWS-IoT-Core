@@ -69,7 +69,7 @@ int main( int argc, char * argv[] )
     assert( mqttResult == MQTTSuccess );
 
     xTaskCreate( otaAgentTask, "T_OTA", 6000, ( void * ) argv, 1, NULL );
-    xTaskCreate( mqttProcessLoopTask, "T_PROCESS", 6000, NULL, 2, NULL );
+    xTaskCreate( mqttProcessLoopTask, "T_MQTT", 6000, NULL, 2, NULL );
 
     setCoreMqttContext( &mqttContext );
     setThingName( argv[ 5 ] );

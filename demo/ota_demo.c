@@ -29,7 +29,15 @@ uint32_t currentBlockOffset = 0;
 uint8_t currentFileId = 0;
 uint32_t totalBytesReceived = 0;
 
+#define MAX_JOB_ID_LENGTH    64U
+
+bool otaDemo_handleJobsStartNextAccepted( const char * jobId,
+                                          const size_t jobIdLength,
+                                          const char * jobDoc,
+                                          const size_t jobDocLength );
+
 static uint8_t downloadedData[ CONFIG_MAX_FILE_SIZE ] = { 0 };
+char globalJobId[ MAX_JOB_ID_LENGTH ] = { 0 };
 
 void otaDemo_start( void )
 {
@@ -45,11 +53,12 @@ void otaDemo_handleIncomingMQTTMessage( char * topic,
                                         uint8_t * message,
                                         size_t messageLength )
 {
-    /* TODO - Switch to coreJobs and pass in handler chain array pointer */
-    bool handled = jobs_handleIncomingMessage( topic,
-                                               topicLength,
-                                               message,
-                                               messageLength );
+    bool handled = coreJobsMQTTAPI_handleIncomingMQTTMessage(
+        &otaDemo_handleJobsStartNextAccepted,
+        topic,
+        topicLength,
+        message,
+        messageLength );
 
     handled = handled || mqttStreams_handleIncomingMessage( topic,
                                                             topicLength,
@@ -68,19 +77,28 @@ void otaDemo_handleIncomingMQTTMessage( char * topic,
 }
 
 /* TODO: Implement for the Jobs library */
-void otaDemo_handleJobsStartNextAccepted( JobInfo_t jobInfo )
+bool otaDemo_handleJobsStartNextAccepted( const char * jobId,
+                                          const size_t jobIdLength,
+                                          const char * jobDoc,
+                                          const size_t jobDocLength )
 {
-    bool handled = handleJobDoc( jobInfo.jobId, jobInfo.jobIdLength, jobInfo.jobDoc, jobInfo.jobDocLength );
+    bool handled = false;
+    if( globalJobId[ 0 ] == 0 )
+    {
+        strncpy( globalJobId, jobId, jobIdLength );
+        handled = handleJobDoc( jobId, jobIdLength, jobDoc, jobDocLength );
+    }
+    return handled;
 }
 
 /* AFR OTA library callback */
-void applicationSuppliedFunction_processAfrOtaDocument( AfrOtaJobDocumentFields_t * params )
+void applicationSuppliedFunction_processAfrOtaDocument(
+    AfrOtaJobDocumentFields_t * params )
 {
     char thingName[MAX_THING_NAME_SIZE + 1];
     memset(thingName, '\0', MAX_THING_NAME_SIZE + 1);
     getThingName(thingName);
 
-    /* Set to 0 if the filesize is perfectly divisible by the block size */
     numOfBlocksRemaining = params->fileSize/CONFIG_BLOCK_SIZE;
     numOfBlocksRemaining += (params->fileSize % CONFIG_BLOCK_SIZE > 0) ? 1 : 0;
     currentFileId = params->fileId;
