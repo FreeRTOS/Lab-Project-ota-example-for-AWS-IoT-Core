@@ -7,34 +7,37 @@
  * the License.
  */
 
+#include <assert.h>
 #include <stdio.h>
 #include <string.h>
-#include <assert.h>
 
 #include "mqtt_wrapper/mqtt_wrapper.h"
 #include "ota_demo.h"
 
+#include "jobs/core_jobs.h"
 #include "ota_job_handler.h"
 #include "ota_job_processor.h"
 
 #include "MQTTFileDownloader.h"
 
-#define CONFIG_BLOCK_SIZE    256U
-#define CONFIG_MAX_FILE_SIZE 65536U
+#define CONFIG_BLOCK_SIZE       256U
+#define CONFIG_MAX_FILE_SIZE    65536U
 #define NUM_OF_BLOCKS_REQUESTED 1U
-#define MAX_THING_NAME_SIZE 128U
+#define MAX_THING_NAME_SIZE     128U
 
 uint32_t numOfBlocksRemaining = 0;
 uint32_t currentBlockOffset = 0;
 uint8_t currentFileId = 0;
 uint32_t totalBytesReceived = 0;
 
-#define MAX_JOB_ID_LENGTH    64U
+#define MAX_JOB_ID_LENGTH 64U
 
 bool otaDemo_handleJobsStartNextAccepted( const char * jobId,
                                           const size_t jobIdLength,
                                           const char * jobDoc,
                                           const size_t jobDocLength );
+
+static void otaDemo_finishDownload();
 
 static uint8_t downloadedData[ CONFIG_MAX_FILE_SIZE ] = { 0 };
 char globalJobId[ MAX_JOB_ID_LENGTH ] = { 0 };
@@ -43,7 +46,12 @@ void otaDemo_start( void )
 {
     if( isMqttConnected() )
     {
-        jobs_startNextPendingJob();
+        char thingName[ MAX_THING_NAME_SIZE + 1 ] = { 0 };
+        getThingName( thingName );
+        coreJobs_startNextPendingJob( thingName,
+                                      strnlen( thingName, MAX_THING_NAME_SIZE ),
+                                      "test",
+                                      4U );
     }
 }
 
@@ -95,27 +103,32 @@ bool otaDemo_handleJobsStartNextAccepted( const char * jobId,
 void applicationSuppliedFunction_processAfrOtaDocument(
     AfrOtaJobDocumentFields_t * params )
 {
-    char thingName[MAX_THING_NAME_SIZE + 1];
-    memset(thingName, '\0', MAX_THING_NAME_SIZE + 1);
-    getThingName(thingName);
+    char thingName[ MAX_THING_NAME_SIZE + 1 ] = { 0 };
+    getThingName( thingName );
 
-    numOfBlocksRemaining = params->fileSize/CONFIG_BLOCK_SIZE;
-    numOfBlocksRemaining += (params->fileSize % CONFIG_BLOCK_SIZE > 0) ? 1 : 0;
+    numOfBlocksRemaining = params->fileSize / CONFIG_BLOCK_SIZE;
+    numOfBlocksRemaining += ( params->fileSize % CONFIG_BLOCK_SIZE > 0 ) ? 1
+                                                                         : 0;
     currentFileId = params->fileId;
     currentBlockOffset = 0;
     totalBytesReceived = 0;
     /* Initalize the File downloader */
-    ucMqttFileDownloaderInit(params->imageRef, thingName, DATA_TYPE_CBOR);
+    ucMqttFileDownloaderInit( params->imageRef, params->imageRefLen, thingName, DATA_TYPE_JSON );
 
     /* Request the first block */
-    ucRequestDataBlock(currentFileId, CONFIG_BLOCK_SIZE, currentBlockOffset, NUM_OF_BLOCKS_REQUESTED);
+    ucRequestDataBlock( currentFileId,
+                        CONFIG_BLOCK_SIZE,
+                        currentBlockOffset,
+                        NUM_OF_BLOCKS_REQUESTED );
 }
 
 /* Implemented for the MQTT Streams library */
-void otaDemo_handleMqttStreamsBlockArrived( MqttFileDownloaderDataBlockInfo_t *dataBlock )
+void otaDemo_handleMqttStreamsBlockArrived(
+    MqttFileDownloaderDataBlockInfo_t * dataBlock )
 {
-    assert((totalBytesReceived + dataBlock->payloadLength) < CONFIG_MAX_FILE_SIZE);
-        
+    assert( ( totalBytesReceived + dataBlock->payloadLength ) <
+            CONFIG_MAX_FILE_SIZE );
+
     memcpy( downloadedData + totalBytesReceived,
             dataBlock->payload,
             dataBlock->payloadLength );
@@ -125,19 +138,32 @@ void otaDemo_handleMqttStreamsBlockArrived( MqttFileDownloaderDataBlockInfo_t *d
 
     if( numOfBlocksRemaining == 0 )
     {
-        printf("Downloaded Data %s \n", (char *) downloadedData);
+        printf( "Downloaded Data %s \n", ( char * ) downloadedData );
         otaDemo_finishDownload();
     }
     else
     {
         currentBlockOffset++;
-        ucRequestDataBlock(currentFileId, CONFIG_BLOCK_SIZE, currentBlockOffset, NUM_OF_BLOCKS_REQUESTED);
+        ucRequestDataBlock( currentFileId,
+                            CONFIG_BLOCK_SIZE,
+                            currentBlockOffset,
+                            NUM_OF_BLOCKS_REQUESTED );
     }
 }
 
-void otaDemo_finishDownload()
+static void otaDemo_finishDownload()
 {
     /* TODO: Do something with the completed download */
     /* Start the bootloader */
-    jobs_reportJobStatusComplete();
+    char thingName[ MAX_THING_NAME_SIZE + 1 ] = { 0 };
+    getThingName( thingName );
+    printf("Reached here\n");
+    coreJobs_updateJobStatus( thingName,
+                              strnlen( thingName, MAX_THING_NAME_SIZE ),
+                              globalJobId,
+                              strnlen( globalJobId, 1000U ), /* TODO: True
+                                                                strnlen */
+                              Succeeded,
+                              "2",
+                              1U );
 }
