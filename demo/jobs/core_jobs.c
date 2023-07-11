@@ -13,11 +13,11 @@
  */
 #define UPDATE_JOB_MSG_LENGTH 48U
 
-static const char * jobStatusString[ 5U ] = { "Queued",
-                                              "InProgress",
-                                              "Failed",
-                                              "Succeeded",
-                                              "Rejected" };
+static const char * jobStatusString[ 5U ] = { "QUEUED",
+                                              "IN_PROGRESS",
+                                              "FAILED",
+                                              "SUCCEEDED",
+                                              "REJECTED" };
 
 static size_t getStartNextPendingJobExecutionTopic( const char * thingname,
                                                     size_t thingnameLength,
@@ -259,7 +259,7 @@ static size_t getUpdateJobExecutionMsg( JobStatus_t status,
              expectedVersion,
              expectedVersionLength );
     messageLength += expectedVersionLength;
-    strncpy( buffer, "\"}", bufferSize - messageLength );
+    strncpy( buffer + messageLength, "\"}", bufferSize - messageLength );
 
     return messageLength + 2U;
 }
