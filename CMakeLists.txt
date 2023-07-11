@@ -46,7 +46,7 @@ FetchContent_Declare(
 FetchContent_Declare(
   aws-iot-core-mqtt-file-streams-embedded-c
   GIT_REPOSITORY https://github.com/aws/aws-iot-core-mqtt-file-streams-embedded-c/
-  GIT_TAG 4bc0c84fe6b16838a843a6407777cd554f885c8f)
+  GIT_TAG 5a034d5cdaf00c76959f927b97264713c91658d8)
 
 # FreeRTOS-Kernel build options
 add_library(freertos_config INTERFACE)
@@ -104,8 +104,9 @@ target_include_directories(aws-iot-core-jobs-afr-ota-handler
 add_library(
   aws-iot-core-mqtt-file-streams-embedded-c 
   "${aws-iot-core-mqtt-file-streams-embedded-c_SOURCE_DIR}/source/MQTTFileDownloader.c"
-  "${aws-iot-core-mqtt-file-streams-embedded-c_SOURCE_DIR}/source/MQTTFileDownloader_base64.c")
-target_link_libraries(aws-iot-core-mqtt-file-streams-embedded-c PUBLIC coreJSON PUBLIC coreMQTT)
+  "${aws-iot-core-mqtt-file-streams-embedded-c_SOURCE_DIR}/source/MQTTFileDownloader_base64.c"
+  "${aws-iot-core-mqtt-file-streams-embedded-c_SOURCE_DIR}/source/MQTTFileDownloader_cbor.c")
+target_link_libraries(aws-iot-core-mqtt-file-streams-embedded-c PUBLIC coreJSON PUBLIC coreMQTT PUBLIC tinycbor)
 target_include_directories(
   aws-iot-core-mqtt-file-streams-embedded-c
   PUBLIC "${aws-iot-core-mqtt-file-streams-embedded-c_SOURCE_DIR}/source/include"

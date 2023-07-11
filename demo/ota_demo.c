@@ -87,7 +87,7 @@ void applicationSuppliedFunction_processAfrOtaDocument( AfrOtaJobDocumentFields_
     currentBlockOffset = 0;
     totalBytesReceived = 0;
     /* Initalize the File downloader */
-    ucMqttFileDownloaderInit(params->imageRef, thingName);
+    ucMqttFileDownloaderInit(params->imageRef, thingName, DATA_TYPE_CBOR);
 
     /* Request the first block */
     ucRequestDataBlock(currentFileId, CONFIG_BLOCK_SIZE, currentBlockOffset, NUM_OF_BLOCKS_REQUESTED);
