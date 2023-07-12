@@ -46,7 +46,7 @@ FetchContent_Declare(
 FetchContent_Declare(
   aws-iot-core-mqtt-file-streams-embedded-c
   GIT_REPOSITORY https://github.com/aws/aws-iot-core-mqtt-file-streams-embedded-c/
-  GIT_TAG 5a034d5cdaf00c76959f927b97264713c91658d8)
+  GIT_TAG 0978663d5be58421ecf4fe6f1e2a99cf82fe5b66)
 
 # FreeRTOS-Kernel build options
 add_library(freertos_config INTERFACE)
