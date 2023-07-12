@@ -113,9 +113,9 @@ target_include_directories(aws-iot-core-mqtt-file-delivery
 
 add_executable(
   coreOTA_Demo
-  ./demo/main.c
-  ./demo/mqtt_wrapper/mqtt_wrapper.c
   ./demo/ota_demo.c
+  ./source/main.c
+  ./source/mqtt_wrapper/mqtt_wrapper.c
   ./source/transport/openssl_posix.c
   ./source/transport/sockets_posix.c
   ./source/transport/transport_wrapper.c
