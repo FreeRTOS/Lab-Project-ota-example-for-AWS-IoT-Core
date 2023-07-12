@@ -101,15 +101,15 @@ target_link_libraries(aws-iot-core-jobs-ota-handler PUBLIC coreJSON)
 target_include_directories(aws-iot-core-jobs-ota-handler
                            PUBLIC ${JOBS_HANDLER_INCLUDES})
 
-# aws-iot-core-mqtt-file-delivery
+# aws-iot-core-mqtt-file-downloader
 include(
-  "${CMAKE_CURRENT_LIST_DIR}/lib/aws-iot-core-mqtt-file-delivery/mqttFileDeliveryFilePaths.cmake"
+  "${CMAKE_CURRENT_LIST_DIR}/lib/aws-iot-core-mqtt-file-downloader/mqttFileDownloaderFilePaths.cmake"
 )
-add_library(aws-iot-core-mqtt-file-delivery ${MQTT_FILE_SOURCES})
-target_link_libraries(aws-iot-core-mqtt-file-delivery PUBLIC coreJSON coreMQTT
-                                                             tinycbor)
-target_include_directories(aws-iot-core-mqtt-file-delivery
-                           PUBLIC ${MQTT_FILE_INCLUDES})
+add_library(aws-iot-core-mqtt-file-downloader ${MQTT_FILE_DOWNLOADER_SOURCES})
+target_link_libraries(aws-iot-core-mqtt-file-downloader
+                      PUBLIC coreJSON coreMQTT tinycbor)
+target_include_directories(aws-iot-core-mqtt-file-downloader
+                           PUBLIC ${MQTT_FILE_DOWNLOADER_INCLUDES})
 
 add_executable(
   coreOTA_Demo
@@ -137,7 +137,7 @@ target_link_libraries(
           freertos_kernel
           aws-iot-core-jobs
           aws-iot-core-jobs-ota-handler
-          aws-iot-core-mqtt-file-delivery)
+          aws-iot-core-mqtt-file-downloader)
 
 find_library(LIBRT rt)
 if(LIBRT)
