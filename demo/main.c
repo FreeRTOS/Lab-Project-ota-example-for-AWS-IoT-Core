@@ -19,9 +19,9 @@
 
 #include "core_mqtt.h"
 #include "mqtt_wrapper/mqtt_wrapper.h"
+#include "ota_demo.h"
 #include "transport/transport_wrapper.h"
 #include "utils/clock.h"
-#include "ota_demo.h"
 
 static TransportInterface_t transport = { 0 };
 static MQTTContext_t mqttContext = { 0 };
@@ -147,10 +147,10 @@ static void handleIncomingMQTTMessage( char * topic,
                                        size_t messageLength )
 
 {
-    bool messageHandled = otaDemo_handleIncomingMQTTMessage(topic,
-                                       topicLength,
-                                        message,
-                                       messageLength);
+    bool messageHandled = otaDemo_handleIncomingMQTTMessage( topic,
+                                                             topicLength,
+                                                             message,
+                                                             messageLength );
     if( !messageHandled )
     {
         printf( "Unhandled incoming PUBLISH received on topic, message: "

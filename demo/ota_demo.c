@@ -14,7 +14,7 @@
 #include "mqtt_wrapper/mqtt_wrapper.h"
 #include "ota_demo.h"
 
-#include "jobs/core_jobs.h"
+#include "core_jobs.h"
 #include "ota_job_handler.h"
 #include "ota_job_processor.h"
 
@@ -32,10 +32,10 @@ uint32_t totalBytesReceived = 0;
 
 #define MAX_JOB_ID_LENGTH 64U
 
-bool otaDemo_handleJobsStartNextAccepted( const char * jobId,
-                                          const size_t jobIdLength,
-                                          const char * jobDoc,
-                                          const size_t jobDocLength );
+static bool handleJobsStartNextAccepted( const char * jobId,
+                                         const size_t jobIdLength,
+                                         const char * jobDoc,
+                                         const size_t jobDocLength );
 
 static void otaDemo_finishDownload();
 
@@ -62,7 +62,7 @@ bool otaDemo_handleIncomingMQTTMessage( char * topic,
                                         size_t messageLength )
 {
     bool handled = coreJobsMQTTAPI_handleIncomingMQTTMessage(
-        &otaDemo_handleJobsStartNextAccepted,
+        &handleJobsStartNextAccepted,
         topic,
         topicLength,
         message,
@@ -85,10 +85,10 @@ bool otaDemo_handleIncomingMQTTMessage( char * topic,
 }
 
 /* TODO: Implement for the Jobs library */
-bool otaDemo_handleJobsStartNextAccepted( const char * jobId,
-                                          const size_t jobIdLength,
-                                          const char * jobDoc,
-                                          const size_t jobDocLength )
+static bool handleJobsStartNextAccepted( const char * jobId,
+                                         const size_t jobIdLength,
+                                         const char * jobDoc,
+                                         const size_t jobDocLength )
 {
     bool handled = false;
     if( globalJobId[ 0 ] == 0 )
@@ -113,7 +113,10 @@ void applicationSuppliedFunction_processAfrOtaDocument(
     currentBlockOffset = 0;
     totalBytesReceived = 0;
     /* Initalize the File downloader */
-    ucMqttFileDownloaderInit( params->imageRef, params->imageRefLen, thingName, DATA_TYPE_JSON );
+    ucMqttFileDownloaderInit( params->imageRef,
+                              params->imageRefLen,
+                              thingName,
+                              DATA_TYPE_JSON );
 
     /* Request the first block */
     ucRequestDataBlock( currentFileId,
@@ -157,7 +160,7 @@ static void otaDemo_finishDownload()
     /* Start the bootloader */
     char thingName[ MAX_THING_NAME_SIZE + 1 ] = { 0 };
     getThingName( thingName );
-    printf("Reached here\n");
+    printf( "Reached here\n" );
     coreJobs_updateJobStatus( thingName,
                               strnlen( thingName, MAX_THING_NAME_SIZE ),
                               globalJobId,

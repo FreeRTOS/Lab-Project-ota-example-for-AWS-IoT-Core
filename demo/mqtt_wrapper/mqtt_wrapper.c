@@ -15,7 +15,7 @@
 static MQTTContext_t * globalCoreMqttContext = NULL;
 
 #define MAX_THING_NAME_SIZE 128U
-static char globalThingName[ MAX_THING_NAME_SIZE + 1];
+static char globalThingName[ MAX_THING_NAME_SIZE + 1 ];
 
 void setCoreMqttContext( MQTTContext_t * mqttContext )
 {
@@ -36,9 +36,9 @@ void setThingName( char * thingName )
 void getThingName( char * thingNameBuffer )
 {
     assert( globalThingName[ 0 ] != 0 );
-    size_t thingNameLength = strlen(globalThingName);
+    size_t thingNameLength = strlen( globalThingName );
     memcpy( thingNameBuffer, globalThingName, thingNameLength );
-    thingNameBuffer[thingNameLength] = '\0';
+    thingNameBuffer[ thingNameLength ] = '\0';
 }
 
 bool mqttConnect( char * thingName )
