@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.16)
 
 project(aws_iot_core_ota)
 
-set(CMAKE_C_FLAGS "-O3 -Wall -Wextra -Wno-stringop-truncation")
+set(CMAKE_C_FLAGS "-O3 -Wall -Wextra")
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(BUILD_SHARED_LIBS OFF)
 set(CMAKE_BUILD_TYPE Debug)
@@ -39,14 +39,6 @@ FetchContent_Declare(
   # hash: sha256-otueOD8tkzbHHVuOBI6krewYoeteRGAAQWSf0r19P5s=
   GIT_REPOSITORY https://github.com/intel/tinycbor.git
   GIT_TAG 9924cfed3b95ad6de299ae675064430fdb886216)
-FetchContent_Declare(
-  aws-iot-core-jobs-afr-ota-handler
-  GIT_REPOSITORY https://github.com/aws/aws-iot-core-jobs-afr-ota-handler/
-  GIT_TAG fa93651af02fe84eb063f454edf43ab47c7c56ed)
-FetchContent_Declare(
-  aws-iot-core-mqtt-file-streams-embedded-c
-  GIT_REPOSITORY https://github.com/aws/aws-iot-core-mqtt-file-streams-embedded-c/
-  GIT_TAG 0978663d5be58421ecf4fe6f1e2a99cf82fe5b66)
 
 # FreeRTOS-Kernel build options
 add_library(freertos_config INTERFACE)
@@ -62,7 +54,7 @@ set(FREERTOS_PORT
     CACHE STRING "" FORCE)
 
 FetchContent_MakeAvailable(FreeRTOS_Kernel coreMQTT backoffAlgorithm coreJSON
-                           tinycbor aws-iot-core-jobs-afr-ota-handler aws-iot-core-mqtt-file-streams-embedded-c)
+                           tinycbor)
 
 # coreMQTT
 include("${coremqtt_SOURCE_DIR}/mqttFilePaths.cmake")
@@ -93,37 +85,47 @@ add_library(
   "${tinycbor_SOURCE_DIR}/src/cborencoder_close_container_checked.c")
 target_include_directories(tinycbor PUBLIC "${tinycbor_SOURCE_DIR}/src")
 
-# afr-ota-handler
+# mqtt-wrapper
+add_library(mqtt_wrapper
+            "${CMAKE_CURRENT_LIST_DIR}/lib/mqtt_wrapper/mqtt_wrapper.c")
+target_link_libraries(mqtt_wrapper PUBLIC coreMQTT)
+target_include_directories(mqtt_wrapper
+                           PUBLIC "${CMAKE_CURRENT_LIST_DIR}/lib/mqtt_wrapper")
+
+# iot-core-jobs
+include("${CMAKE_CURRENT_LIST_DIR}/lib/iot-core-jobs/coreJobsFilePaths.cmake")
+add_library(iot-core-jobs ${CORE_JOBS_SOURCES})
+target_link_libraries(iot-core-jobs PUBLIC coreJSON mqtt_wrapper)
+target_include_directories(iot-core-jobs PUBLIC ${CORE_JOBS_INCLUDES})
+
+# iot-core-jobs-ota-parser
 include(
-  "${aws-iot-core-jobs-afr-ota-handler_SOURCE_DIR}/otaJobsFilePaths.cmake")
-add_library(aws-iot-core-jobs-afr-ota-handler ${JOBS_HANDLER_SOURCES})
-target_link_libraries(aws-iot-core-jobs-afr-ota-handler PUBLIC coreJSON)
-target_include_directories(aws-iot-core-jobs-afr-ota-handler
+  "${CMAKE_CURRENT_LIST_DIR}/lib/iot-core-jobs-ota-parser/otaJobsFilePaths.cmake"
+)
+add_library(iot-core-jobs-ota-parser ${JOBS_HANDLER_SOURCES})
+target_link_libraries(iot-core-jobs-ota-parser PUBLIC coreJSON)
+target_include_directories(iot-core-jobs-ota-parser
                            PUBLIC ${JOBS_HANDLER_INCLUDES})
 
-# aws-iot-core-mqtt-file-streams-embedded-c
-add_library(
-  aws-iot-core-mqtt-file-streams-embedded-c 
-  "${aws-iot-core-mqtt-file-streams-embedded-c_SOURCE_DIR}/source/MQTTFileDownloader.c"
-  "${aws-iot-core-mqtt-file-streams-embedded-c_SOURCE_DIR}/source/MQTTFileDownloader_base64.c"
-  "${aws-iot-core-mqtt-file-streams-embedded-c_SOURCE_DIR}/source/MQTTFileDownloader_cbor.c")
-target_link_libraries(aws-iot-core-mqtt-file-streams-embedded-c PUBLIC coreJSON PUBLIC coreMQTT PUBLIC tinycbor)
-target_include_directories(
-  aws-iot-core-mqtt-file-streams-embedded-c
-  PUBLIC "${aws-iot-core-mqtt-file-streams-embedded-c_SOURCE_DIR}/source/include"
+# iot-core-mqtt-file-downloader
+include(
+  "${CMAKE_CURRENT_LIST_DIR}/lib/iot-core-mqtt-file-downloader/mqttFileDownloaderFilePaths.cmake"
 )
+add_library(iot-core-mqtt-file-downloader ${MQTT_FILE_DOWNLOADER_SOURCES})
+target_link_libraries(iot-core-mqtt-file-downloader
+                      PUBLIC coreJSON coreMQTT mqtt_wrapper tinycbor)
+target_include_directories(iot-core-mqtt-file-downloader
+                           PUBLIC ${MQTT_FILE_DOWNLOADER_INCLUDES})
 
 add_executable(
   coreOTA_Demo
-  ./demo/jobs/core_jobs.c
   ./demo/main.c
   ./demo/ota_demo.c
-  ./demo/mqtt_wrapper/mqtt_wrapper.c
-  ./source/transport/openssl_posix.c
-  ./source/transport/sockets_posix.c
-  ./source/transport/transport_wrapper.c
-  ./source/utils/clock_posix.c
-  ./source/utils/freertos_hooks.c)
+  ./demo/transport/openssl_posix.c
+  ./demo/transport/sockets_posix.c
+  ./demo/transport/transport_wrapper.c
+  ./demo/utils/clock_posix.c
+  ./demo/utils/freertos_hooks.c)
 
 target_include_directories(
   coreOTA_Demo
@@ -133,13 +135,15 @@ target_include_directories(
 target_link_libraries(
   coreOTA_Demo
   PRIVATE coreMQTT
+          mqtt_wrapper
           OpenSSL::SSL
           coreJSON
           tinycbor
           backoffAlgorithm
           freertos_kernel
-          aws-iot-core-jobs-afr-ota-handler
-          aws-iot-core-mqtt-file-streams-embedded-c)
+          iot-core-jobs
+          iot-core-jobs-ota-parser
+          iot-core-mqtt-file-downloader)
 
 find_library(LIBRT rt)
 if(LIBRT)

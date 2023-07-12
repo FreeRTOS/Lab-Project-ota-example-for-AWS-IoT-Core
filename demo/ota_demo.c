@@ -11,43 +11,40 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "mqtt_wrapper/mqtt_wrapper.h"
-#include "ota_demo.h"
-
-#include "jobs/core_jobs.h"
-#include "ota_job_handler.h"
-#include "ota_job_processor.h"
-
 #include "MQTTFileDownloader.h"
+#include "core_jobs.h"
+#include "mqtt_wrapper.h"
+#include "ota_demo.h"
+#include "ota_job_processor.h"
 
 #define CONFIG_BLOCK_SIZE       256U
 #define CONFIG_MAX_FILE_SIZE    65536U
 #define NUM_OF_BLOCKS_REQUESTED 1U
 #define MAX_THING_NAME_SIZE     128U
+#define MAX_JOB_ID_LENGTH       64U
 
-uint32_t numOfBlocksRemaining = 0;
-uint32_t currentBlockOffset = 0;
-uint8_t currentFileId = 0;
-uint32_t totalBytesReceived = 0;
-
-#define MAX_JOB_ID_LENGTH 64U
-
-bool otaDemo_handleJobsStartNextAccepted( const char * jobId,
-                                          const size_t jobIdLength,
-                                          const char * jobDoc,
-                                          const size_t jobDocLength );
-
-static void otaDemo_finishDownload();
-
+static uint32_t numOfBlocksRemaining = 0;
+static uint32_t currentBlockOffset = 0;
+static uint8_t currentFileId = 0;
+static uint32_t totalBytesReceived = 0;
 static uint8_t downloadedData[ CONFIG_MAX_FILE_SIZE ] = { 0 };
 char globalJobId[ MAX_JOB_ID_LENGTH ] = { 0 };
 
+static bool handleJobsStartNextAcceptedCallback( const char * jobId,
+                                                 const size_t jobIdLength,
+                                                 const char * jobDoc,
+                                                 const size_t jobDocLength );
+static void handleMqttStreamsBlockArrivedCallback(
+    MqttFileDownloaderDataBlockInfo_t * dataBlock );
+static void processOtaDocumentCallback( AfrOtaJobDocumentFields_t * params );
+static void finishDownload();
+
 void otaDemo_start( void )
 {
-    if( isMqttConnected() )
+    if( mqttWrapper_isConnected() )
     {
         char thingName[ MAX_THING_NAME_SIZE + 1 ] = { 0 };
-        getThingName( thingName );
+        mqttWrapper_getThingName( thingName );
         coreJobs_startNextPendingJob( thingName,
                                       strnlen( thingName, MAX_THING_NAME_SIZE ),
                                       "test",
@@ -61,17 +58,19 @@ bool otaDemo_handleIncomingMQTTMessage( char * topic,
                                         uint8_t * message,
                                         size_t messageLength )
 {
-    bool handled = coreJobsMQTTAPI_handleIncomingMQTTMessage(
-        &otaDemo_handleJobsStartNextAccepted,
+    bool handled = coreJobs_handleIncomingMQTTMessage(
+        &handleJobsStartNextAcceptedCallback,
         topic,
         topicLength,
         message,
         messageLength );
 
-    handled = handled || mqttStreams_handleIncomingMessage( topic,
-                                                            topicLength,
-                                                            message,
-                                                            messageLength );
+    handled = handled || mqttDownloader_handleIncomingMessage(
+                             &handleMqttStreamsBlockArrivedCallback,
+                             topic,
+                             topicLength,
+                             message,
+                             messageLength );
     if( !handled )
     {
         printf( "Unrecognized incoming MQTT message received on topic: "
@@ -85,26 +84,29 @@ bool otaDemo_handleIncomingMQTTMessage( char * topic,
 }
 
 /* TODO: Implement for the Jobs library */
-bool otaDemo_handleJobsStartNextAccepted( const char * jobId,
-                                          const size_t jobIdLength,
-                                          const char * jobDoc,
-                                          const size_t jobDocLength )
+static bool handleJobsStartNextAcceptedCallback( const char * jobId,
+                                                 const size_t jobIdLength,
+                                                 const char * jobDoc,
+                                                 const size_t jobDocLength )
 {
     bool handled = false;
     if( globalJobId[ 0 ] == 0 )
     {
         strncpy( globalJobId, jobId, jobIdLength );
-        handled = handleJobDoc( jobId, jobIdLength, jobDoc, jobDocLength );
+        handled = otaParser_handleJobDoc( &processOtaDocumentCallback,
+                                          jobId,
+                                          jobIdLength,
+                                          jobDoc,
+                                          jobDocLength );
     }
     return handled;
 }
 
 /* AFR OTA library callback */
-void applicationSuppliedFunction_processAfrOtaDocument(
-    AfrOtaJobDocumentFields_t * params )
+static void processOtaDocumentCallback( AfrOtaJobDocumentFields_t * params )
 {
     char thingName[ MAX_THING_NAME_SIZE + 1 ] = { 0 };
-    getThingName( thingName );
+    mqttWrapper_getThingName( thingName );
 
     numOfBlocksRemaining = params->fileSize / CONFIG_BLOCK_SIZE;
     numOfBlocksRemaining += ( params->fileSize % CONFIG_BLOCK_SIZE > 0 ) ? 1
@@ -113,17 +115,20 @@ void applicationSuppliedFunction_processAfrOtaDocument(
     currentBlockOffset = 0;
     totalBytesReceived = 0;
     /* Initalize the File downloader */
-    ucMqttFileDownloaderInit( params->imageRef, params->imageRefLen, thingName, DATA_TYPE_JSON );
+    mqttDownloader_init( params->imageRef,
+                         params->imageRefLen,
+                         thingName,
+                         DATA_TYPE_JSON );
 
     /* Request the first block */
-    ucRequestDataBlock( currentFileId,
-                        CONFIG_BLOCK_SIZE,
-                        currentBlockOffset,
-                        NUM_OF_BLOCKS_REQUESTED );
+    mqttDownloader_requestDataBlock( currentFileId,
+                                     CONFIG_BLOCK_SIZE,
+                                     currentBlockOffset,
+                                     NUM_OF_BLOCKS_REQUESTED );
 }
 
 /* Implemented for the MQTT Streams library */
-void otaDemo_handleMqttStreamsBlockArrived(
+static void handleMqttStreamsBlockArrivedCallback(
     MqttFileDownloaderDataBlockInfo_t * dataBlock )
 {
     assert( ( totalBytesReceived + dataBlock->payloadLength ) <
@@ -139,25 +144,24 @@ void otaDemo_handleMqttStreamsBlockArrived(
     if( numOfBlocksRemaining == 0 )
     {
         printf( "Downloaded Data %s \n", ( char * ) downloadedData );
-        otaDemo_finishDownload();
+        finishDownload();
     }
     else
     {
         currentBlockOffset++;
-        ucRequestDataBlock( currentFileId,
-                            CONFIG_BLOCK_SIZE,
-                            currentBlockOffset,
-                            NUM_OF_BLOCKS_REQUESTED );
+        mqttDownloader_requestDataBlock( currentFileId,
+                                         CONFIG_BLOCK_SIZE,
+                                         currentBlockOffset,
+                                         NUM_OF_BLOCKS_REQUESTED );
     }
 }
 
-static void otaDemo_finishDownload()
+static void finishDownload()
 {
     /* TODO: Do something with the completed download */
     /* Start the bootloader */
     char thingName[ MAX_THING_NAME_SIZE + 1 ] = { 0 };
-    getThingName( thingName );
-    printf("Reached here\n");
+    mqttWrapper_getThingName( thingName );
     coreJobs_updateJobStatus( thingName,
                               strnlen( thingName, MAX_THING_NAME_SIZE ),
                               globalJobId,
@@ -166,4 +170,5 @@ static void otaDemo_finishDownload()
                               Succeeded,
                               "2",
                               1U );
+    printf( "\033[1;32mOTA Completed successfully!\033[0m\n" );
 }
