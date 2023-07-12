@@ -113,14 +113,14 @@ target_include_directories(aws-iot-core-mqtt-file-delivery
 
 add_executable(
   coreOTA_Demo
+  ./demo/main.c
+  ./demo/mqtt_wrapper/mqtt_wrapper.c
   ./demo/ota_demo.c
-  ./source/main.c
-  ./source/mqtt_wrapper/mqtt_wrapper.c
-  ./source/transport/openssl_posix.c
-  ./source/transport/sockets_posix.c
-  ./source/transport/transport_wrapper.c
-  ./source/utils/clock_posix.c
-  ./source/utils/freertos_hooks.c)
+  ./demo/transport/openssl_posix.c
+  ./demo/transport/sockets_posix.c
+  ./demo/transport/transport_wrapper.c
+  ./demo/utils/clock_posix.c
+  ./demo/utils/freertos_hooks.c)
 
 target_include_directories(
   coreOTA_Demo
