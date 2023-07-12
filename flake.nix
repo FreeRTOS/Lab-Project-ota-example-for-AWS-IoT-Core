@@ -69,14 +69,14 @@
           hardeningDisable = [ "fortify" ];
         };
         packages.default = pkgs.stdenv.mkDerivation {
-          name = "coreOTA";
+          name = "coreOTA_Demo";
           src = ./.;
           nativeBuildInputs = with pkgs; [ cmake ];
           buildInputs = with pkgs; [ openssl_1_1 ];
           hardeningDisable = [ "fortify" ];
           cmakeFlags = getFetchContentFlags
             (builtins.readFile ./CMakeLists.txt);
-          installPhase = "cp coreOTA $out";
+          installPhase = "cp coreOTA_Demo $out";
         };
         checks = packages // {
           formatting = runCheck ''
