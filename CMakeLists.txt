@@ -85,30 +85,30 @@ add_library(
   "${tinycbor_SOURCE_DIR}/src/cborencoder_close_container_checked.c")
 target_include_directories(tinycbor PUBLIC "${tinycbor_SOURCE_DIR}/src")
 
-# aws-iot-core-jobs
+# iot-core-jobs
 include(
-  "${CMAKE_CURRENT_LIST_DIR}/lib/aws-iot-core-jobs/coreJobsFilePaths.cmake")
-add_library(aws-iot-core-jobs ${CORE_JOBS_SOURCES})
-target_link_libraries(aws-iot-core-jobs PUBLIC coreJSON)
-target_include_directories(aws-iot-core-jobs PUBLIC ${CORE_JOBS_INCLUDES})
+  "${CMAKE_CURRENT_LIST_DIR}/lib/iot-core-jobs/coreJobsFilePaths.cmake")
+add_library(iot-core-jobs ${CORE_JOBS_SOURCES})
+target_link_libraries(iot-core-jobs PUBLIC coreJSON)
+target_include_directories(iot-core-jobs PUBLIC ${CORE_JOBS_INCLUDES})
 
-# aws-iot-core-jobs-ota-handler
+# iot-core-jobs-ota-parser
 include(
-  "${CMAKE_CURRENT_LIST_DIR}/lib/aws-iot-core-jobs-ota-handler/otaJobsFilePaths.cmake"
+  "${CMAKE_CURRENT_LIST_DIR}/lib/iot-core-jobs-ota-parser/otaJobsFilePaths.cmake"
 )
-add_library(aws-iot-core-jobs-ota-handler ${JOBS_HANDLER_SOURCES})
-target_link_libraries(aws-iot-core-jobs-ota-handler PUBLIC coreJSON)
-target_include_directories(aws-iot-core-jobs-ota-handler
+add_library(iot-core-jobs-ota-parser ${JOBS_HANDLER_SOURCES})
+target_link_libraries(iot-core-jobs-ota-parser PUBLIC coreJSON)
+target_include_directories(iot-core-jobs-ota-parser
                            PUBLIC ${JOBS_HANDLER_INCLUDES})
 
-# aws-iot-core-mqtt-file-downloader
+# iot-core-mqtt-file-downloader
 include(
-  "${CMAKE_CURRENT_LIST_DIR}/lib/aws-iot-core-mqtt-file-downloader/mqttFileDownloaderFilePaths.cmake"
+  "${CMAKE_CURRENT_LIST_DIR}/lib/iot-core-mqtt-file-downloader/mqttFileDownloaderFilePaths.cmake"
 )
-add_library(aws-iot-core-mqtt-file-downloader ${MQTT_FILE_DOWNLOADER_SOURCES})
-target_link_libraries(aws-iot-core-mqtt-file-downloader
+add_library(iot-core-mqtt-file-downloader ${MQTT_FILE_DOWNLOADER_SOURCES})
+target_link_libraries(iot-core-mqtt-file-downloader
                       PUBLIC coreJSON coreMQTT tinycbor)
-target_include_directories(aws-iot-core-mqtt-file-downloader
+target_include_directories(iot-core-mqtt-file-downloader
                            PUBLIC ${MQTT_FILE_DOWNLOADER_INCLUDES})
 
 add_executable(
@@ -135,9 +135,9 @@ target_link_libraries(
           tinycbor
           backoffAlgorithm
           freertos_kernel
-          aws-iot-core-jobs
-          aws-iot-core-jobs-ota-handler
-          aws-iot-core-mqtt-file-downloader)
+          iot-core-jobs
+          iot-core-jobs-ota-parser
+          iot-core-mqtt-file-downloader)
 
 find_library(LIBRT rt)
 if(LIBRT)

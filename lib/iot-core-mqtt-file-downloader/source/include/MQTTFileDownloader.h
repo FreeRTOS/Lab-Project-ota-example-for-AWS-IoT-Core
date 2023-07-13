@@ -66,5 +66,3 @@ bool mqttStreams_handleIncomingMessage( char * topic,
 //void prvUpdateSubAckStatus(MQTTPacketInfo_t* pxPacketInfo);
 
 #endif // #ifndef MQTT_FILE_DOWNLOADER_H
-
- 
