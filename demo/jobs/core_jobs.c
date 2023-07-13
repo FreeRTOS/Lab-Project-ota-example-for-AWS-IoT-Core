@@ -73,7 +73,7 @@ bool getJobStartNextFields( const uint8_t * message,
         jsonResult = JSON_Search( ( char * ) message,
                                   messageLength,
                                   "execution.jobId",
-                                  15U,
+                                  sizeof( "execution.jobId" ) - 1,
                                   jobId,
                                   jobIdLength );
     }
@@ -82,7 +82,7 @@ bool getJobStartNextFields( const uint8_t * message,
         jsonResult = JSON_Search( ( char * ) message,
                                   messageLength,
                                   "execution.jobDocument",
-                                  21U,
+                                  sizeof( "execution.jobDocument" ) - 1,
                                   jobDoc,
                                   jobDocLength );
     }
@@ -195,13 +195,15 @@ static size_t getStartNextPendingJobExecutionTopic( const char * thingname,
 {
     assert( bufferSize >= 28U + thingnameLength );
 
-    size_t topicLength = 12U;
-    memcpy( buffer, "$aws/things/", 12U );
+    size_t topicLength = sizeof( "$aws/things/" ) - 1;
+    memcpy( buffer, "$aws/things/", sizeof( "$aws/things/" ) - 1 );
     memcpy( buffer + topicLength, thingname, thingnameLength );
     topicLength += thingnameLength;
-    memcpy( buffer + topicLength, "/jobs/start-next", 16U );
+    memcpy( buffer + topicLength,
+            "/jobs/start-next",
+            sizeof( "/jobs/start-next" ) - 1 );
 
-    return topicLength + 16U;
+    return topicLength + sizeof( "/jobs/start-next" ) - 1;
 }
 
 static size_t getStartNextPendingJobExecutionMsg( const char * clientToken,
@@ -211,13 +213,15 @@ static size_t getStartNextPendingJobExecutionMsg( const char * clientToken,
 {
     assert( bufferSize >= 18U + clientTokenLength );
 
-    size_t messageLength = 16U;
-    memcpy( buffer, "{\"clientToken\":\"", 16U );
+    size_t messageLength = sizeof( "{\"clientToken\":\"" ) - 1;
+    memcpy( buffer,
+            "{\"clientToken\":\"",
+            sizeof( "{\"clientToken\":\"" ) - 1 );
     memcpy( buffer + messageLength, clientToken, clientTokenLength );
     messageLength += clientTokenLength;
-    memcpy( buffer + messageLength, "\"}", 2U );
+    memcpy( buffer + messageLength, "\"}", sizeof( "\"}" ) - 1 );
 
-    return messageLength + 2U;
+    return messageLength + sizeof( "\"}" ) - 1;
 }
 
 static size_t getUpdateJobExecutionTopic( char * thingname,
@@ -229,17 +233,17 @@ static size_t getUpdateJobExecutionTopic( char * thingname,
 {
     assert( bufferSize >= 25U + thingnameLength + jobIdLength );
 
-    size_t topicLength = 12U;
-    memcpy( buffer, "$aws/things/", 12U );
+    size_t topicLength = sizeof( "$aws/things/" ) - 1;
+    memcpy( buffer, "$aws/things/", sizeof( "$aws/things/" ) - 1 );
     memcpy( buffer + topicLength, thingname, thingnameLength );
     topicLength += thingnameLength;
-    memcpy( buffer + topicLength, "/jobs/", 6U );
-    topicLength += 6U;
+    memcpy( buffer + topicLength, "/jobs/", sizeof( "/jobs/" ) - 1 );
+    topicLength += sizeof( "/jobs/" ) - 1;
     memcpy( buffer + topicLength, jobId, jobIdLength );
     topicLength += jobIdLength;
-    memcpy( buffer + topicLength, "/update", 7U );
+    memcpy( buffer + topicLength, "/update", sizeof( "/update" ) - 1 );
 
-    return topicLength + 7U;
+    return topicLength + sizeof( "/update" ) - 1;
 }
 
 static size_t getUpdateJobExecutionMsg( JobStatus_t status,
@@ -252,17 +256,19 @@ static size_t getUpdateJobExecutionMsg( JobStatus_t status,
 
     assert( bufferSize >= 34U + expectedVersionLength + jobStatusStringLength );
 
-    size_t messageLength = 11U;
-    memcpy( buffer, "{\"status\":\"", 11U );
+    size_t messageLength = sizeof( "{\"status\":\"" ) - 1;
+    memcpy( buffer, "{\"status\":\"", sizeof( "{\"status\":\"" ) - 1 );
     memcpy( buffer + messageLength,
             jobStatusString[ status ],
             jobStatusStringLength );
     messageLength += jobStatusStringLength;
-    memcpy( buffer + messageLength, "\",\"expectedVersion\":\"", 21U );
-    messageLength += 21U;
+    memcpy( buffer + messageLength,
+            "\",\"expectedVersion\":\"",
+            sizeof( "\",\"expectedVersion\":\"" ) - 1 );
+    messageLength += sizeof( "\",\"expectedVersion\":\"" ) - 1;
     memcpy( buffer + messageLength, expectedVersion, expectedVersionLength );
     messageLength += expectedVersionLength;
-    memcpy( buffer + messageLength, "\"}", 2U );
+    memcpy( buffer + messageLength, "\"}", sizeof( "\"}" ) - 1 );
 
-    return messageLength + 2U;
+    return messageLength + sizeof( "\"}" ) - 1;
 }
