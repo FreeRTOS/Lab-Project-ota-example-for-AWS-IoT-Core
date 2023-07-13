@@ -20,6 +20,14 @@ static const char * jobStatusString[ 5U ] = { "QUEUED",
                                               "SUCCEEDED",
                                               "REJECTED" };
 
+static const size_t jobStatusStringLengths[ 5U ] = {
+    sizeof( "QUEUED" ) - 1U,
+    sizeof( "IN_PROGRESS" ) - 1U,
+    sizeof( "FAILED" ) - 1U,
+    sizeof( "SUCCEEDED" ) - 1U,
+    sizeof( "REJECTED" ) - 1U
+};
+
 static size_t getStartNextPendingJobExecutionTopic( const char * thingname,
                                                     size_t thingnameLength,
                                                     char * buffer,
@@ -252,16 +260,16 @@ static size_t getUpdateJobExecutionMsg( JobStatus_t status,
                                         char * buffer,
                                         size_t bufferSize )
 {
-    size_t jobStatusStringLength = ( sizeof( jobStatusString[ status ] ) - 1 );
-
-    assert( bufferSize >= 34U + expectedVersionLength + jobStatusStringLength );
+    assert( bufferSize >=
+            34U + expectedVersionLength + jobStatusStringLengths[ status ] );
 
     size_t messageLength = sizeof( "{\"status\":\"" ) - 1;
     memcpy( buffer, "{\"status\":\"", sizeof( "{\"status\":\"" ) - 1 );
     memcpy( buffer + messageLength,
             jobStatusString[ status ],
-            jobStatusStringLength );
-    messageLength += jobStatusStringLength;
+            jobStatusStringLengths[ status ] );
+
+    messageLength += jobStatusStringLengths[ status ];
     memcpy( buffer + messageLength,
             "\",\"expectedVersion\":\"",
             sizeof( "\",\"expectedVersion\":\"" ) - 1 );
