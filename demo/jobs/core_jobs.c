@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -72,7 +73,7 @@ bool getJobStartNextFields( const uint8_t * message,
         jsonResult = JSON_Search( ( char * ) message,
                                   messageLength,
                                   "execution.jobId",
-                                  strlen( "execution.jobId" ),
+                                  sizeof( "execution.jobId" ) - 1,
                                   jobId,
                                   jobIdLength );
     }
@@ -81,7 +82,7 @@ bool getJobStartNextFields( const uint8_t * message,
         jsonResult = JSON_Search( ( char * ) message,
                                   messageLength,
                                   "execution.jobDocument",
-                                  strlen( "execution.jobDocument" ),
+                                  sizeof( "execution.jobDocument" ) - 1,
                                   jobDoc,
                                   jobDocLength );
     }
@@ -119,9 +120,9 @@ bool coreJobsMQTTAPI_handleIncomingMQTTMessage(
 }
 
 bool coreJobs_startNextPendingJob( char * thingname,
-                                          size_t thingnameLength,
-                                          char * clientToken,
-                                          size_t clientTokenLength )
+                                   size_t thingnameLength,
+                                   char * clientToken,
+                                   size_t clientTokenLength )
 {
     bool published = false;
     char topicBuffer[ TOPIC_BUFFER_SIZE + 1 ] = { 0 };
@@ -192,16 +193,17 @@ static size_t getStartNextPendingJobExecutionTopic( const char * thingname,
                                                     char * buffer,
                                                     size_t bufferSize )
 {
-    /* TODO - Assert on buffer size being at least the size of the topic */
-    size_t topicLength = 12U;
-    strncpy( buffer, "$aws/things/", bufferSize );
-    strncpy( buffer + topicLength, thingname, bufferSize - topicLength );
-    topicLength += thingnameLength;
-    strncpy( buffer + topicLength,
-             "/jobs/start-next",
-             bufferSize - topicLength );
+    assert( bufferSize >= 28U + thingnameLength );
 
-    return topicLength + 16U;
+    size_t topicLength = sizeof( "$aws/things/" ) - 1;
+    memcpy( buffer, "$aws/things/", sizeof( "$aws/things/" ) - 1 );
+    memcpy( buffer + topicLength, thingname, thingnameLength );
+    topicLength += thingnameLength;
+    memcpy( buffer + topicLength,
+            "/jobs/start-next",
+            sizeof( "/jobs/start-next" ) - 1 );
+
+    return topicLength + sizeof( "/jobs/start-next" ) - 1;
 }
 
 static size_t getStartNextPendingJobExecutionMsg( const char * clientToken,
@@ -209,13 +211,17 @@ static size_t getStartNextPendingJobExecutionMsg( const char * clientToken,
                                                   char * buffer,
                                                   size_t bufferSize )
 {
-    size_t messageLength = 16U;
-    strncpy( buffer, "{\"clientToken\":\"", bufferSize );
-    strncpy( buffer + messageLength, clientToken, clientTokenLength );
-    messageLength += clientTokenLength;
-    strncpy( buffer + messageLength, "\"}", bufferSize - messageLength );
+    assert( bufferSize >= 18U + clientTokenLength );
 
-    return messageLength + 2U;
+    size_t messageLength = sizeof( "{\"clientToken\":\"" ) - 1;
+    memcpy( buffer,
+            "{\"clientToken\":\"",
+            sizeof( "{\"clientToken\":\"" ) - 1 );
+    memcpy( buffer + messageLength, clientToken, clientTokenLength );
+    messageLength += clientTokenLength;
+    memcpy( buffer + messageLength, "\"}", sizeof( "\"}" ) - 1 );
+
+    return messageLength + sizeof( "\"}" ) - 1;
 }
 
 static size_t getUpdateJobExecutionTopic( char * thingname,
@@ -225,18 +231,19 @@ static size_t getUpdateJobExecutionTopic( char * thingname,
                                           char * buffer,
                                           size_t bufferSize )
 {
-    /* TODO - Assert on buffer size being at least the size of the topic */
-    size_t topicLength = 12U;
-    strncpy( buffer, "$aws/things/", bufferSize );
-    strncpy( buffer + topicLength, thingname, thingnameLength );
-    topicLength += thingnameLength;
-    strncpy( buffer + topicLength, "/jobs/", bufferSize - topicLength );
-    topicLength += 6U;
-    strncpy( buffer + topicLength, jobId, jobIdLength );
-    topicLength += jobIdLength;
-    strncpy( buffer + topicLength, "/update", bufferSize - topicLength );
+    assert( bufferSize >= 25U + thingnameLength + jobIdLength );
 
-    return topicLength + 7U;
+    size_t topicLength = sizeof( "$aws/things/" ) - 1;
+    memcpy( buffer, "$aws/things/", sizeof( "$aws/things/" ) - 1 );
+    memcpy( buffer + topicLength, thingname, thingnameLength );
+    topicLength += thingnameLength;
+    memcpy( buffer + topicLength, "/jobs/", sizeof( "/jobs/" ) - 1 );
+    topicLength += sizeof( "/jobs/" ) - 1;
+    memcpy( buffer + topicLength, jobId, jobIdLength );
+    topicLength += jobIdLength;
+    memcpy( buffer + topicLength, "/update", sizeof( "/update" ) - 1 );
+
+    return topicLength + sizeof( "/update" ) - 1;
 }
 
 static size_t getUpdateJobExecutionMsg( JobStatus_t status,
@@ -245,21 +252,23 @@ static size_t getUpdateJobExecutionMsg( JobStatus_t status,
                                         char * buffer,
                                         size_t bufferSize )
 {
-    size_t messageLength = 11U;
-    strncpy( buffer, "{\"status\":\"", bufferSize );
-    strncpy( buffer + messageLength,
-             jobStatusString[ status ],
-             strlen(jobStatusString[status]) );
-    messageLength += strlen( jobStatusString[ status ] );
-    strncpy( buffer + messageLength,
-             "\",\"expectedVersion\":\"",
-             bufferSize - messageLength );
-    messageLength += 21U;
-    strncpy( buffer + messageLength,
-             expectedVersion,
-             expectedVersionLength );
-    messageLength += expectedVersionLength;
-    strncpy( buffer + messageLength, "\"}", bufferSize - messageLength );
+    size_t jobStatusStringLength = ( sizeof( jobStatusString[ status ] ) - 1 );
 
-    return messageLength + 2U;
+    assert( bufferSize >= 34U + expectedVersionLength + jobStatusStringLength );
+
+    size_t messageLength = sizeof( "{\"status\":\"" ) - 1;
+    memcpy( buffer, "{\"status\":\"", sizeof( "{\"status\":\"" ) - 1 );
+    memcpy( buffer + messageLength,
+            jobStatusString[ status ],
+            jobStatusStringLength );
+    messageLength += jobStatusStringLength;
+    memcpy( buffer + messageLength,
+            "\",\"expectedVersion\":\"",
+            sizeof( "\",\"expectedVersion\":\"" ) - 1 );
+    messageLength += sizeof( "\",\"expectedVersion\":\"" ) - 1;
+    memcpy( buffer + messageLength, expectedVersion, expectedVersionLength );
+    messageLength += expectedVersionLength;
+    memcpy( buffer + messageLength, "\"}", sizeof( "\"}" ) - 1 );
+
+    return messageLength + sizeof( "\"}" ) - 1;
 }
