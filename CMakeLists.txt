@@ -86,8 +86,7 @@ add_library(
 target_include_directories(tinycbor PUBLIC "${tinycbor_SOURCE_DIR}/src")
 
 # iot-core-jobs
-include(
-  "${CMAKE_CURRENT_LIST_DIR}/lib/iot-core-jobs/coreJobsFilePaths.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/lib/iot-core-jobs/coreJobsFilePaths.cmake")
 add_library(iot-core-jobs ${CORE_JOBS_SOURCES})
 target_link_libraries(iot-core-jobs PUBLIC coreJSON)
 target_include_directories(iot-core-jobs PUBLIC ${CORE_JOBS_INCLUDES})
@@ -106,8 +105,8 @@ include(
   "${CMAKE_CURRENT_LIST_DIR}/lib/iot-core-mqtt-file-downloader/mqttFileDownloaderFilePaths.cmake"
 )
 add_library(iot-core-mqtt-file-downloader ${MQTT_FILE_DOWNLOADER_SOURCES})
-target_link_libraries(iot-core-mqtt-file-downloader
-                      PUBLIC coreJSON coreMQTT tinycbor)
+target_link_libraries(iot-core-mqtt-file-downloader PUBLIC coreJSON coreMQTT
+                                                           tinycbor)
 target_include_directories(iot-core-mqtt-file-downloader
                            PUBLIC ${MQTT_FILE_DOWNLOADER_INCLUDES})
 
