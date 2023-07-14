@@ -14,6 +14,7 @@ License Info
 #include "MQTTFileDownloader_base64.h"
 #include "MQTTFileDownloader_cbor.h"
 #include "core_json.h"
+#include "mqtt_wrapper.h"
 
 /* Logging configuration for the library. */
 #ifndef LIBRARY_LOG_NAME
@@ -50,29 +51,6 @@ License Info
 static size_t stringBuilder( char * pBuffer,
                              size_t bufferSizeBytes,
                              const char * const strings[] );
-
-/**
- * @brief Subscribes to the topic as specified in pTopicName.
- * In the case of a Subscribe ACK failure, then subscription is
- * retried using an exponential backoff strategy with jitter.
- *
- * @param[in] pxMQTTContext MQTT context pointer.
- */
-// static bool prvMQTTSubscribeWithRetries(MQTTContext_t* pxMQTTContext, char*
-// pTopicName);
-extern bool mqttSubscribe( char * topic, size_t topicLength );
-
-/**
- * @brief Publishes a message mqttexampleMESSAGE on mqttexampleTOPIC topic.
- *
- * @param[in] pxMQTTContext MQTT context pointer.
- */
-// void prvMQTTPublishToTopic(MQTTContext_t* pxMQTTContext, char* pTopicName,
-// char* pMessage);
-extern bool mqttPublish( char * topic,
-                         size_t topicLength,
-                         uint8_t * message,
-                         size_t messageLength );
 
 extern void otaDemo_handleMqttStreamsBlockArrived(
     MqttFileDownloaderDataBlockInfo_t * dataBlock );
@@ -186,7 +164,7 @@ static size_t stringBuilder( char * pBuffer,
     return curLen;
 }
 
-uint8_t ucMqttFileDownloaderInit( char * pStreamName,
+uint8_t mqttDownloader_init( char * pStreamName,
                                   size_t streamNameLength,
                                   char * pThingName,
                                   uint8_t ucDataType )
@@ -270,12 +248,12 @@ uint8_t ucMqttFileDownloaderInit( char * pStreamName,
 
     assert( ( topicLen > 0U ) && ( topicLen < sizeof( pGetStreamTopic ) ) );
 
-    mqttSubscribe( pRxStreamTopic, topicLen );
+    mqttWrapper_subscribe( pRxStreamTopic, topicLen );
 
     return 0;
 }
 
-uint8_t ucRequestDataBlock( uint16_t usFileId,
+uint8_t mqttDownloader_requestDataBlock( uint16_t usFileId,
                             uint32_t ulBlockSize,
                             uint16_t usBlockOffset,
                             uint32_t ulNumberOfBlocksRequested )
@@ -305,7 +283,7 @@ uint8_t ucRequestDataBlock( uint16_t usFileId,
                   ulBlockSize,
                   usBlockOffset,
                   ulNumberOfBlocksRequested );
-        mqttPublish( pGetStreamTopic,
+        mqttWrapper_publish( pGetStreamTopic,
                      strlen( pGetStreamTopic ),
                      ( uint8_t * ) getStreamRequest,
                      strlen( getStreamRequest ) );
@@ -324,7 +302,7 @@ uint8_t ucRequestDataBlock( uint16_t usFileId,
                                                  ( const uint8_t * ) "MQ==",
                                                  strlen( "MQ==" ),
                                                  ulNumberOfBlocksRequested );
-        mqttPublish( pGetStreamTopic,
+        mqttWrapper_publish( pGetStreamTopic,
                      strlen( pGetStreamTopic ),
                      ( uint8_t * ) getStreamRequest,
                      encodedMessageSize );

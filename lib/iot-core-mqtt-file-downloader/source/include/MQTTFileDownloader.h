@@ -29,7 +29,7 @@ typedef struct MqttFileDownloaderDataBlockInfo {
   * @param[in] pStreamName Stream name to download the file.
   * @param[in] pThingName Thing name of the Device.
   */
-uint8_t ucMqttFileDownloaderInit(char * pStreamName, size_t streamNameLength, char *pThingName, uint8_t ucDataType);
+uint8_t mqttDownloader_init(char * pStreamName, size_t streamNameLength, char *pThingName, uint8_t ucDataType);
 
 /**
  * Request the Data blocks from MQTT Streams.
@@ -40,7 +40,7 @@ uint8_t ucMqttFileDownloaderInit(char * pStreamName, size_t streamNameLength, ch
  * @param[in] usBlockOffset Block Offset.
  * @param[in] ulNumberOfBlocksRequested Number of Blocks requested per request.
  */
-uint8_t ucRequestDataBlock(uint16_t usFileId,
+uint8_t mqttDownloader_requestDataBlock(uint16_t usFileId,
                             uint32_t ulBlockSize,
                             uint16_t usBlockOffset,
                             uint32_t ulNumberOfBlocksRequested);

@@ -85,10 +85,17 @@ add_library(
   "${tinycbor_SOURCE_DIR}/src/cborencoder_close_container_checked.c")
 target_include_directories(tinycbor PUBLIC "${tinycbor_SOURCE_DIR}/src")
 
+# mqtt-wrapper
+add_library(mqtt_wrapper
+            "${CMAKE_CURRENT_LIST_DIR}/lib/mqtt_wrapper/mqtt_wrapper.c")
+target_link_libraries(mqtt_wrapper PUBLIC coreMQTT)
+target_include_directories(mqtt_wrapper
+                           PUBLIC "${CMAKE_CURRENT_LIST_DIR}/lib/mqtt_wrapper")
+
 # iot-core-jobs
 include("${CMAKE_CURRENT_LIST_DIR}/lib/iot-core-jobs/coreJobsFilePaths.cmake")
 add_library(iot-core-jobs ${CORE_JOBS_SOURCES})
-target_link_libraries(iot-core-jobs PUBLIC coreJSON)
+target_link_libraries(iot-core-jobs PUBLIC coreJSON mqtt_wrapper)
 target_include_directories(iot-core-jobs PUBLIC ${CORE_JOBS_INCLUDES})
 
 # iot-core-jobs-ota-parser
@@ -105,15 +112,14 @@ include(
   "${CMAKE_CURRENT_LIST_DIR}/lib/iot-core-mqtt-file-downloader/mqttFileDownloaderFilePaths.cmake"
 )
 add_library(iot-core-mqtt-file-downloader ${MQTT_FILE_DOWNLOADER_SOURCES})
-target_link_libraries(iot-core-mqtt-file-downloader PUBLIC coreJSON coreMQTT
-                                                           tinycbor)
+target_link_libraries(iot-core-mqtt-file-downloader
+                      PUBLIC coreJSON coreMQTT mqtt_wrapper tinycbor)
 target_include_directories(iot-core-mqtt-file-downloader
                            PUBLIC ${MQTT_FILE_DOWNLOADER_INCLUDES})
 
 add_executable(
   coreOTA_Demo
   ./demo/main.c
-  ./demo/mqtt_wrapper/mqtt_wrapper.c
   ./demo/ota_demo.c
   ./demo/transport/openssl_posix.c
   ./demo/transport/sockets_posix.c
@@ -129,6 +135,7 @@ target_include_directories(
 target_link_libraries(
   coreOTA_Demo
   PRIVATE coreMQTT
+          mqtt_wrapper
           OpenSSL::SSL
           coreJSON
           tinycbor

@@ -18,7 +18,7 @@
 #include "task.h"
 
 #include "core_mqtt.h"
-#include "mqtt_wrapper/mqtt_wrapper.h"
+#include "mqtt_wrapper.h"
 #include "ota_demo.h"
 #include "transport/transport_wrapper.h"
 #include "utils/clock.h"
@@ -72,8 +72,8 @@ int main( int argc, char * argv[] )
     xTaskCreate( otaAgentTask, "T_OTA", 6000, ( void * ) argv, 1, NULL );
     xTaskCreate( mqttProcessLoopTask, "T_MQTT", 6000, NULL, 2, NULL );
 
-    setCoreMqttContext( &mqttContext );
-    setThingName( argv[ 5 ] );
+    mqttWrapper_setCoreMqttContext( &mqttContext );
+    mqttWrapper_setThingName( argv[ 5 ] );
 
     vTaskStartScheduler();
 
@@ -86,7 +86,7 @@ static void mqttProcessLoopTask( void * parameters )
 
     while( true )
     {
-        if( isMqttConnected() )
+        if( mqttWrapper_isConnected() )
         {
             MQTTStatus_t status = MQTT_ProcessLoop( &mqttContext );
 
@@ -177,7 +177,7 @@ static void otaAgentTask( void * parameters )
                                         endpoint );
     assert( result );
 
-    result = mqttConnect( thingName );
+    result = mqttWrapper_connect( thingName );
     assert( result );
     printf( "Successfully connected to IoT Core\n" );
 

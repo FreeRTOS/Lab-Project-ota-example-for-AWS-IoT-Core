@@ -4,13 +4,7 @@
 
 #include "core_jobs.h"
 #include "core_json.h"
-
-/* TODO: Remove these externs for a better interface declaration */
-extern void getThingName( char * thingNameBuffer );
-extern bool mqttPublish( char * topic,
-                         size_t topicLength,
-                         uint8_t * message,
-                         size_t messageLength );
+#include "mqtt_wrapper.h"
 
 #define TOPIC_BUFFER_SIZE     256U
 #define MAX_THING_NAME_LENGTH 128U
@@ -61,7 +55,7 @@ bool isMessageJobStartNextAccepted( const char * topic,
     bool isMatch = false;
     char expectedBuffer[ TOPIC_BUFFER_SIZE + 1 ] = { 0 };
     char thingName[ MAX_THING_NAME_LENGTH + 1 ] = { 0 };
-    getThingName( thingName );
+    mqttWrapper_getThingName( thingName );
     snprintf( expectedBuffer,
               TOPIC_BUFFER_SIZE,
               "%s%s%s",
@@ -156,7 +150,7 @@ bool coreJobs_startNextPendingJob( char * thingname,
 
     if( topicLength > 0 && messageLength > 0 )
     {
-        published = mqttPublish( topicBuffer,
+        published = mqttWrapper_publish( topicBuffer,
                                  topicLength,
                                  ( uint8_t * ) messageBuffer,
                                  messageLength );
@@ -193,7 +187,7 @@ bool coreJobs_updateJobStatus( char * thingname,
 
     if( topicLength > 0 && messageLength > 0 )
     {
-        published = mqttPublish( topicBuffer,
+        published = mqttWrapper_publish( topicBuffer,
                                  topicLength,
                                  ( uint8_t * ) messageBuffer,
                                  messageLength );

@@ -10,30 +10,30 @@
 #include <assert.h>
 #include <string.h>
 
-#include "mqtt_wrapper/mqtt_wrapper.h"
+#include "mqtt_wrapper.h"
 
 static MQTTContext_t * globalCoreMqttContext = NULL;
 
 #define MAX_THING_NAME_SIZE 128U
 static char globalThingName[ MAX_THING_NAME_SIZE + 1 ];
 
-void setCoreMqttContext( MQTTContext_t * mqttContext )
+void mqttWrapper_setCoreMqttContext( MQTTContext_t * mqttContext )
 {
     globalCoreMqttContext = mqttContext;
 }
 
-MQTTContext_t * getCoreMqttContext( void )
+MQTTContext_t * mqttWrapper_getCoreMqttContext( void )
 {
     assert( globalCoreMqttContext != NULL );
     return globalCoreMqttContext;
 }
 
-void setThingName( char * thingName )
+void mqttWrapper_setThingName( char * thingName )
 {
     strncpy( globalThingName, thingName, MAX_THING_NAME_SIZE );
 }
 
-void getThingName( char * thingNameBuffer )
+void mqttWrapper_getThingName( char * thingNameBuffer )
 {
     assert( globalThingName[ 0 ] != 0 );
     size_t thingNameLength = strlen( globalThingName );
@@ -41,7 +41,7 @@ void getThingName( char * thingNameBuffer )
     thingNameBuffer[ thingNameLength ] = '\0';
 }
 
-bool mqttConnect( char * thingName )
+bool mqttWrapper_connect( char * thingName )
 {
     assert( globalCoreMqttContext != NULL );
     MQTTConnectInfo_t connectInfo = { 0 };
@@ -63,20 +63,20 @@ bool mqttConnect( char * thingName )
     return mqttStatus == MQTTSuccess;
 }
 
-bool isMqttConnected( void )
+bool mqttWrapper_isConnected( void )
 {
     assert( globalCoreMqttContext != NULL );
     bool isConnected = globalCoreMqttContext->connectStatus == MQTTConnected;
     return isConnected;
 }
 
-bool mqttPublish( char * topic,
-                  size_t topicLength,
-                  uint8_t * message,
-                  size_t messageLength )
+bool mqttWrapper_publish( char * topic,
+                          size_t topicLength,
+                          uint8_t * message,
+                          size_t messageLength )
 {
     assert( globalCoreMqttContext != NULL );
-    bool success = isMqttConnected();
+    bool success = mqttWrapper_isConnected();
     if( success )
     {
         MQTTStatus_t mqttStatus = MQTTSuccess;
@@ -95,10 +95,10 @@ bool mqttPublish( char * topic,
     return success;
 }
 
-bool mqttSubscribe( char * topic, size_t topicLength )
+bool mqttWrapper_subscribe( char * topic, size_t topicLength )
 {
     assert( globalCoreMqttContext != NULL );
-    bool success = isMqttConnected();
+    bool success = mqttWrapper_isConnected();
     if( success )
     {
         MQTTStatus_t mqttStatus = MQTTSuccess;
