@@ -15,7 +15,6 @@
 #include "core_jobs.h"
 #include "mqtt_wrapper/mqtt_wrapper.h"
 #include "ota_demo.h"
-#include "ota_job_handler.h"
 #include "ota_job_processor.h"
 
 #define CONFIG_BLOCK_SIZE       256U
@@ -28,16 +27,17 @@ static uint32_t numOfBlocksRemaining = 0;
 static uint32_t currentBlockOffset = 0;
 static uint8_t currentFileId = 0;
 static uint32_t totalBytesReceived = 0;
+static uint8_t downloadedData[ CONFIG_MAX_FILE_SIZE ] = { 0 };
+char globalJobId[ MAX_JOB_ID_LENGTH ] = { 0 };
 
-static bool handleJobsStartNextAccepted( const char * jobId,
-                                         const size_t jobIdLength,
-                                         const char * jobDoc,
-                                         const size_t jobDocLength );
+static bool handleJobsStartNextAcceptedCallback( const char * jobId,
+                                                 const size_t jobIdLength,
+                                                 const char * jobDoc,
+                                                 const size_t jobDocLength );
 
 static void otaDemo_finishDownload();
 
-static uint8_t downloadedData[ CONFIG_MAX_FILE_SIZE ] = { 0 };
-char globalJobId[ MAX_JOB_ID_LENGTH ] = { 0 };
+static void processOtaDocument( AfrOtaJobDocumentFields_t * params );
 
 void otaDemo_start( void )
 {
@@ -59,7 +59,7 @@ bool otaDemo_handleIncomingMQTTMessage( char * topic,
                                         size_t messageLength )
 {
     bool handled = coreJobs_handleIncomingMQTTMessage(
-        &handleJobsStartNextAccepted,
+        &handleJobsStartNextAcceptedCallback,
         topic,
         topicLength,
         message,
@@ -82,23 +82,26 @@ bool otaDemo_handleIncomingMQTTMessage( char * topic,
 }
 
 /* TODO: Implement for the Jobs library */
-static bool handleJobsStartNextAccepted( const char * jobId,
-                                         const size_t jobIdLength,
-                                         const char * jobDoc,
-                                         const size_t jobDocLength )
+static bool handleJobsStartNextAcceptedCallback( const char * jobId,
+                                                 const size_t jobIdLength,
+                                                 const char * jobDoc,
+                                                 const size_t jobDocLength )
 {
     bool handled = false;
     if( globalJobId[ 0 ] == 0 )
     {
         strncpy( globalJobId, jobId, jobIdLength );
-        handled = handleJobDoc( jobId, jobIdLength, jobDoc, jobDocLength );
+        handled = otaParser_handleJobDoc( &processOtaDocument,
+                                          jobId,
+                                          jobIdLength,
+                                          jobDoc,
+                                          jobDocLength );
     }
     return handled;
 }
 
 /* AFR OTA library callback */
-void applicationSuppliedFunction_processAfrOtaDocument(
-    AfrOtaJobDocumentFields_t * params )
+static void processOtaDocument( AfrOtaJobDocumentFields_t * params )
 {
     char thingName[ MAX_THING_NAME_SIZE + 1 ] = { 0 };
     getThingName( thingName );
@@ -157,7 +160,6 @@ static void otaDemo_finishDownload()
     /* Start the bootloader */
     char thingName[ MAX_THING_NAME_SIZE + 1 ] = { 0 };
     getThingName( thingName );
-    printf( "Reached here\n" );
     coreJobs_updateJobStatus( thingName,
                               strnlen( thingName, MAX_THING_NAME_SIZE ),
                               globalJobId,
@@ -166,4 +168,5 @@ static void otaDemo_finishDownload()
                               Succeeded,
                               "2",
                               1U );
+    printf( "\033[1;32mOTA Completed successfully!\033[0m\n" );
 }

@@ -5,6 +5,10 @@
 
 #include <stdint.h>
 
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+
 typedef struct AfrOtaJobDocumentFields
 {
     char * signature;
@@ -22,6 +26,12 @@ typedef struct AfrOtaJobDocumentFields
     uint32_t fileType;
 } AfrOtaJobDocumentFields_t;
 
-void applicationSuppliedFunction_processAfrOtaDocument( AfrOtaJobDocumentFields_t * params );
+typedef void ( *OtaDocProcessor_t )( AfrOtaJobDocumentFields_t * params );
+
+bool otaParser_handleJobDoc( OtaDocProcessor_t docCallback,
+                             const char * jobId,
+                             const size_t jobIdLength,
+                             const char * jobDoc,
+                             const size_t jobDocLength );
 
 #endif /*OTA_JOB_PROCESSOR_H*/

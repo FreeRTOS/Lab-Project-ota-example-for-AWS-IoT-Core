@@ -6,7 +6,6 @@
 
 #include "core_json.h"
 
-#include "ota_job_handler.h"
 #include "job_parser.h"
 #include "ota_job_processor.h"
 
@@ -20,10 +19,11 @@
  * @return true The job document is for a FreeRTOS OTA update
  * @return false The job document is NOT for an FreeRTOS OTA update
  */
-bool handleJobDoc( const char * jobId,
-                   const size_t jobIdLength,
-                   const char * jobDoc,
-                   const size_t jobDocLength )
+bool otaParser_handleJobDoc( OtaDocProcessor_t docCallback,
+                             const char * jobId,
+                             const size_t jobIdLength,
+                             const char * jobDoc,
+                             const size_t jobDocLength )
 {
     bool docHandled = false;
     JSONStatus_t isFreeRTOSOta = JSONIllegalDocument;
@@ -36,7 +36,8 @@ bool handleJobDoc( const char * jobId,
 
     if( ( jobDoc != NULL ) && ( jobDocLength > 0U ) )
     {
-        /* FreeRTOS OTA updates have a top level "afr_ota" job document key. Check for this to ensure the docuemnt is an FreeRTOS OTA update */
+        /* FreeRTOS OTA updates have a top level "afr_ota" job document key.
+         * Check for this to ensure the docuemnt is an FreeRTOS OTA update */
         isFreeRTOSOta = JSON_SearchConst( jobDoc,
                                           jobDocLength,
                                           "afr_ota",
@@ -55,14 +56,23 @@ bool handleJobDoc( const char * jobId,
         docHandled = true;
 
         while( docHandled && ( fileIndex <= 9 ) &&
-               ( JSONSuccess == JSON_SearchConst( jobDoc, jobDocLength, files, 16U, &fileValue, &fileValueLength, NULL ) ) )
+               ( JSONSuccess == JSON_SearchConst( jobDoc,
+                                                  jobDocLength,
+                                                  files,
+                                                  16U,
+                                                  &fileValue,
+                                                  &fileValueLength,
+                                                  NULL ) ) )
         {
             AfrOtaJobDocumentFields_t fields;
-            docHandled &= populateJobDocFields( jobDoc, jobDocLength, fileIndex, &fields );
+            docHandled &= populateJobDocFields( jobDoc,
+                                                jobDocLength,
+                                                fileIndex,
+                                                &fields );
 
             if( docHandled )
             {
-                applicationSuppliedFunction_processAfrOtaDocument( &fields );
+                docCallback( &fields );
             }
 
             files[ 14U ] = ( char ) ( ++fileIndex + ( int ) '0' );
