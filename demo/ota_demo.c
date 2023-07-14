@@ -11,26 +11,23 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "MQTTFileDownloader.h"
+#include "core_jobs.h"
 #include "mqtt_wrapper/mqtt_wrapper.h"
 #include "ota_demo.h"
-
-#include "core_jobs.h"
 #include "ota_job_handler.h"
 #include "ota_job_processor.h"
-
-#include "MQTTFileDownloader.h"
 
 #define CONFIG_BLOCK_SIZE       256U
 #define CONFIG_MAX_FILE_SIZE    65536U
 #define NUM_OF_BLOCKS_REQUESTED 1U
 #define MAX_THING_NAME_SIZE     128U
+#define MAX_JOB_ID_LENGTH       64U
 
-uint32_t numOfBlocksRemaining = 0;
-uint32_t currentBlockOffset = 0;
-uint8_t currentFileId = 0;
-uint32_t totalBytesReceived = 0;
-
-#define MAX_JOB_ID_LENGTH 64U
+static uint32_t numOfBlocksRemaining = 0;
+static uint32_t currentBlockOffset = 0;
+static uint8_t currentFileId = 0;
+static uint32_t totalBytesReceived = 0;
 
 static bool handleJobsStartNextAccepted( const char * jobId,
                                          const size_t jobIdLength,
@@ -61,7 +58,7 @@ bool otaDemo_handleIncomingMQTTMessage( char * topic,
                                         uint8_t * message,
                                         size_t messageLength )
 {
-    bool handled = coreJobsMQTTAPI_handleIncomingMQTTMessage(
+    bool handled = coreJobs_handleIncomingMQTTMessage(
         &handleJobsStartNextAccepted,
         topic,
         topicLength,

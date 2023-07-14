@@ -107,7 +107,7 @@ bool getJobStartNextFields( const uint8_t * message,
 // If the incoming MQTT message is intended for an AWS IoT Jobs topic, then
 // this function parses the Job doc and distributes it through the Jobs
 // chain of responsibilities, then returns true. Returns false otherwise.
-bool coreJobsMQTTAPI_handleIncomingMQTTMessage(
+bool coreJobs_handleIncomingMQTTMessage(
     const IncomingJobDocHandler_t jobDocHandler,
     const char * topic,
     const size_t topicLength,
