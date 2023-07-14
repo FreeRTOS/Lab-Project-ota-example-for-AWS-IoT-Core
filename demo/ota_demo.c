@@ -34,10 +34,10 @@ static bool handleJobsStartNextAcceptedCallback( const char * jobId,
                                                  const size_t jobIdLength,
                                                  const char * jobDoc,
                                                  const size_t jobDocLength );
-
-static void finishDownload();
-
+static void handleMqttStreamsBlockArrivedCallback(
+    MqttFileDownloaderDataBlockInfo_t * dataBlock );
 static void processOtaDocumentCallback( AfrOtaJobDocumentFields_t * params );
+static void finishDownload();
 
 void otaDemo_start( void )
 {
@@ -65,10 +65,12 @@ bool otaDemo_handleIncomingMQTTMessage( char * topic,
         message,
         messageLength );
 
-    handled = handled || mqttStreams_handleIncomingMessage( topic,
-                                                            topicLength,
-                                                            message,
-                                                            messageLength );
+    handled = handled || mqttDownloader_handleIncomingMessage(
+                             &handleMqttStreamsBlockArrivedCallback,
+                             topic,
+                             topicLength,
+                             message,
+                             messageLength );
     if( !handled )
     {
         printf( "Unrecognized incoming MQTT message received on topic: "
@@ -126,7 +128,7 @@ static void processOtaDocumentCallback( AfrOtaJobDocumentFields_t * params )
 }
 
 /* Implemented for the MQTT Streams library */
-void otaDemo_handleMqttStreamsBlockArrived(
+static void handleMqttStreamsBlockArrivedCallback(
     MqttFileDownloaderDataBlockInfo_t * dataBlock )
 {
     assert( ( totalBytesReceived + dataBlock->payloadLength ) <

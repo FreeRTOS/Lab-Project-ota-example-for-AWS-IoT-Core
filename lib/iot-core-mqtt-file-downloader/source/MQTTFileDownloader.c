@@ -52,9 +52,6 @@ static size_t stringBuilder( char * pBuffer,
                              size_t bufferSizeBytes,
                              const char * const strings[] );
 
-extern void otaDemo_handleMqttStreamsBlockArrived(
-    MqttFileDownloaderDataBlockInfo_t * dataBlock );
-
 /**
  *  @brief Topic strings used by the MQTT downloader.
  *
@@ -165,9 +162,9 @@ static size_t stringBuilder( char * pBuffer,
 }
 
 uint8_t mqttDownloader_init( char * pStreamName,
-                                  size_t streamNameLength,
-                                  char * pThingName,
-                                  uint8_t ucDataType )
+                             size_t streamNameLength,
+                             char * pThingName,
+                             uint8_t ucDataType )
 {
     uint16_t topicLen = 0;
 
@@ -254,9 +251,9 @@ uint8_t mqttDownloader_init( char * pStreamName,
 }
 
 uint8_t mqttDownloader_requestDataBlock( uint16_t usFileId,
-                            uint32_t ulBlockSize,
-                            uint16_t usBlockOffset,
-                            uint32_t ulNumberOfBlocksRequested )
+                                         uint32_t ulBlockSize,
+                                         uint16_t usBlockOffset,
+                                         uint32_t ulNumberOfBlocksRequested )
 {
     char getStreamRequest[ GET_STREAM_REQUEST_BUFFER_SIZE ];
 
@@ -284,9 +281,9 @@ uint8_t mqttDownloader_requestDataBlock( uint16_t usFileId,
                   usBlockOffset,
                   ulNumberOfBlocksRequested );
         mqttWrapper_publish( pGetStreamTopic,
-                     strlen( pGetStreamTopic ),
-                     ( uint8_t * ) getStreamRequest,
-                     strlen( getStreamRequest ) );
+                             strlen( pGetStreamTopic ),
+                             ( uint8_t * ) getStreamRequest,
+                             strlen( getStreamRequest ) );
     }
     else
     {
@@ -303,15 +300,16 @@ uint8_t mqttDownloader_requestDataBlock( uint16_t usFileId,
                                                  strlen( "MQ==" ),
                                                  ulNumberOfBlocksRequested );
         mqttWrapper_publish( pGetStreamTopic,
-                     strlen( pGetStreamTopic ),
-                     ( uint8_t * ) getStreamRequest,
-                     encodedMessageSize );
+                             strlen( pGetStreamTopic ),
+                             ( uint8_t * ) getStreamRequest,
+                             encodedMessageSize );
     }
 
     return 0;
 }
 
-bool mqttStreams_handleIncomingMessage( char * topic,
+bool mqttDownloader_handleIncomingMessage( MqttFileBlockHandler_t blockCallback,
+                                        char * topic,
                                         size_t topicLength,
                                         uint8_t * message,
                                         size_t messageLength )
@@ -418,7 +416,7 @@ bool mqttStreams_handleIncomingMessage( char * topic,
             }
         }
 
-        otaDemo_handleMqttStreamsBlockArrived( &dataBlock );
+        blockCallback( &dataBlock );
     }
     else
     {
