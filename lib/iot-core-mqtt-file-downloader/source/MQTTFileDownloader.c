@@ -289,7 +289,7 @@ uint8_t mqttDownloader_requestDataBlock( uint16_t usFileId,
     {
         size_t encodedMessageSize = 0;
 
-        OTA_CBOR_Encode_GetStreamRequestMessage( ( uint8_t * ) getStreamRequest,
+        CBOR_Encode_GetStreamRequestMessage( ( uint8_t * ) getStreamRequest,
                                                  GET_STREAM_REQUEST_BUFFER_SIZE,
                                                  &encodedMessageSize,
                                                  "rdy",
@@ -391,7 +391,7 @@ bool mqttDownloader_handleIncomingMessage( MqttFileBlockHandler_t blockCallback,
             uint8_t * pPayload = ( uint8_t * ) decodedData;
             size_t pPayloadSize = 1024;
             bool cborDecodeRet = false;
-            cborDecodeRet = OTA_CBOR_Decode_GetStreamResponseMessage(
+            cborDecodeRet = CBOR_Decode_GetStreamResponseMessage(
                 message,
                 messageLength,
                 &pFileId,
@@ -400,7 +400,7 @@ bool mqttDownloader_handleIncomingMessage( MqttFileBlockHandler_t blockCallback,
                 &pBlockSize, /* CBOR requires pointer to int and our block sizes
                                 never exceed 31 bits. */
                 &pPayload,   /* This payload gets malloc'd by
-                                OTA_CBOR_Decode_GetStreamResponseMessage(). We
+                                CBOR_Decode_GetStreamResponseMessage(). We
                                 must free it. */
                 &pPayloadSize );
 

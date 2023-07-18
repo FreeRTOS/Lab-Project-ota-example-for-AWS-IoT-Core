@@ -55,27 +55,27 @@
 /**
  * @brief Decode a Get Stream response message from AWS IoT OTA.
  */
-bool OTA_CBOR_Decode_GetStreamResponseMessage( const uint8_t * pMessageBuffer,
+bool CBOR_Decode_GetStreamResponseMessage( const uint8_t * messageBuffer,
                                                size_t messageSize,
-                                               int32_t * pFileId,
-                                               int32_t * pBlockId,
-                                               int32_t * pBlockSize,
-                                               uint8_t * const * pPayload,
-                                               size_t * pPayloadSize );
+                                               int32_t * fileId,
+                                               int32_t * blockId,
+                                               int32_t * blockSize,
+                                               uint8_t * const * payload,
+                                               size_t * payloadSize );
 
 /**
  * @brief Create an encoded Get Stream Request message for the AWS IoT OTA
  * service. The service allows block count or block bitmap to be requested,
  * but not both.
  */
-bool OTA_CBOR_Encode_GetStreamRequestMessage( uint8_t * pMessageBuffer,
+bool CBOR_Encode_GetStreamRequestMessage( uint8_t * messageBuffer,
                                               size_t messageBufferSize,
-                                              size_t * pEncodedMessageSize,
-                                              const char * pClientToken,
+                                              size_t * encodedMessageSize,
+                                              const char * clientToken,
                                               int32_t fileId,
                                               int32_t blockSize,
                                               int32_t blockOffset,
-                                              const uint8_t * pBlockBitmap,
+                                              const uint8_t * blockBitmap,
                                               size_t blockBitmapSize,
                                               int32_t numOfBlocksRequested );
 
