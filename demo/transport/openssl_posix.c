@@ -185,7 +185,7 @@ static OpensslStatus_t tlsHandshake(
     int32_t sslStatus = -1, verifyPeerCertStatus = X509_V_OK;
 
     /* Validate the hostname against the server's certificate. */
-    sslStatus = SSL_set1_host( opensslParams->ssl, serverInfo->pHostName );
+    sslStatus = SSL_set1_host( opensslParams->ssl, serverInfo->hostName );
 
     if( sslStatus != 1 )
     {

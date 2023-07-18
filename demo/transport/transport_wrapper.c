@@ -94,7 +94,7 @@ bool transport_tlsConnect( char * certificateFilePath,
     opensslCredentials.privateKeyBuffer = privateKey;
     opensslCredentials.privateKeyLength = privateKeyLength;
 
-    serverInfo.pHostName = endpoint;
+    serverInfo.hostName = endpoint;
     serverInfo.hostNameLength = strlen( endpoint );
     serverInfo.port = 8883U;
 
