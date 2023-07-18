@@ -152,12 +152,11 @@ typedef struct OpensslCredentials
  * #OPENSSL_INVALID_PARAMETER, #OPENSSL_INVALID_CREDENTIALS,
  * #OPENSSL_INVALID_CREDENTIALS, #OPENSSL_SYSTEM_ERROR on failure.
  */
-OpensslStatus_t Openssl_Connect(
-    NetworkContext_t * networkContext,
-    const ServerInfo_t * serverInfo,
-    const OpensslCredentials_t * opensslCredentials,
-    uint32_t sendTimeoutMs,
-    uint32_t recvTimeoutMs );
+OpensslStatus_t Openssl_Connect( NetworkContext_t * networkContext,
+                                 const ServerInfo_t * serverInfo,
+                                 const OpensslCredentials_t * opensslCredentials,
+                                 uint32_t sendTimeoutMs,
+                                 uint32_t recvTimeoutMs );
 
 /**
  * @brief Closes a TLS session on top of a TCP connection using the OpenSSL

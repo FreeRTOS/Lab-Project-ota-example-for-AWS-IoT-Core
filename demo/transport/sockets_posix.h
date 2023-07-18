@@ -54,8 +54,8 @@ typedef enum SocketStatus
 typedef struct ServerInfo
 {
     const char * hostName; /**< @brief Server host name. */
-    size_t hostNameLength;  /**< @brief Length of the server host name. */
-    uint16_t port;          /**< @brief Server port in host-order. */
+    size_t hostNameLength; /**< @brief Length of the server host name. */
+    uint16_t port;         /**< @brief Server port in host-order. */
 } ServerInfo_t;
 
 /**

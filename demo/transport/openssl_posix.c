@@ -406,17 +406,14 @@ static int32_t setCredentials( SSL_CTX * sslContext,
                                opensslCredentials->rootCaLength );
     }
 
-    if( ( sslStatus == 1 ) &&
-        ( opensslCredentials->clientCertBuffer != NULL ) )
+    if( ( sslStatus == 1 ) && ( opensslCredentials->clientCertBuffer != NULL ) )
     {
-        sslStatus = setClientCertificate(
-            sslContext,
-            opensslCredentials->clientCertBuffer,
-            opensslCredentials->clientCertLength );
+        sslStatus = setClientCertificate( sslContext,
+                                          opensslCredentials->clientCertBuffer,
+                                          opensslCredentials->clientCertLength );
     }
 
-    if( ( sslStatus == 1 ) &&
-        ( opensslCredentials->privateKeyBuffer != NULL ) )
+    if( ( sslStatus == 1 ) && ( opensslCredentials->privateKeyBuffer != NULL ) )
     {
         sslStatus = setPrivateKey( sslContext,
                                    opensslCredentials->privateKeyBuffer,
@@ -484,8 +481,7 @@ static void setOptionalConfigurations(
 
             /* Change the size of the read buffer to match the
              * maximum fragment length + some extra bytes for overhead. */
-            SSL_set_default_read_buffer_len( ssl,
-                                             ( size_t ) readBufferLength );
+            SSL_set_default_read_buffer_len( ssl, ( size_t ) readBufferLength );
         }
     }
 
@@ -512,12 +508,11 @@ static void setOptionalConfigurations(
 }
 /*-----------------------------------------------------------*/
 
-OpensslStatus_t Openssl_Connect(
-    NetworkContext_t * networkContext,
-    const ServerInfo_t * serverInfo,
-    const OpensslCredentials_t * opensslCredentials,
-    uint32_t sendTimeoutMs,
-    uint32_t recvTimeoutMs )
+OpensslStatus_t Openssl_Connect( NetworkContext_t * networkContext,
+                                 const ServerInfo_t * serverInfo,
+                                 const OpensslCredentials_t * opensslCredentials,
+                                 uint32_t sendTimeoutMs,
+                                 uint32_t recvTimeoutMs )
 {
     OpensslParams_t * opensslParams = NULL;
     SocketStatus_t socketStatus = SOCKETS_SUCCESS;
@@ -885,12 +880,12 @@ int32_t Openssl_Send( NetworkContext_t * networkContext,
 
             if( bytesSent <= 0 )
             {
-                LogError( ( "Failed to send data over network: SSL_write of "
-                            "OpenSSL failed: "
-                            "ErrorStatus=%s.",
-                            ERR_reason_error_string(
-                                SSL_get_error( opensslParams->ssl,
-                                               bytesSent ) ) ) );
+                LogError(
+                    ( "Failed to send data over network: SSL_write of "
+                      "OpenSSL failed: "
+                      "ErrorStatus=%s.",
+                      ERR_reason_error_string(
+                          SSL_get_error( opensslParams->ssl, bytesSent ) ) ) );
 
                 /* As the SSL context is configured for blocking mode, the
                  * SSL_write() function does not return an SSL_ERROR_WANT_READ

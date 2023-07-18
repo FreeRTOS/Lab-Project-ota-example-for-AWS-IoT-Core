@@ -163,8 +163,7 @@ static SocketStatus_t connectToAddress( struct sockaddr * addrInfo,
     struct sockaddr_in6 * ipv6Address;
 
     assert( addrInfo != NULL );
-    assert( addrInfo->sa_family == AF_INET ||
-            addrInfo->sa_family == AF_INET6 );
+    assert( addrInfo->sa_family == AF_INET || addrInfo->sa_family == AF_INET6 );
     assert( tcpSocket >= 0 );
 
     /* Convert port from host byte order to network byte order. */
@@ -252,8 +251,8 @@ static SocketStatus_t attemptConnection( struct addrinfo * listHead,
     for( index = listHead; index != NULL; index = index->ai_next )
     {
         *tcpSocket = socket( index->ai_family,
-                              index->ai_socktype,
-                              index->ai_protocol );
+                             index->ai_socktype,
+                             index->ai_protocol );
 
         if( *tcpSocket == -1 )
         {
@@ -330,8 +329,7 @@ SocketStatus_t Sockets_Connect( int32_t * tcpSocket,
     }
     else if( serverInfo->hostName == NULL )
     {
-        LogError(
-            ( "Parameter check failed: serverInfo->hostName is NULL." ) );
+        LogError( ( "Parameter check failed: serverInfo->hostName is NULL." ) );
         returnStatus = SOCKETS_INVALID_PARAMETER;
     }
     else if( tcpSocket == NULL )
