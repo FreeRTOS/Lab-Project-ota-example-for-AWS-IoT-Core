@@ -87,18 +87,18 @@ bool transport_tlsConnect( char * certificateFilePath,
     rootCA[ rootCALength ] = '\0';
 
     opensslCredentials.sniHostName = endpoint;
-    opensslCredentials.pClientCertBuffer = certificate;
+    opensslCredentials.clientCertBuffer = certificate;
     opensslCredentials.clientCertLength = certificateLength;
-    opensslCredentials.pRootCaBuffer = rootCA;
+    opensslCredentials.rootCaBuffer = rootCA;
     opensslCredentials.rootCaLength = rootCALength;
-    opensslCredentials.pPrivateKeyBuffer = privateKey;
+    opensslCredentials.privateKeyBuffer = privateKey;
     opensslCredentials.privateKeyLength = privateKeyLength;
 
     serverInfo.pHostName = endpoint;
     serverInfo.hostNameLength = strlen( endpoint );
     serverInfo.port = 8883U;
 
-    networkContext.pParams = &opensslParams;
+    networkContext.params = &opensslParams;
 
     opensslStatus = Openssl_Connect( &networkContext,
                                      &serverInfo,
@@ -111,7 +111,7 @@ bool transport_tlsConnect( char * certificateFilePath,
 
 void transport_tlsDisconnect( void )
 {
-    if( networkContext.pParams != NULL )
+    if( networkContext.params != NULL )
     {
         ( void ) Openssl_Disconnect( &networkContext );
     }

@@ -49,13 +49,13 @@ extern "C" {
 typedef struct OpensslParams
 {
     int32_t socketDescriptor;
-    SSL * pSsl;
+    SSL * ssl;
 } OpensslParams_t;
 
 /* Each compilation unit must define the NetworkContext struct. */
 struct NetworkContext
 {
-    OpensslParams_t * pParams;
+    OpensslParams_t * params;
 };
 
 /**
@@ -88,7 +88,7 @@ typedef struct OpensslCredentials
      * (https://aws.amazon.com/blogs/iot/mqtt-with-tls-client-authentication-on-port-443-why-it-is-useful-and-how-it-works/)
      * for more information.
      */
-    const char * pAlpnProtos;
+    const char * alpnProtos;
 
     /**
      * @brief Length of the ALPN protocols array.
@@ -121,11 +121,11 @@ typedef struct OpensslCredentials
      * @note These strings must be NULL-terminated because the OpenSSL API
      * requires them to be.
      */
-    const char * pRootCaBuffer;     /**< @brief string to the trusted server
+    const char * rootCaBuffer;     /**< @brief string to the trusted server
                                        root CA. */
-    const char * pClientCertBuffer; /**< @brief string to the client
+    const char * clientCertBuffer; /**< @brief string to the client
                                        certificate. */
-    const char * pPrivateKeyBuffer; /**< @brief string to the client
+    const char * privateKeyBuffer; /**< @brief string to the client
                                        certificate's private key. */
 
     int rootCaLength;     /**< @brief size o the trusted server root CA. */
@@ -139,10 +139,10 @@ typedef struct OpensslCredentials
  * @brief Sets up a TLS session on top of a TCP connection using the OpenSSL
  * API.
  *
- * @param[out] pNetworkContext The output parameter to return the created
+ * @param[out] networkContext The output parameter to return the created
  * network context.
- * @param[in] pServerInfo Server connection info.
- * @param[in] pOpensslCredentials Credentials for the TLS connection.
+ * @param[in] serverInfo Server connection info.
+ * @param[in] opensslCredentials Credentials for the TLS connection.
  * @param[in] sendTimeoutMs Timeout for transport send.
  * @param[in] recvTimeoutMs Timeout for transport recv.
  *
@@ -153,9 +153,9 @@ typedef struct OpensslCredentials
  * #OPENSSL_INVALID_CREDENTIALS, #OPENSSL_SYSTEM_ERROR on failure.
  */
 OpensslStatus_t Openssl_Connect(
-    NetworkContext_t * pNetworkContext,
-    const ServerInfo_t * pServerInfo,
-    const OpensslCredentials_t * pOpensslCredentials,
+    NetworkContext_t * networkContext,
+    const ServerInfo_t * serverInfo,
+    const OpensslCredentials_t * opensslCredentials,
     uint32_t sendTimeoutMs,
     uint32_t recvTimeoutMs );
 
@@ -163,13 +163,13 @@ OpensslStatus_t Openssl_Connect(
  * @brief Closes a TLS session on top of a TCP connection using the OpenSSL
  * API.
  *
- * @param[out] pNetworkContext The output parameter to end the TLS session
+ * @param[out] networkContext The output parameter to end the TLS session
  * and clean the created network context.
  *
  * @return #OPENSSL_SUCCESS on success; #OPENSSL_INVALID_PARAMETER on
  * failure.
  */
-OpensslStatus_t Openssl_Disconnect( const NetworkContext_t * pNetworkContext );
+OpensslStatus_t Openssl_Disconnect( const NetworkContext_t * networkContext );
 
 /**
  * @brief Receives data over an established TLS session using the OpenSSL
@@ -178,17 +178,17 @@ OpensslStatus_t Openssl_Disconnect( const NetworkContext_t * pNetworkContext );
  * This can be used as #TransportInterface.recv function for receiving data
  * from the network.
  *
- * @param[in] pNetworkContext The network context created using
+ * @param[in] networkContext The network context created using
  * Openssl_Connect API.
- * @param[out] pBuffer Buffer to receive network data into.
+ * @param[out] buffer Buffer to receive network data into.
  * @param[in] bytesToRecv Number of bytes requested from the network.
  *
  * @return Number of bytes received if successful; negative value to
  * indicate failure. A return value of zero represents that the receive
  * operation can be retried.
  */
-int32_t Openssl_Recv( NetworkContext_t * pNetworkContext,
-                      void * pBuffer,
+int32_t Openssl_Recv( NetworkContext_t * networkContext,
+                      void * buffer,
                       size_t bytesToRecv );
 
 /**
@@ -197,9 +197,9 @@ int32_t Openssl_Recv( NetworkContext_t * pNetworkContext,
  * This can be used as the #TransportInterface.send function to send data
  * over the network.
  *
- * @param[in] pNetworkContext The network context created using
+ * @param[in] networkContext The network context created using
  * Openssl_Connect API.
- * @param[in] pBuffer Buffer containing the bytes to send over the network
+ * @param[in] buffer Buffer containing the bytes to send over the network
  * stack.
  * @param[in] bytesToSend Number of bytes to send over the network.
  *
@@ -208,8 +208,8 @@ int32_t Openssl_Recv( NetworkContext_t * pNetworkContext,
  * @note This function does not return zero value because it cannot be
  * retried on send operation failure.
  */
-int32_t Openssl_Send( NetworkContext_t * pNetworkContext,
-                      const void * pBuffer,
+int32_t Openssl_Send( NetworkContext_t * networkContext,
+                      const void * buffer,
                       size_t bytesToSend );
 
 /* *INDENT-OFF* */
