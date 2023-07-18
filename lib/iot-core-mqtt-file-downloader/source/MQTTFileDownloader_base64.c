@@ -31,22 +31,22 @@
 
   /**
    * @brief Number to represent both line feed and carriage return symbols in the
-   *        pBase64SymbolToIndexMap table.
+   *        base64SymbolToIndexMap table.
    */
 #define NEWLINE                                  64U
 
    /**
-    * @brief Number to represent the whitespace character in the pBase64SymbolToIndexMap table.
+    * @brief Number to represent the whitespace character in the base64SymbolToIndexMap table.
     */
 #define WHITESPACE                               65U
 
     /**
-     * @brief Number to represent the Base64 padding symbol in the pBase64SymbolToIndexMap table.
+     * @brief Number to represent the Base64 padding symbol in the base64SymbolToIndexMap table.
      */
 #define PADDING_SYMBOL                           66U
 
      /**
-      * @brief Number to represent values that are invalid in the pBase64SymbolToIndexMap table.
+      * @brief Number to represent values that are invalid in the base64SymbolToIndexMap table.
       */
 #define NON_BASE64_INDEX                         67U
 
@@ -98,7 +98,7 @@
 #define SIZE_OF_PADDING_WITH_THREE_SEXTETS       2
 
                /**
-                * @brief Inclusive upper bound for valid values that can be contained in pBase64SymbolToIndexMap.
+                * @brief Inclusive upper bound for valid values that can be contained in base64SymbolToIndexMap.
                 */
 #define SYMBOL_TO_INDEX_MAP_VALUE_UPPER_BOUND    67U
 
@@ -133,7 +133,7 @@
                   *        - All positions in the ascii table that are invalid symbols are identified with the
                   *          number 67 (other than '\n','\\r',' ','=').
                   */
-static const uint8_t pBase64SymbolToIndexMap[] =
+static const uint8_t base64SymbolToIndexMap[] =
 {
     67, 67, 67, 67, 67, 67, 67, 67, 67, 67,
     64, 67, 67, 64, 67, 67, 67, 67, 67, 67,
@@ -171,15 +171,15 @@ static const uint8_t pBase64SymbolToIndexMap[] =
  *                far.
  *
  * @param[in]     base64Index Base64 index that can have on of the values
- *                listed in pBase64SymbolToIndexMap. This index represents the
+ *                listed in base64SymbolToIndexMap. This index represents the
  *                value of a valid Base64 symbol, a number to identify it as a
  *                formatting symbol, or a number to identify it as an invalid
  *                symbol.
- * @param[in,out] pNumPadding Pointer to the number of padding symbols that are
+ * @param[in,out] numPadding Pointer to the number of padding symbols that are
  *                present before the input Base64 index in the encoded data.
  *                This number is incremented if the input symbol is a padding
  *                symbol.
- * @param[in,out] pNumWhitespace Pointer to the number of whitespace symbols
+ * @param[in,out] numWhitespace Pointer to the number of whitespace symbols
  *                that are present before the input Base64 index in the encoded
  *                data. This number is incremented if the input symbol is a
  *                whitespace symbol.
@@ -191,18 +191,18 @@ static const uint8_t pBase64SymbolToIndexMap[] =
  *                  encoded data or input parameters are invalid.
  */
 static Base64Status_t preprocessBase64Index(uint8_t base64Index,
-    int64_t* pNumPadding,
-    int64_t* pNumWhitespace)
+    int64_t* numPadding,
+    int64_t* numWhitespace)
 {
     Base64Status_t returnVal = Base64Success;
-    int64_t numPadding;
-    int64_t numWhitespace;
+    int64_t numPaddingVal;
+    int64_t numWhitespaceVal;
 
-    assert(pNumPadding != NULL);
-    assert(pNumWhitespace != NULL);
+    assert(numPadding != NULL);
+    assert(numWhitespace != NULL);
 
-    numPadding = *pNumPadding;
-    numWhitespace = *pNumWhitespace;
+    numPaddingVal = *numPadding;
+    numWhitespaceVal = *numWhitespace;
 
     /* Validate that the Base64 index is valid and in an appropriate place. */
     if (base64Index == NON_BASE64_INDEX)
@@ -211,11 +211,11 @@ static Base64Status_t preprocessBase64Index(uint8_t base64Index,
     }
     else if (base64Index == PADDING_SYMBOL)
     {
-        if (numWhitespace != 0)
+        if (numWhitespaceVal != 0)
         {
             returnVal = Base64InvalidSymbolOrdering;
         }
-        else if (++numPadding > MAX_EXPECTED_NUM_PADDING)
+        else if (++numPaddingVal > MAX_EXPECTED_NUM_PADDING)
         {
             returnVal = Base64InvalidPaddingSymbol;
         }
@@ -226,7 +226,7 @@ static Base64Status_t preprocessBase64Index(uint8_t base64Index,
     }
     else if (base64Index == WHITESPACE)
     {
-        ++numWhitespace;
+        ++numWhitespaceVal;
     }
     else if (base64Index == NEWLINE)
     {
@@ -239,14 +239,14 @@ static Base64Status_t preprocessBase64Index(uint8_t base64Index,
     {
         assert(base64Index <= BASE64_INDEX_VALUE_UPPER_BOUND);
 
-        if ((numWhitespace != 0) || (numPadding != 0))
+        if ((numWhitespaceVal != 0) || (numPaddingVal != 0))
         {
             returnVal = Base64InvalidSymbolOrdering;
         }
     }
 
-    *pNumWhitespace = numWhitespace;
-    *pNumPadding = numPadding;
+    *numWhitespace = numWhitespaceVal;
+    *numPadding = numPaddingVal;
     return returnVal;
 }
 
@@ -255,26 +255,26 @@ static Base64Status_t preprocessBase64Index(uint8_t base64Index,
  *                only be updated if the index represents a Base64 digit.
  *
  * @param[in]     base64Index Base64 index that can have one of the values
- *                listed in pBase64SymbolToIndexMap.
- * @param[in,out] pBase64IndexBuffer Pointer to a 32 bit variable that contains
+ *                listed in base64SymbolToIndexMap.
+ * @param[in,out] base64IndexBufferPtr Pointer to a 32 bit variable that contains
  *                Base64 indexes that will be decoded.
- * @param[in,out] pNumDataInBuffer Pointer to the number of sextets that are
- *                stored in pBase64IndexBuffer. This will be incremented if
- *                base64Index is stored in pBase64IndexBuffer.
+ * @param[in,out] numDataIndexBuffer Pointer to the number of sextets that are
+ *                stored in base64IndexBufferPtr. This will be incremented if
+ *                base64Index is stored in base64IndexBufferPtr.
  */
 static void updateBase64DecodingBuffer(const uint8_t base64Index,
-    uint32_t* pBase64IndexBuffer,
-    uint32_t* pNumDataInBuffer)
+    uint32_t* base64IndexBufferPtr,
+    uint32_t* numDataIndexBuffer)
 {
     uint32_t base64IndexBuffer;
     uint32_t numDataInBuffer;
 
-    assert(pBase64IndexBuffer != NULL);
-    assert(pNumDataInBuffer != NULL);
+    assert(base64IndexBufferPtr != NULL);
+    assert(numDataIndexBuffer != NULL);
     assert(base64Index <= SYMBOL_TO_INDEX_MAP_VALUE_UPPER_BOUND);
 
-    base64IndexBuffer = *pBase64IndexBuffer;
-    numDataInBuffer = *pNumDataInBuffer;
+    base64IndexBuffer = *base64IndexBufferPtr;
+    numDataInBuffer = *numDataIndexBuffer;
 
     /* Only update the buffer if the Base64 index is representing a Base64 digit. Base64 digits
      * have a Base64 index that is inclusively between 0 and 63. */
@@ -289,23 +289,23 @@ static void updateBase64DecodingBuffer(const uint8_t base64Index,
         ++numDataInBuffer;
     }
 
-    *pBase64IndexBuffer = base64IndexBuffer;
-    *pNumDataInBuffer = numDataInBuffer;
+    *base64IndexBufferPtr = base64IndexBuffer;
+    *numDataIndexBuffer = numDataInBuffer;
 }
 
 /**
  * @brief         Decode a buffer containing two, three, or four Base64
  *                indices.
  *
- * @param[in,out] pBase64IndexBuffer Pointer to a 32 bit variable that contains
+ * @param[in,out] base64IndexBufferPtr Pointer to a 32 bit variable that contains
  *                Base64 indexes that will be decoded. Each index is
  *                represented by a sextet in the buffer.
- * @param[in,out] pNumDataInBuffer Pointer to the number of sextets (indexes)
- *                that are concatenated and stored in pBase64IndexBuffer. This
+ * @param[in,out] numDataIndexBuffer Pointer to the number of sextets (indexes)
+ *                that are concatenated and stored in base64IndexBufferPtr. This
  *                will be set to zero before this function returns.
- * @param[out]    pDest Pointer to a buffer used for storing the decoded data.
- * @param[in]     destLen Length of the pDest buffer.
- * @param[in,out] pOutputLen Pointer to the index of pDest where the output
+ * @param[out]    dest Pointer to a buffer used for storing the decoded data.
+ * @param[in]     destLen Length of the dest buffer.
+ * @param[in,out] outputLength Pointer to the index of dest where the output
  *                should be written.
  *
  * @return        One of the following:
@@ -314,11 +314,11 @@ static void updateBase64DecodingBuffer(const uint8_t base64Index,
  *                - An error code defined in ota_base64_private.h if the
  *                  encoded data or input parameters are invalid.
  */
-static Base64Status_t decodeBase64IndexBuffer(uint32_t* pBase64IndexBuffer,
-    uint32_t* pNumDataInBuffer,
-    uint8_t* pDest,
+static Base64Status_t decodeBase64IndexBuffer(uint32_t* base64IndexBufferPtr,
+    uint32_t* numDataIndexBuffer,
+    uint8_t* dest,
     const size_t destLen,
-    size_t* pOutputLen)
+    size_t* outputLength)
 {
     Base64Status_t returnVal = Base64Success;
     size_t outputLen;
@@ -326,17 +326,17 @@ static Base64Status_t decodeBase64IndexBuffer(uint32_t* pBase64IndexBuffer,
     uint32_t numDataInBuffer;
     uint32_t numDataToWrite;
 
-    assert(pBase64IndexBuffer != NULL);
-    assert(pNumDataInBuffer != NULL);
-    assert((*pNumDataInBuffer == 2U) ||
-        (*pNumDataInBuffer == 3U) ||
-        (*pNumDataInBuffer == 4U));
-    assert(pDest != NULL);
-    assert(pOutputLen != NULL);
+    assert(base64IndexBufferPtr != NULL);
+    assert(numDataIndexBuffer != NULL);
+    assert((*numDataIndexBuffer == 2U) ||
+        (*numDataIndexBuffer == 3U) ||
+        (*numDataIndexBuffer == 4U));
+    assert(dest != NULL);
+    assert(outputLength != NULL);
 
-    outputLen = *pOutputLen;
-    base64IndexBuffer = *pBase64IndexBuffer;
-    numDataInBuffer = *pNumDataInBuffer;
+    outputLen = *outputLength;
+    base64IndexBuffer = *base64IndexBufferPtr;
+    numDataInBuffer = *numDataIndexBuffer;
     numDataToWrite = (numDataInBuffer * 3U) / 4U;
 
     if (destLen < (outputLen + numDataToWrite))
@@ -350,9 +350,9 @@ static Base64Status_t decodeBase64IndexBuffer(uint32_t* pBase64IndexBuffer,
          * significant bits and ending at the least significant bits. */
         if (numDataInBuffer == MAX_NUM_BASE64_DATA)
         {
-            pDest[outputLen] = (uint8_t)((base64IndexBuffer >> SIZE_OF_TWO_OCTETS) & 0xFFU);
-            pDest[outputLen + 1U] = (uint8_t)((base64IndexBuffer >> SIZE_OF_ONE_OCTET) & 0xFFU);
-            pDest[outputLen + 2U] = (uint8_t)(base64IndexBuffer & 0xFFU);
+            dest[outputLen] = (uint8_t)((base64IndexBuffer >> SIZE_OF_TWO_OCTETS) & 0xFFU);
+            dest[outputLen + 1U] = (uint8_t)((base64IndexBuffer >> SIZE_OF_ONE_OCTET) & 0xFFU);
+            dest[outputLen + 2U] = (uint8_t)(base64IndexBuffer & 0xFFU);
             outputLen += 3U;
         }
 
@@ -370,8 +370,8 @@ static Base64Status_t decodeBase64IndexBuffer(uint32_t* pBase64IndexBuffer,
             if (returnVal == Base64Success)
             {
                 base64IndexBuffer = base64IndexBuffer >> SIZE_OF_PADDING_WITH_THREE_SEXTETS;
-                pDest[outputLen] = (uint8_t)((base64IndexBuffer >> SIZE_OF_ONE_OCTET) & 0xFFU);
-                pDest[outputLen + 1U] = (uint8_t)(base64IndexBuffer & 0xFFU);
+                dest[outputLen] = (uint8_t)((base64IndexBuffer >> SIZE_OF_ONE_OCTET) & 0xFFU);
+                dest[outputLen + 1U] = (uint8_t)(base64IndexBuffer & 0xFFU);
                 outputLen += 2U;
             }
         }
@@ -390,33 +390,33 @@ static Base64Status_t decodeBase64IndexBuffer(uint32_t* pBase64IndexBuffer,
             if (returnVal == Base64Success)
             {
                 base64IndexBuffer = base64IndexBuffer >> SIZE_OF_PADDING_WITH_TWO_SEXTETS;
-                pDest[outputLen] = (uint8_t)(base64IndexBuffer & 0xFFU);
+                dest[outputLen] = (uint8_t)(base64IndexBuffer & 0xFFU);
                 outputLen += 1U;
             }
         }
     }
 
-    *pNumDataInBuffer = 0;
-    *pOutputLen = outputLen;
-    *pBase64IndexBuffer = 0;
+    *numDataIndexBuffer = 0;
+    *outputLength = outputLen;
+    *base64IndexBufferPtr = 0;
     return returnVal;
 }
 
-Base64Status_t base64Decode(uint8_t* pDest,
+Base64Status_t base64_Decode(uint8_t* dest,
     const size_t destLen,
-    size_t* pResultLen,
-    const uint8_t* pEncodedData,
+    size_t* resultLen,
+    const uint8_t* encodedData,
     const size_t encodedLen)
 {
     uint32_t base64IndexBuffer = 0;
     uint32_t numDataInBuffer = 0;
-    const uint8_t* pCurrBase64Symbol = pEncodedData;
+    const uint8_t* pCurrBase64Symbol = encodedData;
     size_t outputLen = 0;
     int64_t numPadding = 0;
     int64_t numWhitespace = 0;
     Base64Status_t returnVal = Base64Success;
 
-    if ((pEncodedData == NULL) || (pDest == NULL) || (pResultLen == NULL))
+    if ((encodedData == NULL) || (dest == NULL) || (resultLen == NULL))
     {
         returnVal = Base64NullPointerInput;
     }
@@ -428,13 +428,13 @@ Base64Status_t base64Decode(uint8_t* pDest,
 
     /* This loop will decode the first (encodedLen - (encodedLen % 4)) amount of data. */
     while ((returnVal == Base64Success) &&
-        (pCurrBase64Symbol < (pEncodedData + encodedLen)))
+        (pCurrBase64Symbol < (encodedData + encodedLen)))
     {
         uint8_t base64Index = 0;
         /* Read in the next Ascii character that represents the current Base64 symbol. */
         uint8_t base64AsciiSymbol = *pCurrBase64Symbol++;
         /* Get the Base64 index that represents the Base64 symbol. */
-        base64Index = pBase64SymbolToIndexMap[base64AsciiSymbol];
+        base64Index = base64SymbolToIndexMap[base64AsciiSymbol];
 
         /* Validate the input and update counters for padding and whitespace. */
         returnVal = preprocessBase64Index(base64Index,
@@ -456,7 +456,7 @@ Base64Status_t base64Decode(uint8_t* pDest,
         {
             returnVal = decodeBase64IndexBuffer(&base64IndexBuffer,
                 &numDataInBuffer,
-                pDest,
+                dest,
                 destLen,
                 &outputLen);
         }
@@ -484,7 +484,7 @@ Base64Status_t base64Decode(uint8_t* pDest,
         {
             returnVal = decodeBase64IndexBuffer(&base64IndexBuffer,
                 &numDataInBuffer,
-                pDest,
+                dest,
                 destLen,
                 &outputLen);
         }
@@ -492,7 +492,7 @@ Base64Status_t base64Decode(uint8_t* pDest,
 
     if (returnVal == Base64Success)
     {
-        *pResultLen = outputLen;
+        *resultLen = outputLen;
     }
 
     return returnVal;

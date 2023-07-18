@@ -91,12 +91,12 @@ extern "C" {
     /**
      * @brief Decode Base64 encoded data.
      *
-     * @param[out] pDest Pointer to a buffer for storing the decoded result.
-     * @param[in]  destLen Length of the pDest buffer.
-     * @param[out] pResultLen Pointer to the length of the decoded result.
-     * @param[in]  pEncodedData Pointer to a buffer containing the Base64 encoded
+     * @param[out] dest Pointer to a buffer for storing the decoded result.
+     * @param[in]  destLen Length of the dest buffer.
+     * @param[out] resultLen Pointer to the length of the decoded result.
+     * @param[in]  encodedData Pointer to a buffer containing the Base64 encoded
      *             data that is intended to be decoded.
-     * @param[in]  encodedLen Length of the pEncodedData buffer.
+     * @param[in]  encodedLen Length of the encodedData buffer.
      *
      * @return     One of the following:
      *             - #Base64Success if the Base64 encoded data was valid
@@ -104,10 +104,10 @@ extern "C" {
      *             - An error code defined in ota_base64_private.h if the
      *               encoded data or input parameters are invalid.
      */
-    Base64Status_t base64Decode(uint8_t* pDest,
+    Base64Status_t base64_Decode(uint8_t* dest,
         const size_t destLen,
-        size_t* pResultLen,
-        const uint8_t* pEncodedData,
+        size_t* resultLen,
+        const uint8_t* encodedData,
         const size_t encodedLen);
 
     /* *INDENT-OFF* */
