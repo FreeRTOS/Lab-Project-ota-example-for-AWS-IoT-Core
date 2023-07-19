@@ -19,7 +19,7 @@
 /**
  * @brief Number of keys in cbor get stream request message.
  */
-#define OTA_CBOR_GETSTREAMREQUEST_ITEM_COUNT    6
+#define CBOR_GETSTREAMREQUEST_ITEM_COUNT    6
 
 /* ========================================================================== */
 
@@ -47,36 +47,36 @@ static CborError checkDataType( CborType expectedType,
 /**
  * @brief Decode a Get Stream response message from AWS IoT OTA.
  *
- * @param[in] pMessageBuffer message to decode.
+ * @param[in] messageBuffer message to decode.
  * @param[in] messageSize size of the message to decode.
- * @param[out] pFileId Decoded file id value.
- * @param[out] pBlockId Decoded block id value.
- * @param[out] pBlockSize Decoded block size value.
- * @param[out] pPayload Buffer for the decoded payload.
- * @param[in,out] pPayloadSize maximum size of the buffer as in and actual
+ * @param[out] fileId Decoded file id value.
+ * @param[out] blockId Decoded block id value.
+ * @param[out] blockSize Decoded block size value.
+ * @param[out] payload Buffer for the decoded payload.
+ * @param[in,out] payloadSize maximum size of the buffer as in and actual
  * payload size for the decoded payload as out.
  *
  * @return TRUE when success, otherwise FALSE.
  */
-bool OTA_CBOR_Decode_GetStreamResponseMessage( const uint8_t * pMessageBuffer,
+bool CBOR_Decode_GetStreamResponseMessage( const uint8_t * messageBuffer,
                                                size_t messageSize,
-                                               int32_t * pFileId,
-                                               int32_t * pBlockId,
-                                               int32_t * pBlockSize,
-                                               uint8_t * const * pPayload,
-                                               size_t * pPayloadSize )
+                                               int32_t * fileId,
+                                               int32_t * blockId,
+                                               int32_t * blockSize,
+                                               uint8_t * const * payload,
+                                               size_t * payloadSize )
 {
     CborError cborResult = CborNoError;
     CborParser cborParser;
     CborValue cborValue, cborMap;
     size_t payloadSizeReceived = 0;
 
-    if( ( pFileId == NULL ) ||
-        ( pBlockId == NULL ) ||
-        ( pBlockSize == NULL ) ||
-        ( pPayload == NULL ) ||
-        ( pPayloadSize == NULL ) ||
-        ( pMessageBuffer == NULL ) )
+    if( ( fileId == NULL ) ||
+        ( blockId == NULL ) ||
+        ( blockSize == NULL ) ||
+        ( payload == NULL ) ||
+        ( payloadSize == NULL ) ||
+        ( messageBuffer == NULL ) )
     {
         cborResult = CborUnknownError;
     }
@@ -84,7 +84,7 @@ bool OTA_CBOR_Decode_GetStreamResponseMessage( const uint8_t * pMessageBuffer,
     /* Initialize the parser. */
     if( CborNoError == cborResult )
     {
-        cborResult = cbor_parser_init( pMessageBuffer,
+        cborResult = cbor_parser_init( messageBuffer,
                                        messageSize,
                                        0,
                                        &cborParser,
@@ -117,7 +117,7 @@ bool OTA_CBOR_Decode_GetStreamResponseMessage( const uint8_t * pMessageBuffer,
     if( CborNoError == cborResult )
     {
         cborResult = cbor_value_get_int( &cborValue,
-                                         ( int * ) pFileId );
+                                         ( int * ) fileId );
     }
 
     /* Find the block ID. */
@@ -136,7 +136,7 @@ bool OTA_CBOR_Decode_GetStreamResponseMessage( const uint8_t * pMessageBuffer,
     if( CborNoError == cborResult )
     {
         cborResult = cbor_value_get_int( &cborValue,
-                                         ( int * ) pBlockId );
+                                         ( int * ) blockId );
     }
 
     /* Find the block size. */
@@ -155,7 +155,7 @@ bool OTA_CBOR_Decode_GetStreamResponseMessage( const uint8_t * pMessageBuffer,
     if( CborNoError == cborResult )
     {
         cborResult = cbor_value_get_int( &cborValue,
-                                         ( int * ) pBlockSize );
+                                         ( int * ) blockSize );
     }
 
     /* Find the payload bytes. */
@@ -181,9 +181,9 @@ bool OTA_CBOR_Decode_GetStreamResponseMessage( const uint8_t * pMessageBuffer,
     if( CborNoError == cborResult )
     {
         /* Check if the received payload size is less than or equal to buffer size. */
-        if( payloadSizeReceived <= ( *pPayloadSize ) )
+        if( payloadSizeReceived <= ( *payloadSize ) )
         {
-            *pPayloadSize = payloadSizeReceived;
+            *payloadSize = payloadSizeReceived;
         }
         else
         {
@@ -194,8 +194,8 @@ bool OTA_CBOR_Decode_GetStreamResponseMessage( const uint8_t * pMessageBuffer,
     if( CborNoError == cborResult )
     {
         cborResult = cbor_value_copy_byte_string( &cborValue,
-                                                  *pPayload,
-                                                  pPayloadSize,
+                                                  *payload,
+                                                  payloadSize,
                                                   NULL );
     }
 
@@ -207,37 +207,37 @@ bool OTA_CBOR_Decode_GetStreamResponseMessage( const uint8_t * pMessageBuffer,
  * service. The service allows block count or block bitmap to be requested,
  * but not both.
  *
- * @param[in,out] pMessageBuffer Buffer to store the encoded message.
+ * @param[in,out] messageBuffer Buffer to store the encoded message.
  * @param[in] messageBufferSize Size of the buffer to store the encoded message.
- * @param[out] pEncodedMessageSize Size of the final encoded message.
- * @param[in] pClientToken Client token in the encoded message.
+ * @param[out] encodedMessageSize Size of the final encoded message.
+ * @param[in] clientToken Client token in the encoded message.
  * @param[in] fileId Value of file id in the encoded message.
  * @param[in] blockSize Value of block size in the encoded message.
  * @param[in] blockOffset Value of block offset in the encoded message.
- * @param[in] pBlockBitmap bitmap in the encoded message.
+ * @param[in] blockBitmap bitmap in the encoded message.
  * @param[in] blockBitmapSize Size of the provided bitmap buffer.
  * @param[in] numOfBlocksRequested number of blocks to request in the encoded message.
  *
  * @return TRUE when success, otherwise FALSE.
  */
-bool OTA_CBOR_Encode_GetStreamRequestMessage( uint8_t * pMessageBuffer,
+bool CBOR_Encode_GetStreamRequestMessage( uint8_t * messageBuffer,
                                               size_t messageBufferSize,
-                                              size_t * pEncodedMessageSize,
-                                              const char * pClientToken,
+                                              size_t * encodedMessageSize,
+                                              const char * clientToken,
                                               int32_t fileId,
                                               int32_t blockSize,
                                               int32_t blockOffset,
-                                              const uint8_t * pBlockBitmap,
+                                              const uint8_t * blockBitmap,
                                               size_t blockBitmapSize,
                                               int32_t numOfBlocksRequested )
 {
     CborError cborResult = CborNoError;
     CborEncoder cborEncoder, cborMapEncoder;
 
-    if( ( pMessageBuffer == NULL ) ||
-        ( pEncodedMessageSize == NULL ) ||
-        ( pClientToken == NULL ) ||
-        ( pBlockBitmap == NULL ) )
+    if( ( messageBuffer == NULL ) ||
+        ( encodedMessageSize == NULL ) ||
+        ( clientToken == NULL ) ||
+        ( blockBitmap == NULL ) )
     {
         cborResult = CborUnknownError;
     }
@@ -246,12 +246,12 @@ bool OTA_CBOR_Encode_GetStreamRequestMessage( uint8_t * pMessageBuffer,
     if( CborNoError == cborResult )
     {
         cbor_encoder_init( &cborEncoder,
-                           pMessageBuffer,
+                           messageBuffer,
                            messageBufferSize,
                            0 );
         cborResult = cbor_encoder_create_map( &cborEncoder,
                                               &cborMapEncoder,
-                                              OTA_CBOR_GETSTREAMREQUEST_ITEM_COUNT );
+                                              CBOR_GETSTREAMREQUEST_ITEM_COUNT );
     }
 
     /* Encode the client token key and value. */
@@ -264,7 +264,7 @@ bool OTA_CBOR_Encode_GetStreamRequestMessage( uint8_t * pMessageBuffer,
     if( CborNoError == cborResult )
     {
         cborResult = cbor_encode_text_stringz( &cborMapEncoder,
-                                               pClientToken );
+                                               clientToken );
     }
 
     /* Encode the file ID key and value. */
@@ -316,7 +316,7 @@ bool OTA_CBOR_Encode_GetStreamRequestMessage( uint8_t * pMessageBuffer,
     if( CborNoError == cborResult )
     {
         cborResult = cbor_encode_byte_string( &cborMapEncoder,
-                                              pBlockBitmap,
+                                              blockBitmap,
                                               blockBitmapSize );
     }
 
@@ -343,8 +343,8 @@ bool OTA_CBOR_Encode_GetStreamRequestMessage( uint8_t * pMessageBuffer,
     /* Get the encoded size. */
     if( CborNoError == cborResult )
     {
-        *pEncodedMessageSize = cbor_encoder_get_buffer_size( &cborEncoder,
-                                                             pMessageBuffer );
+        *encodedMessageSize = cbor_encoder_get_buffer_size( &cborEncoder,
+                                                             messageBuffer );
     }
 
     return CborNoError == cborResult;
