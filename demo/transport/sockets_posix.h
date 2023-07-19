@@ -39,17 +39,17 @@ typedef enum SocketStatus
  */
 typedef struct ServerInfo
 {
-    const char * pHostName; /**< @brief Server host name. */
-    size_t hostNameLength;  /**< @brief Length of the server host name. */
-    uint16_t port;          /**< @brief Server port in host-order. */
+    const char * hostName; /**< @brief Server host name. */
+    size_t hostNameLength; /**< @brief Length of the server host name. */
+    uint16_t port;         /**< @brief Server port in host-order. */
 } ServerInfo_t;
 
 /**
  * @brief Establish a connection to server.
  *
- * @param[out] pTcpSocket The output parameter to return the created socket
+ * @param[out] tcpSocket The output parameter to return the created socket
  * descriptor.
- * @param[in] pServerInfo Server connection info.
+ * @param[in] serverInfo Server connection info.
  * @param[in] sendTimeoutMs Timeout for transport send.
  * @param[in] recvTimeoutMs Timeout for transport recv.
  *
@@ -59,8 +59,8 @@ typedef struct ServerInfo
  * #SOCKETS_INVALID_PARAMETER, #SOCKETS_DNS_FAILURE,
  * #SOCKETS_CONNECT_FAILURE on error.
  */
-SocketStatus_t Sockets_Connect( int32_t * pTcpSocket,
-                                const ServerInfo_t * pServerInfo,
+SocketStatus_t Sockets_Connect( int32_t * tcpSocket,
+                                const ServerInfo_t * serverInfo,
                                 uint32_t sendTimeoutMs,
                                 uint32_t recvTimeoutMs );
 
