@@ -49,8 +49,7 @@
 /*
  * Configure the Maximum size of the data payload.
  */
-#define mqttFileDownloader_CONFIG_BLOCK_SIZE       1024U
-
+#define mqttFileDownloader_CONFIG_BLOCK_SIZE       256U
 /*
  * @brief  MQTT File Downloader return codes.
  */
