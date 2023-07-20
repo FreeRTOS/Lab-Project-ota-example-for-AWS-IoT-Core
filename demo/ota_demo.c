@@ -17,12 +17,12 @@
 #include "ota_demo.h"
 #include "ota_job_processor.h"
 
-#define CONFIG_BLOCK_SIZE       256U
 #define CONFIG_MAX_FILE_SIZE    65536U
 #define NUM_OF_BLOCKS_REQUESTED 1U
 #define MAX_THING_NAME_SIZE     128U
 #define MAX_JOB_ID_LENGTH       64U
 
+MqttFileDownloaderContext_t mqttFileDownloaderContext = { 0 };
 static uint32_t numOfBlocksRemaining = 0;
 static uint32_t currentBlockOffset = 0;
 static uint8_t currentFileId = 0;
@@ -66,6 +66,7 @@ bool otaDemo_handleIncomingMQTTMessage( char * topic,
         messageLength );
 
     handled = handled || mqttDownloader_handleIncomingMessage(
+                             &mqttFileDownloaderContext,
                              &handleMqttStreamsBlockArrivedCallback,
                              topic,
                              topicLength,
@@ -108,21 +109,23 @@ static void processOtaDocumentCallback( AfrOtaJobDocumentFields_t * params )
     char thingName[ MAX_THING_NAME_SIZE + 1 ] = { 0 };
     mqttWrapper_getThingName( thingName );
 
-    numOfBlocksRemaining = params->fileSize / CONFIG_BLOCK_SIZE;
-    numOfBlocksRemaining += ( params->fileSize % CONFIG_BLOCK_SIZE > 0 ) ? 1
+    numOfBlocksRemaining = params->fileSize / mqttFileDownloader_CONFIG_BLOCK_SIZE;
+    numOfBlocksRemaining += ( params->fileSize % mqttFileDownloader_CONFIG_BLOCK_SIZE > 0 ) ? 1
                                                                          : 0;
     currentFileId = params->fileId;
     currentBlockOffset = 0;
     totalBytesReceived = 0;
     /* Initalize the File downloader */
-    mqttDownloader_init( params->imageRef,
+    mqttDownloader_init( &mqttFileDownloaderContext,
+                         params->imageRef,
                          params->imageRefLen,
                          thingName,
                          DATA_TYPE_JSON );
 
     /* Request the first block */
-    mqttDownloader_requestDataBlock( currentFileId,
-                                     CONFIG_BLOCK_SIZE,
+    mqttDownloader_requestDataBlock( &mqttFileDownloaderContext,
+                                     currentFileId,
+                                     mqttFileDownloader_CONFIG_BLOCK_SIZE,
                                      currentBlockOffset,
                                      NUM_OF_BLOCKS_REQUESTED );
 }
@@ -149,8 +152,9 @@ static void handleMqttStreamsBlockArrivedCallback(
     else
     {
         currentBlockOffset++;
-        mqttDownloader_requestDataBlock( currentFileId,
-                                         CONFIG_BLOCK_SIZE,
+        mqttDownloader_requestDataBlock( &mqttFileDownloaderContext,
+                                         currentFileId,
+                                         mqttFileDownloader_CONFIG_BLOCK_SIZE,
                                          currentBlockOffset,
                                          NUM_OF_BLOCKS_REQUESTED );
     }
