@@ -136,4 +136,4 @@ bool mqttDownloader_handleIncomingMessage( MqttFileDownloaderContext_t * context
                                         uint8_t * message,
                                         size_t messageLength );
 
-#endif // #ifndef MQTT_FILE_DOWNLOADER_H
+#endif /* #ifndef MQTT_FILE_DOWNLOADER_H */

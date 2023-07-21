@@ -121,10 +121,6 @@ static uint16_t createTopic( char *topicBuffer,
 {
     uint16_t topicLen = 0;
     char streamNameBuff[STREAM_NAME_MAX_LEN];
-
-    memset(streamNameBuff, '\0', STREAM_NAME_MAX_LEN);
-    memcpy(streamNameBuff, streamName, streamNameLength);
-
     /* NULL-terminated list of topic string parts. */
     const char * topicParts[] = {
         MQTT_API_THINGS,
@@ -134,6 +130,9 @@ static uint16_t createTopic( char *topicBuffer,
         NULL,
         NULL
     };
+
+    memset(streamNameBuff, '\0', STREAM_NAME_MAX_LEN);
+    memcpy(streamNameBuff, streamName, streamNameLength);
 
     topicParts[ 1 ] = ( const char * ) thingName;
     topicParts[ 3 ] = ( const char * ) streamNameBuff;
@@ -389,6 +388,7 @@ bool mqttDownloader_handleIncomingMessage( MqttFileDownloaderContext_t * context
     uint8_t decodingStatus = MQTTFileDownloaderSuccess;
     uint8_t decodedData[ mqttFileDownloader_CONFIG_BLOCK_SIZE ];
     size_t decodedDataLength = 0;
+    MqttFileDownloaderDataBlockInfo_t dataBlock;
 
     printf( "MQTT streams handling incoming message \n" );
 
@@ -408,8 +408,6 @@ bool mqttDownloader_handleIncomingMessage( MqttFileDownloaderContext_t * context
                 ( int ) messageLength,
                 ( char * ) message );
 
-
-        MqttFileDownloaderDataBlockInfo_t dataBlock;
         dataBlock.payload = NULL;
         dataBlock.payloadLength = 0U;
 
