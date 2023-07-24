@@ -246,7 +246,6 @@ static int32_t setRootCa( const SSL_CTX * sslContext,
                           int rootCaLength )
 {
     int32_t sslStatus = 1;
-    FILE * rootCaFile = NULL;
     X509 * rootCa = NULL;
     BIO * bio = NULL;
 
@@ -282,22 +281,6 @@ static int32_t setRootCa( const SSL_CTX * sslContext,
         /* Free the X509 object used to set the root CA. */
         X509_free( rootCa );
         rootCa = NULL;
-    }
-
-    /* Close the file if it was successfully opened. */
-    if( rootCaFile != NULL )
-    {
-        /* MISRA Rule 21.6 flags the following line for using the standard
-         * library input/output function `fclose()`. This rule is suppressed
-         * because openssl function #PEM_read_X509 takes an argument of type
-         * `FILE *` for reading the root ca PEM file and `fopen()` is used to
-         * get the file pointer. The file opened with `fopen()` needs to be
-         * closed by calling `fclose()`.*/
-        /* coverity[misra_c_2012_rule_21_6_violation] */
-        if( fclose( rootCaFile ) != 0 )
-        {
-            LogWarn( ( "fclose failed to close file." ) );
-        }
     }
 
     /* Log the success message if we successfully imported the root CA. */
