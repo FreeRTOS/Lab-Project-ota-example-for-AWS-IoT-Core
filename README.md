@@ -26,6 +26,22 @@ make
 ./coreOTA certificateFilePath privateKeyFilePath rootCAFilePath endpoint thingName
 ```
 
+## Unit Tests
+To run the unit tests, you'll need to first build them. You'll likely need to fetch any git submodules using the following commands...
+
+```
+git submodule sync
+git submodule update --init --recursive
+```
+
+From here you can build the unit tests...
+```
+cmake -B build -S test
+make -C build
+```
+
+Once built, the test executables can be found under the `build/bin/tests/` directory
+
 ## Security
 
 See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more

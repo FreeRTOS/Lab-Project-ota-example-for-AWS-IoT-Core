@@ -13,6 +13,7 @@
 
 #include "unity.h"
 
+#include "job_parser.h"
 #include "ota_job_processor.h"
 
 static bool result;

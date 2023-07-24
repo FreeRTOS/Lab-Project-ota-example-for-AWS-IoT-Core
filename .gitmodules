@@ -1,0 +1,9 @@
+[submodule "CMock"]
+    path = test/lib/CMock
+    url = https://github.com/ThrowTheSwitch/CMock.git
+[submodule "test/lib/CMock"]
+	path = test/lib/CMock
+	url = https://github.com/ThrowTheSwitch/CMock.git
+[submodule "test/lib/CoreJSON"]
+	path = test/lib/CoreJSON
+	url = https://github.com/FreeRTOS/coreJSON.git

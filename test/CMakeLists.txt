@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 3.16.0)
 
-project("AWS IoT Jobs OTA Handler Tests"
+project("AWS IoT CoreOTA Unit Tests"
         VERSION 1.0.0
         LANGUAGES C )
 
@@ -34,7 +34,7 @@ set(MODULE_ROOT_DIR ${__MODULE_ROOT_DIR} CACHE INTERNAL "coreOTA-Jobs-Handler re
 set( CMOCK_DIR ${MODULE_ROOT_DIR}/test/lib/CMock CACHE INTERNAL "CMock library source directory." )
 
 # Include CMock build configuration.
-include( lib/cmock_build.cmake )
+include( ${MODULE_ROOT_DIR}/test/unit-test/cmock_build.cmake )
 
 # Check if the CMock source directory exists, and if not present, clone the submodule
 # if BUILD_CLONE_SUBMODULES configuration is enabled.
