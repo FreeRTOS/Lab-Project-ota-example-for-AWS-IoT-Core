@@ -231,12 +231,12 @@ uint8_t mqttDownloader_requestDataBlock( MqttFileDownloaderContext_t * context,
 
     memset( getStreamRequest, '\0', GET_STREAM_REQUEST_BUFFER_SIZE );
 
-    if (context == NULL)
+    if ( context == NULL )
     {
         requestStatus = MQTTFileDownloaderBadParameter;
     }
 
-    if ( (context->topicStreamDataLength == 0) || (context->topicGetStreamLength == 0) )
+    if ( context && (( context->topicStreamDataLength == 0 ) || ( context->topicGetStreamLength == 0 )) )
     {
         requestStatus = MQTTFileDownloaderNotInitialized;
     }
