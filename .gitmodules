@@ -1,6 +1,3 @@
-[submodule "CMock"]
-    path = test/lib/CMock
-    url = https://github.com/ThrowTheSwitch/CMock.git
 [submodule "test/lib/CMock"]
 	path = test/lib/CMock
 	url = https://github.com/ThrowTheSwitch/CMock.git
