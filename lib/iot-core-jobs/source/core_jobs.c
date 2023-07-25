@@ -71,7 +71,8 @@ bool isMessageJobStartNextAccepted( const char * topic,
               "$aws/things/",
               thingName,
               "/jobs/start-next/accepted" );
-    isMatch = (uint32_t) strnlen( expectedBuffer, TOPIC_BUFFER_SIZE ) == topicLength;
+    isMatch = ( uint32_t ) strnlen( expectedBuffer, TOPIC_BUFFER_SIZE ) ==
+              topicLength;
     isMatch = isMatch && strncmp( expectedBuffer, topic, topicLength ) == 0;
     return isMatch;
 }
@@ -162,9 +163,9 @@ bool coreJobs_startNextPendingJob( char * thingname,
     if( topicLength > 0 && messageLength > 0 )
     {
         published = mqttWrapper_publish( topicBuffer,
-                                 topicLength,
-                                 ( uint8_t * ) messageBuffer,
-                                 messageLength );
+                                         topicLength,
+                                         ( uint8_t * ) messageBuffer,
+                                         messageLength );
     }
 
     return published;
@@ -199,9 +200,9 @@ bool coreJobs_updateJobStatus( char * thingname,
     if( topicLength > 0 && messageLength > 0 )
     {
         published = mqttWrapper_publish( topicBuffer,
-                                 topicLength,
-                                 ( uint8_t * ) messageBuffer,
-                                 messageLength );
+                                         topicLength,
+                                         ( uint8_t * ) messageBuffer,
+                                         messageLength );
     }
 
     return published;
