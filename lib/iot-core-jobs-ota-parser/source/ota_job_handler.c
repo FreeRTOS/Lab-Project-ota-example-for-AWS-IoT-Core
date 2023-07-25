@@ -34,12 +34,11 @@ bool otaParser_handleJobDoc( OtaDocProcessor_t docCallback,
 {
     bool docHandled = false;
     JSONStatus_t isFreeRTOSOta = JSONIllegalDocument;
+    const char * afrOtaDocHeader;
+    size_t afrOtaDocHeaderLength = 0U;
 
     ( void ) jobId;
     ( void ) jobIdLength;
-
-    const char * afrOtaDocHeader;
-    size_t afrOtaDocHeaderLength = 0U;
 
     if( ( jobDoc != NULL ) && ( jobDocLength > 0U ) )
     {

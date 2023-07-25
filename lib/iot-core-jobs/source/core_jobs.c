@@ -71,7 +71,8 @@ bool isMessageJobStartNextAccepted( const char * topic,
               "$aws/things/",
               thingName,
               "/jobs/start-next/accepted" );
-    isMatch = strnlen( expectedBuffer, TOPIC_BUFFER_SIZE ) == topicLength;
+    isMatch = ( uint32_t ) strnlen( expectedBuffer, TOPIC_BUFFER_SIZE ) ==
+              topicLength;
     isMatch = isMatch && strncmp( expectedBuffer, topic, topicLength ) == 0;
     return isMatch;
 }
@@ -106,10 +107,12 @@ bool getJobStartNextFields( const uint8_t * message,
     return jsonResult == JSONSuccess;
 }
 
-// Can be called on any incoming MQTT message
-// If the incoming MQTT message is intended for an AWS IoT Jobs topic, then
-// this function parses the Job doc and distributes it through the Jobs
-// chain of responsibilities, then returns true. Returns false otherwise.
+/*
+ * Can be called on any incoming MQTT message
+ * If the incoming MQTT message is intended for an AWS IoT Jobs topic, then
+ * this function parses the Job doc and distributes it through the Jobs
+ * chain of responsibilities, then returns true. Returns false otherwise.
+ */
 bool coreJobs_handleIncomingMQTTMessage(
     const IncomingJobDocHandler_t jobDocHandler,
     const char * topic,
@@ -160,9 +163,9 @@ bool coreJobs_startNextPendingJob( char * thingname,
     if( topicLength > 0 && messageLength > 0 )
     {
         published = mqttWrapper_publish( topicBuffer,
-                                 topicLength,
-                                 ( uint8_t * ) messageBuffer,
-                                 messageLength );
+                                         topicLength,
+                                         ( uint8_t * ) messageBuffer,
+                                         messageLength );
     }
 
     return published;
@@ -197,9 +200,9 @@ bool coreJobs_updateJobStatus( char * thingname,
     if( topicLength > 0 && messageLength > 0 )
     {
         published = mqttWrapper_publish( topicBuffer,
-                                 topicLength,
-                                 ( uint8_t * ) messageBuffer,
-                                 messageLength );
+                                         topicLength,
+                                         ( uint8_t * ) messageBuffer,
+                                         messageLength );
     }
 
     return published;
@@ -210,9 +213,11 @@ static size_t getStartNextPendingJobExecutionTopic( const char * thingname,
                                                     char * buffer,
                                                     size_t bufferSize )
 {
+    size_t topicLength = 0;
+
     assert( bufferSize >= 28U + thingnameLength );
 
-    size_t topicLength = sizeof( "$aws/things/" ) - 1;
+    topicLength = sizeof( "$aws/things/" ) - 1;
     memcpy( buffer, "$aws/things/", sizeof( "$aws/things/" ) - 1 );
     memcpy( buffer + topicLength, thingname, thingnameLength );
     topicLength += thingnameLength;
@@ -228,9 +233,11 @@ static size_t getStartNextPendingJobExecutionMsg( const char * clientToken,
                                                   char * buffer,
                                                   size_t bufferSize )
 {
+    size_t messageLength = 0;
+
     assert( bufferSize >= 18U + clientTokenLength );
 
-    size_t messageLength = sizeof( "{\"clientToken\":\"" ) - 1;
+    messageLength = sizeof( "{\"clientToken\":\"" ) - 1;
     memcpy( buffer,
             "{\"clientToken\":\"",
             sizeof( "{\"clientToken\":\"" ) - 1 );
@@ -248,9 +255,11 @@ static size_t getUpdateJobExecutionTopic( char * thingname,
                                           char * buffer,
                                           size_t bufferSize )
 {
+    size_t topicLength = 0;
+
     assert( bufferSize >= 25U + thingnameLength + jobIdLength );
 
-    size_t topicLength = sizeof( "$aws/things/" ) - 1;
+    topicLength = sizeof( "$aws/things/" ) - 1;
     memcpy( buffer, "$aws/things/", sizeof( "$aws/things/" ) - 1 );
     memcpy( buffer + topicLength, thingname, thingnameLength );
     topicLength += thingnameLength;
@@ -269,10 +278,12 @@ static size_t getUpdateJobExecutionMsg( JobStatus_t status,
                                         char * buffer,
                                         size_t bufferSize )
 {
+    size_t messageLength = 0;
+
     assert( bufferSize >=
             34U + expectedVersionLength + jobStatusStringLengths[ status ] );
 
-    size_t messageLength = sizeof( "{\"status\":\"" ) - 1;
+    messageLength = sizeof( "{\"status\":\"" ) - 1;
     memcpy( buffer, "{\"status\":\"", sizeof( "{\"status\":\"" ) - 1 );
     memcpy( buffer + messageLength,
             jobStatusString[ status ],
