@@ -47,12 +47,12 @@ static size_t stringBuilder( char * buffer,
  *
  * @return uint16_t Length of the MQTT topic, not including the terminator.
  */
-static uint16_t createTopic( char *topicBuffer,
-                     size_t topicBufferLen,
-                     char * streamName,
-                     size_t streamNameLength,
-                     char * thingName,
-                     char * apiSuffix);
+static uint16_t createTopic( char * topicBuffer,
+                             size_t topicBufferLen,
+                             char * streamName,
+                             size_t streamNameLength,
+                             char * thingName,
+                             char * apiSuffix );
 
 /**
  * @brief Handles and decodes the received message in CBOR format.
@@ -64,8 +64,10 @@ static uint16_t createTopic( char *topicBuffer,
  *
  * @return uint8_t returns appropriate MQTT File Downloader Status.
  */
-static uint8_t handleCborMessage(uint8_t * decodedData, size_t * decodedDataLength,
-                          uint8_t * message, size_t messageLength);
+static uint8_t handleCborMessage( uint8_t * decodedData,
+                                  size_t * decodedDataLength,
+                                  uint8_t * message,
+                                  size_t messageLength );
 
 /**
  * @brief Handles and decodes the received message in JSON format.
@@ -77,9 +79,10 @@ static uint8_t handleCborMessage(uint8_t * decodedData, size_t * decodedDataLeng
  *
  * @return uint8_t returns appropriate MQTT File Downloader Status.
  */
-static uint8_t handleJsonMessage(uint8_t * decodedData, size_t * decodedDataLength,
-                          uint8_t * message, size_t messageLength);
-
+static uint8_t handleJsonMessage( uint8_t * decodedData,
+                                  size_t * decodedDataLength,
+                                  uint8_t * message,
+                                  size_t messageLength );
 
 static size_t stringBuilder( char * buffer,
                              size_t bufferSizeBytes,
@@ -95,15 +98,13 @@ static size_t stringBuilder( char * buffer,
     {
         thisLength = strlen( strings[ i ] );
 
-        if (( thisLength + curLen + 1U ) > bufferSizeBytes )
+        if( ( thisLength + curLen + 1U ) > bufferSizeBytes )
         {
             curLen = 0;
             break;
         }
 
-        ( void ) strncat( buffer,
-                          strings[ i ],
-                          bufferSizeBytes - curLen - 1U );
+        ( void ) strncat( buffer, strings[ i ], bufferSizeBytes - curLen - 1U );
         curLen += thisLength;
     }
 
@@ -112,28 +113,31 @@ static size_t stringBuilder( char * buffer,
     return curLen;
 }
 
-static uint16_t createTopic( char *topicBuffer,
-                     size_t topicBufferLen,
-                     char * streamName,
-                     size_t streamNameLength,
-                     char * thingName,
-                     char * apiSuffix)
+static uint16_t createTopic( char * topicBuffer,
+                             size_t topicBufferLen,
+                             char * streamName,
+                             size_t streamNameLength,
+                             char * thingName,
+                             char * apiSuffix )
 {
     uint16_t topicLen = 0;
-    char streamNameBuff[STREAM_NAME_MAX_LEN + 1];
+    char streamNameBuff[ STREAM_NAME_MAX_LEN + 1 ];
 
     memset(streamNameBuff, '\0', STREAM_NAME_MAX_LEN + 1);
     memcpy(streamNameBuff, streamName, streamNameLength);
 
     /* NULL-terminated list of topic string parts. */
-    const char * topicParts[] = {
-        MQTT_API_THINGS,
-        NULL, /* Thing Name not available at compile time, initialized below. */
-        MQTT_API_STREAMS,
-        NULL, /* Stream Name not available at compile time, initialized below.*/
-        NULL,
-        NULL
-    };
+    const char * topicParts[] = { MQTT_API_THINGS,
+                                  NULL, /* Thing Name not available at compile
+                                           time, initialized below. */
+                                  MQTT_API_STREAMS,
+                                  NULL, /* Stream Name not available at compile
+                                           time, initialized below.*/
+                                  NULL,
+                                  NULL };
+
+    memset( streamNameBuff, '\0', STREAM_NAME_MAX_LEN );
+    memcpy( streamNameBuff, streamName, streamNameLength );
 
     topicParts[ 1 ] = ( const char * ) thingName;
     topicParts[ 3 ] = ( const char * ) streamNameBuff;
@@ -144,7 +148,6 @@ static uint16_t createTopic( char *topicBuffer,
                                            topicParts );
 
     return topicLen;
-
 }
 
 uint8_t mqttDownloader_init( MqttFileDownloaderContext_t * context,
@@ -158,21 +161,22 @@ uint8_t mqttDownloader_init( MqttFileDownloaderContext_t * context,
     bool subscribeStatus = false;
     uint8_t initStatus = MQTTFileDownloaderSuccess;
 
-    if (context == NULL)
+    if( context == NULL )
     {
         initStatus = MQTTFileDownloaderBadParameter;
     }
 
-    if ( initStatus == MQTTFileDownloaderSuccess )
+    if( initStatus == MQTTFileDownloaderSuccess )
     {
         /* Initializing MQTT File Downloader context */
-        memset( context->topicStreamData, '\0', TOPIC_STREAM_DATA_BUFFER_SIZE);
-        memset( context->topicGetStream, '\0', TOPIC_GET_STREAM_BUFFER_SIZE);
+        memset( context->topicStreamData, '\0', TOPIC_STREAM_DATA_BUFFER_SIZE );
+        memset( context->topicGetStream, '\0', TOPIC_GET_STREAM_BUFFER_SIZE );
         context->topicStreamDataLength = 0U;
         context->topicGetStreamLength = 0U;
         context->dataType = dataType;
 
-        if (dataType == DATA_TYPE_JSON) {
+        if( dataType == DATA_TYPE_JSON )
+        {
             streamDataApiSuffix = MQTT_API_DATA_JSON;
         }
         else
@@ -180,8 +184,14 @@ uint8_t mqttDownloader_init( MqttFileDownloaderContext_t * context,
             streamDataApiSuffix = MQTT_API_DATA_CBOR;
         }
 
-        context->topicStreamDataLength = createTopic(context->topicStreamData, TOPIC_STREAM_DATA_BUFFER_SIZE, streamName, streamNameLength, thingName, streamDataApiSuffix);
-        if ( context->topicStreamDataLength == 0 )
+        context->topicStreamDataLength = createTopic(
+            context->topicStreamData,
+            TOPIC_STREAM_DATA_BUFFER_SIZE,
+            streamName,
+            streamNameLength,
+            thingName,
+            streamDataApiSuffix );
+        if( context->topicStreamDataLength == 0 )
         {
             initStatus = MQTTFileDownloaderInitFailed;
         }
@@ -189,9 +199,10 @@ uint8_t mqttDownloader_init( MqttFileDownloaderContext_t * context,
         printf( "Data topic is %s\n", context->topicStreamData );
     }
 
-    if ( initStatus == MQTTFileDownloaderSuccess )
+    if( initStatus == MQTTFileDownloaderSuccess )
     {
-        if (dataType == DATA_TYPE_JSON) {
+        if( dataType == DATA_TYPE_JSON )
+        {
             getStreamApiSuffix = MQTT_API_GET_JSON;
         }
         else
@@ -199,8 +210,14 @@ uint8_t mqttDownloader_init( MqttFileDownloaderContext_t * context,
             getStreamApiSuffix = MQTT_API_GET_CBOR;
         }
 
-        context->topicGetStreamLength = createTopic(context->topicGetStream, TOPIC_GET_STREAM_BUFFER_SIZE, streamName, streamNameLength, thingName, getStreamApiSuffix);
-        if ( context->topicGetStreamLength == 0 )
+        context
+            ->topicGetStreamLength = createTopic( context->topicGetStream,
+                                                  TOPIC_GET_STREAM_BUFFER_SIZE,
+                                                  streamName,
+                                                  streamNameLength,
+                                                  thingName,
+                                                  getStreamApiSuffix );
+        if( context->topicGetStreamLength == 0 )
         {
             initStatus = MQTTFileDownloaderInitFailed;
         }
@@ -208,11 +225,14 @@ uint8_t mqttDownloader_init( MqttFileDownloaderContext_t * context,
         printf( "Get stream topic is %s\n", context->topicGetStream );
     }
 
-    if ( initStatus == MQTTFileDownloaderSuccess )
+    if( initStatus == MQTTFileDownloaderSuccess )
     {
-        subscribeStatus = mqttWrapper_subscribe( context->topicStreamData, context->topicStreamDataLength );
+        subscribeStatus = mqttWrapper_subscribe( context->topicStreamData,
+                                                 context
+                                                     ->topicStreamDataLength );
 
-        initStatus = subscribeStatus ? MQTTFileDownloaderSuccess : MQTTFileDownloaderPublishFailed;
+        initStatus = subscribeStatus ? MQTTFileDownloaderSuccess
+                                     : MQTTFileDownloaderPublishFailed;
     }
 
     return initStatus;
@@ -231,76 +251,81 @@ uint8_t mqttDownloader_requestDataBlock( MqttFileDownloaderContext_t * context,
 
     memset( getStreamRequest, '\0', GET_STREAM_REQUEST_BUFFER_SIZE );
 
-    if ( context == NULL )
+    if( context == NULL )
     {
         requestStatus = MQTTFileDownloaderBadParameter;
     }
 
-    if ( context && (( context->topicStreamDataLength == 0 ) || ( context->topicGetStreamLength == 0 )) )
+    if( ( context->topicStreamDataLength == 0 ) ||
+        ( context->topicGetStreamLength == 0 ) )
     {
         requestStatus = MQTTFileDownloaderNotInitialized;
     }
 
-    if ( requestStatus == MQTTFileDownloaderSuccess )
+    if( requestStatus == MQTTFileDownloaderSuccess )
     {
         /*
-        * Get stream request format
-        *
-        *   "{ \"s\" : 1, \"f\": 1, \"l\": 256, \"o\": 0, \"n\": 1 }";
-        */
+         * Get stream request format
+         *
+         *   "{ \"s\" : 1, \"f\": 1, \"l\": 256, \"o\": 0, \"n\": 1 }";
+         */
         if( context->dataType == DATA_TYPE_JSON )
         {
             snprintf( getStreamRequest,
-                    GET_STREAM_REQUEST_BUFFER_SIZE,
-                    "{"
-                    "\"s\": 1,"
-                    "\"f\": %u,"
-                    "\"l\": %u,"
-                    "\"o\": %u,"
-                    "\"n\": %u"
+                      GET_STREAM_REQUEST_BUFFER_SIZE,
+                      "{"
+                      "\"s\": 1,"
+                      "\"f\": %u,"
+                      "\"l\": %u,"
+                      "\"o\": %u,"
+                      "\"n\": %u"
 
-                    "}",
-                    fileId,
-                    blockSize,
-                    blockOffset,
-                    numberOfBlocksRequested );
+                      "}",
+                      fileId,
+                      blockSize,
+                      blockOffset,
+                      numberOfBlocksRequested );
 
-            getStreamRequestLength = strnlen( getStreamRequest, GET_STREAM_REQUEST_BUFFER_SIZE );
+            getStreamRequestLength = strnlen( getStreamRequest,
+                                              GET_STREAM_REQUEST_BUFFER_SIZE );
         }
         else
         {
             size_t encodedMessageSize = 0;
 
             CBOR_Encode_GetStreamRequestMessage( ( uint8_t * ) getStreamRequest,
-                                                    GET_STREAM_REQUEST_BUFFER_SIZE,
-                                                    &encodedMessageSize,
-                                                    "rdy",
-                                                    fileId,
-                                                    blockSize,
-                                                    blockOffset,
-                                                    ( const uint8_t * ) "MQ==",
-                                                    strlen( "MQ==" ),
-                                                    numberOfBlocksRequested );
+                                                 GET_STREAM_REQUEST_BUFFER_SIZE,
+                                                 &encodedMessageSize,
+                                                 "rdy",
+                                                 fileId,
+                                                 blockSize,
+                                                 blockOffset,
+                                                 ( const uint8_t * ) "MQ==",
+                                                 strlen( "MQ==" ),
+                                                 numberOfBlocksRequested );
 
             getStreamRequestLength = encodedMessageSize;
         }
     }
 
-    if ( requestStatus == MQTTFileDownloaderSuccess )
+    if( requestStatus == MQTTFileDownloaderSuccess )
     {
         publishStatus = mqttWrapper_publish( context->topicGetStream,
-                                context->topicGetStreamLength,
-                                ( uint8_t * ) getStreamRequest,
-                                getStreamRequestLength );
+                                             context->topicGetStreamLength,
+                                             ( uint8_t * ) getStreamRequest,
+                                             getStreamRequestLength );
 
-        requestStatus = publishStatus ? MQTTFileDownloaderSuccess : MQTTFileDownloaderPublishFailed;
+        requestStatus = publishStatus ? MQTTFileDownloaderSuccess
+                                      : MQTTFileDownloaderPublishFailed;
     }
 
     return requestStatus;
 }
 
-static uint8_t handleCborMessage(uint8_t * decodedData, size_t * decodedDataLength,
-                          uint8_t * message, size_t messageLength)
+static uint8_t handleCborMessage( uint8_t * decodedData,
+                                  size_t * decodedDataLength,
+                                  uint8_t * message,
+                                  size_t messageLength )
 {
     bool cborDecodeRet = false;
     int32_t fileId = 0;
@@ -312,15 +337,13 @@ static uint8_t handleCborMessage(uint8_t * decodedData, size_t * decodedDataLeng
 
     memset( decodedData, '\0', mqttFileDownloader_CONFIG_BLOCK_SIZE );
 
-
-    cborDecodeRet = CBOR_Decode_GetStreamResponseMessage(
-                        message,
-                        messageLength,
-                        &fileId,
-                        &blockId,
-                        &blockSize,
-                        &payload,
-                        &payloadSize );
+    cborDecodeRet = CBOR_Decode_GetStreamResponseMessage( message,
+                                                          messageLength,
+                                                          &fileId,
+                                                          &blockId,
+                                                          &blockSize,
+                                                          &payload,
+                                                          &payloadSize );
 
     if( cborDecodeRet )
     {
@@ -328,15 +351,17 @@ static uint8_t handleCborMessage(uint8_t * decodedData, size_t * decodedDataLeng
     }
     else
     {
-        printf( "Failed to decode CBOR data.");
+        printf( "Failed to decode CBOR data." );
         handleStatus = MQTTFileDownloaderDataDecodingFailed;
     }
 
     return handleStatus;
 }
 
-static uint8_t handleJsonMessage(uint8_t * decodedData, size_t * decodedDataLength,
-                          uint8_t * message, size_t messageLength)
+static uint8_t handleJsonMessage( uint8_t * decodedData,
+                                  size_t * decodedDataLength,
+                                  uint8_t * message,
+                                  size_t messageLength )
 {
     char dataQuery[] = "p";
     size_t dataQueryLength = sizeof( dataQuery ) - 1;
@@ -356,21 +381,22 @@ static uint8_t handleJsonMessage(uint8_t * decodedData, size_t * decodedDataLeng
 
     if( result != JSONSuccess )
     {
-        printf( "Failed to parse JSON data.");
+        printf( "Failed to parse JSON data." );
         handleStatus = MQTTFileDownloaderDataDecodingFailed;
     }
 
-    if ( handleStatus == MQTTFileDownloaderSuccess )
+    if( handleStatus == MQTTFileDownloaderSuccess )
     {
         base64Status = base64_Decode( decodedData,
-                                        mqttFileDownloader_CONFIG_BLOCK_SIZE,
-                                        decodedDataLength,
-                                        ( const uint8_t * ) dataValue,
-                                        dataValueLength );
+                                      mqttFileDownloader_CONFIG_BLOCK_SIZE,
+                                      decodedDataLength,
+                                      ( const uint8_t * ) dataValue,
+                                      dataValueLength );
 
         if( base64Status != Base64Success )
         {
-            printf( "Failed to decode Base64 data. Error code =%d", ( int ) base64Status );
+            printf( "Failed to decode Base64 data. Error code =%d",
+                    ( int ) base64Status );
             handleStatus = MQTTFileDownloaderDataDecodingFailed;
         }
     }
@@ -379,16 +405,17 @@ static uint8_t handleJsonMessage(uint8_t * decodedData, size_t * decodedDataLeng
 }
 
 bool mqttDownloader_handleIncomingMessage( MqttFileDownloaderContext_t * context,
-                                        MqttFileBlockHandler_t blockCallback,
-                                        char * topic,
-                                        size_t topicLength,
-                                        uint8_t * message,
-                                        size_t messageLength )
+                                           MqttFileBlockHandler_t blockCallback,
+                                           char * topic,
+                                           size_t topicLength,
+                                           uint8_t * message,
+                                           size_t messageLength )
 {
     bool handled = false;
     uint8_t decodingStatus = MQTTFileDownloaderSuccess;
     uint8_t decodedData[ mqttFileDownloader_CONFIG_BLOCK_SIZE ];
     size_t decodedDataLength = 0;
+    MqttFileDownloaderDataBlockInfo_t dataBlock;
 
     printf( "MQTT streams handling incoming message \n" );
 
@@ -408,25 +435,29 @@ bool mqttDownloader_handleIncomingMessage( MqttFileDownloaderContext_t * context
                 ( int ) messageLength,
                 ( char * ) message );
 
-
-        MqttFileDownloaderDataBlockInfo_t dataBlock;
         dataBlock.payload = NULL;
         dataBlock.payloadLength = 0U;
 
         memset( decodedData, '\0', mqttFileDownloader_CONFIG_BLOCK_SIZE );
 
-        if ( context->dataType == DATA_TYPE_JSON )
+        if( context->dataType == DATA_TYPE_JSON )
         {
-            decodingStatus = handleJsonMessage( decodedData, &decodedDataLength, message, messageLength );
+            decodingStatus = handleJsonMessage( decodedData,
+                                                &decodedDataLength,
+                                                message,
+                                                messageLength );
         }
         else
         {
-            decodingStatus = handleCborMessage( decodedData, &decodedDataLength, message, messageLength );
+            decodingStatus = handleCborMessage( decodedData,
+                                                &decodedDataLength,
+                                                message,
+                                                messageLength );
         }
 
-        if ( decodingStatus != MQTTFileDownloaderSuccess )
+        if( decodingStatus != MQTTFileDownloaderSuccess )
         {
-            printf("Failed to decode the data received \n");
+            printf( "Failed to decode the data received \n" );
         }
         else
         {
@@ -439,7 +470,9 @@ bool mqttDownloader_handleIncomingMessage( MqttFileDownloaderContext_t * context
     else
     {
         handled = false;
-        printf( "Incoming Publish Topic Name: %s does not match subscribed topic.\r\n", topic );
+        printf( "Incoming Publish Topic Name: %s does not match subscribed "
+                "topic.\r\n",
+                topic );
     }
 
     return handled;
