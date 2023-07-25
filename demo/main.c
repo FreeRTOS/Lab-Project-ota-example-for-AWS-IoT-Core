@@ -47,6 +47,9 @@ static void handleIncomingMQTTMessage( char * topic,
 
 int main( int argc, char * argv[] )
 {
+    MQTTStatus_t mqttResult;
+    MQTTFixedBuffer_t fixedBuffer = { 0 };
+
     if( argc != 6 )
     {
         printf( "Usage: %s certificateFilePath privateKeyFilePath "
@@ -60,9 +63,11 @@ int main( int argc, char * argv[] )
     MQTTStateUpdateLock = xSemaphoreCreateMutexStatic(
         &MQTTStateUpdateLockBuffer );
 
-    MQTTFixedBuffer_t fixedBuffer = { .pBuffer = networkBuffer, .size = 5000U };
+    fixedBuffer.pBuffer = networkBuffer;
+    fixedBuffer.size = 5000U;
+
     transport_tlsInit( &transport );
-    MQTTStatus_t mqttResult = MQTT_Init( &mqttContext,
+    mqttResult = MQTT_Init( &mqttContext,
                                          &transport,
                                          Clock_GetTimeMs,
                                          mqttEventCallback,
@@ -104,15 +109,21 @@ static void mqttEventCallback( MQTTContext_t * mqttContext,
                                MQTTPacketInfo_t * packetInfo,
                                MQTTDeserializedInfo_t * deserializedInfo )
 {
+    char * topic = NULL;
+    size_t topicLength = 0U;
+    uint8_t * message = NULL;
+    size_t messageLength = 0U;
+
     ( void ) mqttContext;
+
     if( ( packetInfo->type & 0xF0U ) == MQTT_PACKET_TYPE_PUBLISH )
     {
         assert( deserializedInfo->pPublishInfo != NULL );
-        char * topic = ( char * ) deserializedInfo->pPublishInfo->pTopicName;
-        size_t topicLength = deserializedInfo->pPublishInfo->topicNameLength;
-        uint8_t * message = ( uint8_t * )
+        topic = ( char * ) deserializedInfo->pPublishInfo->pTopicName;
+        topicLength = deserializedInfo->pPublishInfo->topicNameLength;
+        message = ( uint8_t * )
                                 deserializedInfo->pPublishInfo->pPayload;
-        size_t messageLength = deserializedInfo->pPublishInfo->payloadLength;
+        messageLength = deserializedInfo->pPublishInfo->payloadLength;
         handleIncomingMQTTMessage( topic, topicLength, message, messageLength );
     }
     else

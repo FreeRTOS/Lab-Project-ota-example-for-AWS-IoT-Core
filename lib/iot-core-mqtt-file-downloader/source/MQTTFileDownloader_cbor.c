@@ -12,14 +12,14 @@
  * @brief CBOR encode/decode routines for AWS IoT Over-the-Air updates.
  */
 
-#include <stdlib.h>
-#include "cbor.h"
 #include "MQTTFileDownloader_cbor.h"
+#include "cbor.h"
+#include <stdlib.h>
 
 /**
  * @brief Number of keys in cbor get stream request message.
  */
-#define CBOR_GETSTREAMREQUEST_ITEM_COUNT    6
+#define CBOR_GETSTREAMREQUEST_ITEM_COUNT 6
 
 /* ========================================================================== */
 
@@ -59,23 +59,20 @@ static CborError checkDataType( CborType expectedType,
  * @return TRUE when success, otherwise FALSE.
  */
 bool CBOR_Decode_GetStreamResponseMessage( const uint8_t * messageBuffer,
-                                               size_t messageSize,
-                                               int32_t * fileId,
-                                               int32_t * blockId,
-                                               int32_t * blockSize,
-                                               uint8_t * const * payload,
-                                               size_t * payloadSize )
+                                           size_t messageSize,
+                                           int32_t * fileId,
+                                           int32_t * blockId,
+                                           int32_t * blockSize,
+                                           uint8_t * const * payload,
+                                           size_t * payloadSize )
 {
     CborError cborResult = CborNoError;
     CborParser cborParser;
     CborValue cborValue, cborMap;
     size_t payloadSizeReceived = 0;
 
-    if( ( fileId == NULL ) ||
-        ( blockId == NULL ) ||
-        ( blockSize == NULL ) ||
-        ( payload == NULL ) ||
-        ( payloadSize == NULL ) ||
+    if( ( fileId == NULL ) || ( blockId == NULL ) || ( blockSize == NULL ) ||
+        ( payload == NULL ) || ( payloadSize == NULL ) ||
         ( messageBuffer == NULL ) )
     {
         cborResult = CborUnknownError;
@@ -116,8 +113,7 @@ bool CBOR_Decode_GetStreamResponseMessage( const uint8_t * messageBuffer,
 
     if( CborNoError == cborResult )
     {
-        cborResult = cbor_value_get_int( &cborValue,
-                                         ( int * ) fileId );
+        cborResult = cbor_value_get_int( &cborValue, ( int * ) fileId );
     }
 
     /* Find the block ID. */
@@ -135,8 +131,7 @@ bool CBOR_Decode_GetStreamResponseMessage( const uint8_t * messageBuffer,
 
     if( CborNoError == cborResult )
     {
-        cborResult = cbor_value_get_int( &cborValue,
-                                         ( int * ) blockId );
+        cborResult = cbor_value_get_int( &cborValue, ( int * ) blockId );
     }
 
     /* Find the block size. */
@@ -154,8 +149,7 @@ bool CBOR_Decode_GetStreamResponseMessage( const uint8_t * messageBuffer,
 
     if( CborNoError == cborResult )
     {
-        cborResult = cbor_value_get_int( &cborValue,
-                                         ( int * ) blockSize );
+        cborResult = cbor_value_get_int( &cborValue, ( int * ) blockSize );
     }
 
     /* Find the payload bytes. */
@@ -180,7 +174,8 @@ bool CBOR_Decode_GetStreamResponseMessage( const uint8_t * messageBuffer,
 
     if( CborNoError == cborResult )
     {
-        /* Check if the received payload size is less than or equal to buffer size. */
+        /* Check if the received payload size is less than or equal to buffer
+         * size. */
         if( payloadSizeReceived <= ( *payloadSize ) )
         {
             *payloadSize = payloadSizeReceived;
@@ -216,28 +211,27 @@ bool CBOR_Decode_GetStreamResponseMessage( const uint8_t * messageBuffer,
  * @param[in] blockOffset Value of block offset in the encoded message.
  * @param[in] blockBitmap bitmap in the encoded message.
  * @param[in] blockBitmapSize Size of the provided bitmap buffer.
- * @param[in] numOfBlocksRequested number of blocks to request in the encoded message.
+ * @param[in] numOfBlocksRequested number of blocks to request in the encoded
+ * message.
  *
  * @return TRUE when success, otherwise FALSE.
  */
 bool CBOR_Encode_GetStreamRequestMessage( uint8_t * messageBuffer,
-                                              size_t messageBufferSize,
-                                              size_t * encodedMessageSize,
-                                              const char * clientToken,
-                                              int32_t fileId,
-                                              int32_t blockSize,
-                                              int32_t blockOffset,
-                                              const uint8_t * blockBitmap,
-                                              size_t blockBitmapSize,
-                                              int32_t numOfBlocksRequested )
+                                          size_t messageBufferSize,
+                                          size_t * encodedMessageSize,
+                                          const char * clientToken,
+                                          int32_t fileId,
+                                          int32_t blockSize,
+                                          int32_t blockOffset,
+                                          const uint8_t * blockBitmap,
+                                          size_t blockBitmapSize,
+                                          int32_t numOfBlocksRequested )
 {
     CborError cborResult = CborNoError;
     CborEncoder cborEncoder, cborMapEncoder;
 
-    if( ( messageBuffer == NULL ) ||
-        ( encodedMessageSize == NULL ) ||
-        ( clientToken == NULL ) ||
-        ( blockBitmap == NULL ) )
+    if( ( messageBuffer == NULL ) || ( encodedMessageSize == NULL ) ||
+        ( clientToken == NULL ) || ( blockBitmap == NULL ) )
     {
         cborResult = CborUnknownError;
     }
@@ -245,10 +239,7 @@ bool CBOR_Encode_GetStreamRequestMessage( uint8_t * messageBuffer,
     /* Initialize the CBOR encoder. */
     if( CborNoError == cborResult )
     {
-        cbor_encoder_init( &cborEncoder,
-                           messageBuffer,
-                           messageBufferSize,
-                           0 );
+        cbor_encoder_init( &cborEncoder, messageBuffer, messageBufferSize, 0 );
         cborResult = cbor_encoder_create_map( &cborEncoder,
                                               &cborMapEncoder,
                                               CBOR_GETSTREAMREQUEST_ITEM_COUNT );
@@ -263,8 +254,7 @@ bool CBOR_Encode_GetStreamRequestMessage( uint8_t * messageBuffer,
 
     if( CborNoError == cborResult )
     {
-        cborResult = cbor_encode_text_stringz( &cborMapEncoder,
-                                               clientToken );
+        cborResult = cbor_encode_text_stringz( &cborMapEncoder, clientToken );
     }
 
     /* Encode the file ID key and value. */
@@ -276,8 +266,7 @@ bool CBOR_Encode_GetStreamRequestMessage( uint8_t * messageBuffer,
 
     if( CborNoError == cborResult )
     {
-        cborResult = cbor_encode_int( &cborMapEncoder,
-                                      fileId );
+        cborResult = cbor_encode_int( &cborMapEncoder, fileId );
     }
 
     /* Encode the block size key and value. */
@@ -289,8 +278,7 @@ bool CBOR_Encode_GetStreamRequestMessage( uint8_t * messageBuffer,
 
     if( CborNoError == cborResult )
     {
-        cborResult = cbor_encode_int( &cborMapEncoder,
-                                      blockSize );
+        cborResult = cbor_encode_int( &cborMapEncoder, blockSize );
     }
 
     /* Encode the block offset key and value. */
@@ -302,8 +290,7 @@ bool CBOR_Encode_GetStreamRequestMessage( uint8_t * messageBuffer,
 
     if( CborNoError == cborResult )
     {
-        cborResult = cbor_encode_int( &cborMapEncoder,
-                                      blockOffset );
+        cborResult = cbor_encode_int( &cborMapEncoder, blockOffset );
     }
 
     /* Encode the block bitmap key and value. */
@@ -329,8 +316,7 @@ bool CBOR_Encode_GetStreamRequestMessage( uint8_t * messageBuffer,
 
     if( CborNoError == cborResult )
     {
-        cborResult = cbor_encode_int( &cborMapEncoder,
-                                      numOfBlocksRequested );
+        cborResult = cbor_encode_int( &cborMapEncoder, numOfBlocksRequested );
     }
 
     /* Close the encoder. */
@@ -344,7 +330,7 @@ bool CBOR_Encode_GetStreamRequestMessage( uint8_t * messageBuffer,
     if( CborNoError == cborResult )
     {
         *encodedMessageSize = cbor_encoder_get_buffer_size( &cborEncoder,
-                                                             messageBuffer );
+                                                            messageBuffer );
     }
 
     return CborNoError == cborResult;
