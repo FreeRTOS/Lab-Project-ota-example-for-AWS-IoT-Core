@@ -35,18 +35,21 @@ void mqttWrapper_setThingName( char * thingName )
 
 void mqttWrapper_getThingName( char * thingNameBuffer )
 {
+    size_t thingNameLength = 0;
     assert( globalThingName[ 0 ] != 0 );
-    size_t thingNameLength = strlen( globalThingName );
+    thingNameLength = strlen( globalThingName );
     memcpy( thingNameBuffer, globalThingName, thingNameLength );
     thingNameBuffer[ thingNameLength ] = '\0';
 }
 
 bool mqttWrapper_connect( char * thingName )
 {
-    assert( globalCoreMqttContext != NULL );
     MQTTConnectInfo_t connectInfo = { 0 };
     MQTTStatus_t mqttStatus = MQTTSuccess;
     bool sessionPresent = false;
+
+    assert( globalCoreMqttContext != NULL );
+
     connectInfo.pClientIdentifier = thingName;
     connectInfo.clientIdentifierLength = ( uint16_t ) sizeof( thingName );
     connectInfo.pUserName = NULL;
@@ -65,8 +68,9 @@ bool mqttWrapper_connect( char * thingName )
 
 bool mqttWrapper_isConnected( void )
 {
+    bool isConnected = false;
     assert( globalCoreMqttContext != NULL );
-    bool isConnected = globalCoreMqttContext->connectStatus == MQTTConnected;
+    isConnected = globalCoreMqttContext->connectStatus == MQTTConnected;
     return isConnected;
 }
 
@@ -75,18 +79,22 @@ bool mqttWrapper_publish( char * topic,
                           uint8_t * message,
                           size_t messageLength )
 {
+    bool success = false;
     assert( globalCoreMqttContext != NULL );
-    bool success = mqttWrapper_isConnected();
+
+    success = mqttWrapper_isConnected();
     if( success )
     {
         MQTTStatus_t mqttStatus = MQTTSuccess;
-        MQTTPublishInfo_t pubInfo = { .qos = 0,
-                                      .retain = false,
-                                      .dup = false,
-                                      .pTopicName = topic,
-                                      .topicNameLength = topicLength,
-                                      .pPayload = message,
-                                      .payloadLength = messageLength };
+        MQTTPublishInfo_t pubInfo = { 0 };
+        pubInfo.qos = 0;
+        pubInfo.retain = false;
+        pubInfo.dup = false;
+        pubInfo.pTopicName = topic;
+        pubInfo.topicNameLength = topicLength;
+        pubInfo.pPayload = message;
+        pubInfo.payloadLength = messageLength;
+
         mqttStatus = MQTT_Publish( globalCoreMqttContext,
                                    &pubInfo,
                                    MQTT_GetPacketId( globalCoreMqttContext ) );
@@ -97,14 +105,18 @@ bool mqttWrapper_publish( char * topic,
 
 bool mqttWrapper_subscribe( char * topic, size_t topicLength )
 {
+    bool success = false;
     assert( globalCoreMqttContext != NULL );
-    bool success = mqttWrapper_isConnected();
+
+    success = mqttWrapper_isConnected();
     if( success )
     {
         MQTTStatus_t mqttStatus = MQTTSuccess;
-        MQTTSubscribeInfo_t subscribeInfo = { .qos = 0,
-                                              .pTopicFilter = topic,
-                                              .topicFilterLength = topicLength };
+        MQTTSubscribeInfo_t subscribeInfo = { 0 };
+        subscribeInfo.qos = 0;
+        subscribeInfo.pTopicFilter = topic;
+        subscribeInfo.topicFilterLength = topicLength;
+
         mqttStatus = MQTT_Subscribe( globalCoreMqttContext,
                                      &subscribeInfo,
                                      1,
