@@ -121,7 +121,11 @@ static uint16_t createTopic( char * topicBuffer,
                              char * apiSuffix )
 {
     uint16_t topicLen = 0;
-    char streamNameBuff[ STREAM_NAME_MAX_LEN ];
+    char streamNameBuff[ STREAM_NAME_MAX_LEN + 1 ];
+
+    memset(streamNameBuff, '\0', STREAM_NAME_MAX_LEN + 1);
+    memcpy(streamNameBuff, streamName, streamNameLength);
+
     /* NULL-terminated list of topic string parts. */
     const char * topicParts[] = { MQTT_API_THINGS,
                                   NULL, /* Thing Name not available at compile
@@ -150,7 +154,7 @@ uint8_t mqttDownloader_init( MqttFileDownloaderContext_t * context,
                              char * streamName,
                              size_t streamNameLength,
                              char * thingName,
-                             uint8_t ucDataType )
+                             uint8_t dataType )
 {
     char * streamDataApiSuffix = NULL;
     char * getStreamApiSuffix = NULL;
@@ -169,9 +173,9 @@ uint8_t mqttDownloader_init( MqttFileDownloaderContext_t * context,
         memset( context->topicGetStream, '\0', TOPIC_GET_STREAM_BUFFER_SIZE );
         context->topicStreamDataLength = 0U;
         context->topicGetStreamLength = 0U;
-        context->dataType = ucDataType;
+        context->dataType = dataType;
 
-        if( ucDataType == DATA_TYPE_JSON )
+        if( dataType == DATA_TYPE_JSON )
         {
             streamDataApiSuffix = MQTT_API_DATA_JSON;
         }
@@ -197,7 +201,7 @@ uint8_t mqttDownloader_init( MqttFileDownloaderContext_t * context,
 
     if( initStatus == MQTTFileDownloaderSuccess )
     {
-        if( ucDataType == DATA_TYPE_JSON )
+        if( dataType == DATA_TYPE_JSON )
         {
             getStreamApiSuffix = MQTT_API_GET_JSON;
         }

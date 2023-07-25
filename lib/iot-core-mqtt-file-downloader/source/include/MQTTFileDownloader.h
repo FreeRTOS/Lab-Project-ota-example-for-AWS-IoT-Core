@@ -29,10 +29,9 @@
 /* Maximum lengths for constants used in MQTT downloader.
  * These are used to calculate the static size of buffers used to store MQTT
  * topic and message strings. Each length is in terms of bytes. */
-#define JOB_NAME_MAX_LEN    128U
-#define STREAM_NAME_MAX_LEN 44U
-#define NULL_CHAR_LEN       1U
-#define MAX_THINGNAME_LEN   128U
+#define STREAM_NAME_MAX_LEN     44U
+#define NULL_CHAR_LEN           1U
+#define MAX_THINGNAME_LEN       128U
 
 #define CONST_STRLEN( s )   ( ( ( uint32_t ) sizeof( s ) ) - 1UL )
 

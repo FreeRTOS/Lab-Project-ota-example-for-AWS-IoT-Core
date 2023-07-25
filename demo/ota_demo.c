@@ -115,7 +115,7 @@ static void processOtaDocumentCallback( AfrOtaJobDocumentFields_t * params )
     currentFileId = params->fileId;
     currentBlockOffset = 0;
     totalBytesReceived = 0;
-    /* Initalize the File downloader */
+    /* Initialize the File downloader */
     mqttDownloader_init( &mqttFileDownloaderContext,
                          params->imageRef,
                          params->imageRefLen,
