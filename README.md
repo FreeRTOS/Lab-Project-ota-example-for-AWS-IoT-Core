@@ -19,15 +19,13 @@ to IoT Core.
 A detailed breakdown of important concepts and architectural decisions can be
 found [here](docs/design/CONCEPTS.md).
 
-## 1. Demo Prerequisites
+## 1. ESP32 Demo Prerequisites
 
 - A personal computer running a POSIX operating system (Linux, MacOS, or WSL)
   - (Optional) Use [the Nix package manager](https://nixos.org/download.html) to
     supply software dependencies
-  - A C99 compiler (tested with Clang v11.1.0, GCC v9.4.0, and Apple clang
-    v14.0.0)
-  - CMake v3.16+ (tested with v3.24.3 and v3.26.1)
-  - OpenSSL (tested with v1.1.1t and v1.1.1u)
+  - ESP-IDF v5 installed to your system, and activated using `. ./export.sh` (tested with v5.0.1)
+- An ESP32-WROOM or ESP32-WROVER development board (the ESP32-DevKitC is a good choice)
 - An
   [AWS account with with administrative access](https://docs.aws.amazon.com/iot/latest/developerguide/setting-up.html)
   to use for [AWS IoT Core](https://aws.amazon.com/iot-core/)
@@ -78,20 +76,42 @@ subsequent configuration steps.
   SHA-256 hash to perform OTA updates.
 - [Grant access to Code Signing for AWS IoT](https://docs.aws.amazon.com/freertos/latest/userguide/code-sign-policy.html).
 
-### 2.3 Build the coreOTA_Demo Binary
-
-On your personal computer, open a terminal and issue the following commands:
+### 2.3 Flash the ESP32
+Plug your ESP32-WROOM or ESP32-WROVER board into your computer. Open a terminal and issue the following commands:
 
 ```bash
-# optional command - skip if you do not have Nix installed
 nix develop --extra-experimental-features "nix-command flakes"
+idf.py build
+idf.py flash
 ```
 
-```bash
-mkdir build
-cd build
-cmake ..
-make
+### 2.4 Configure the Device Credentials
+
+An ESP32 device has an initial factory state. Note that a secure, production-ready device should have the private key stored
+securely on an HSM, not written to the device. For demo purposes, we write the credentials directly to flash.
+
+You must set the `ThingName`, `PrivateKey`, `SSID`, `Passphrase`, `Endpoint`, and `Certificate`
+keys by modifying `./nvs/factory_nvs.csv`.
+
+Set the `ThingName` in the CSV (replacing "FIXME_ESP32DefaultThingName").
+
+Set the `SSID` in the CSV (replacing "FIXME_ESP32DefaultThingName").
+
+Set the `Passphrase` in the CSV (replacing "FIXME_ESP32DefaultThingName").
+
+Set the `Endpoint` in the CSV (replacing "FIXME_ESP32DefaultThingName").
+
+For `PrivateKey`, update the path in the CSV for `PrivateKey` to the key you
+downloaded above, or copy that file to `./nvs/PrivateKey.pem`.
+
+For `Certificate`, update the path in the CSV for `Certificate` to the key you
+downloaded above, or copy that file to `./nvs/Certificate.pem`.
+
+Once `./nvs/factory_nvs.csv` is ready, run the following to flash the factory
+state onto your device:
+
+```sh
+./nvs/flash_nvs.sh -p /dev/<USB_SERIAL_PATH>
 ```
 
 ## 3. Run the OTA Demo
@@ -111,16 +131,20 @@ Apply the following options:
 
 ### 3.2 Run the simulator
 
-After you've created your OTA update, start the simulator by using the following
-command in your `build/` directory:
+After you've created your OTA update, start the ESP32 demo by running the following command:
 
 ```
-./coreOTA_Demo {certificateFilePath} {privateKeyFilePath} {rootCAFilePath} {endpoint} {thingName}
+idf.py monitor
+```
+
+If you see any erratic behavior (e.g. tight bootloops), try running the following command, then restarting from step 2.3:
+```
+idf.py erase-flash
 ```
 
 ### 3.3 Verify successful OTA in the AWS IoT Core Console
 
-After the simulator stops printing output, check the IoT Core Console to verify
+After the ESP32 prints "OTA successful", check the IoT Core Console to verify
 that the OTA Job you created is marked as "Successful".
 
 ## Security

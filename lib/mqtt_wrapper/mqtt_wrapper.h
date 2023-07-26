@@ -20,7 +20,7 @@ void mqttWrapper_setThingName( char * thingName );
 
 void mqttWrapper_getThingName( char * thingNameBuffer );
 
-bool mqttWrapper_connect( char * thingName );
+bool mqttWrapper_connect(  );
 
 bool mqttWrapper_isConnected( void );
 

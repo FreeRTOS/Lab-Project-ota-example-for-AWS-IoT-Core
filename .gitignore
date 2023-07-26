@@ -7,3 +7,12 @@ build/
 
 # Ignore build artifacts
 *.o
+
+/.cache/
+/compile_commands.json
+/.direnv
+/nvs/factory_nvs.bin
+/nvs/Certificate.pem
+/nvs/PrivateKey.pem
+/nvs/OTAcertificate.pem
+/sdkconfig.old

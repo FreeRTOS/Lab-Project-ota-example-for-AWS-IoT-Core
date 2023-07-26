@@ -1,0 +1,11 @@
+key,type,encoding,value
+config,namespace,,
+
+# Configure these:
+SSID,data,binary,REPLACE_WITH_WIFI_NAME
+Passphrase,data,binary,REPLACE_WITH_WIFI_PASSWORD
+Endpoint,data,binary,REPLACE_WITH_IOT_CORE_ENDPOINT
+ThingName,data,binary,REPLACE_WITH_THING_NAME
+PrivateKey,file,binary,./PrivateKey.pem
+Certificate,file,binary,./Certificate.pem
+RootCA,file,binary,./AmazonRootCA1.pem

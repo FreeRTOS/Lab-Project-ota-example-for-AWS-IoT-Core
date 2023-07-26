@@ -123,8 +123,8 @@ static uint16_t createTopic( char * topicBuffer,
     uint16_t topicLen = 0;
     char streamNameBuff[ STREAM_NAME_MAX_LEN + 1 ];
 
-    memset(streamNameBuff, '\0', STREAM_NAME_MAX_LEN + 1);
-    memcpy(streamNameBuff, streamName, streamNameLength);
+    memset( streamNameBuff, '\0', STREAM_NAME_MAX_LEN + 1 );
+    memcpy( streamNameBuff, streamName, streamNameLength );
 
     /* NULL-terminated list of topic string parts. */
     const char * topicParts[] = { MQTT_API_THINGS,
@@ -275,16 +275,16 @@ uint8_t mqttDownloader_requestDataBlock( MqttFileDownloaderContext_t * context,
                       GET_STREAM_REQUEST_BUFFER_SIZE,
                       "{"
                       "\"s\": 1,"
-                      "\"f\": %u,"
-                      "\"l\": %u,"
-                      "\"o\": %u,"
-                      "\"n\": %u"
+                      "\"f\": %lu,"
+                      "\"l\": %lu,"
+                      "\"o\": %lu,"
+                      "\"n\": %lu"
 
                       "}",
-                      fileId,
-                      blockSize,
-                      blockOffset,
-                      numberOfBlocksRequested );
+                      ( unsigned long ) fileId,
+                      ( unsigned long ) blockSize,
+                      ( unsigned long ) blockOffset,
+                      ( unsigned long ) numberOfBlocksRequested );
 
             getStreamRequestLength = strnlen( getStreamRequest,
                                               GET_STREAM_REQUEST_BUFFER_SIZE );
@@ -428,10 +428,10 @@ bool mqttDownloader_handleIncomingMessage( MqttFileDownloaderContext_t * context
         printf( "Incoming Publish Topic Length: %lu Name: %.*s matches "
                 "subscribed topic.\r\n"
                 "Incoming Publish Message length: %lu Message: %.*s\r\n",
-                topicLength,
+                ( unsigned long ) topicLength,
                 ( int ) topicLength,
                 topic,
-                messageLength,
+                ( unsigned long ) messageLength,
                 ( int ) messageLength,
                 ( char * ) message );
 

@@ -1,0 +1,12 @@
+[submodule "lib/backoffAlgorithm"]
+	path = lib/backoffAlgorithm
+	url = https://github.com/FreeRTOS/backoffAlgorithm.git
+[submodule "lib/coreJSON"]
+	path = lib/coreJSON
+	url = https://github.com/FreeRTOS/coreJSON.git
+[submodule "lib/coreMQTT"]
+	path = lib/coreMQTT
+	url = https://github.com/FreeRTOS/coreMQTT.git
+[submodule "lib/tinycbor"]
+	path = lib/tinycbor
+	url = https://github.com/intel/tinycbor.git

@@ -42,7 +42,7 @@ void mqttWrapper_getThingName( char * thingNameBuffer )
     thingNameBuffer[ thingNameLength ] = '\0';
 }
 
-bool mqttWrapper_connect( char * thingName )
+bool mqttWrapper_connect( )
 {
     MQTTConnectInfo_t connectInfo = { 0 };
     MQTTStatus_t mqttStatus = MQTTSuccess;
@@ -50,8 +50,8 @@ bool mqttWrapper_connect( char * thingName )
 
     assert( globalCoreMqttContext != NULL );
 
-    connectInfo.pClientIdentifier = thingName;
-    connectInfo.clientIdentifierLength = ( uint16_t ) sizeof( thingName );
+    connectInfo.pClientIdentifier = globalThingName;
+    connectInfo.clientIdentifierLength = strlen(globalThingName);
     connectInfo.pUserName = NULL;
     connectInfo.userNameLength = 0U;
     connectInfo.pPassword = NULL;
