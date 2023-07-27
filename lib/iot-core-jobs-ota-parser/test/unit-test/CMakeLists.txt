@@ -7,9 +7,8 @@ project(
 # https://github.com/FreeRTOS/coreMQTT/blob/main/test/unit-test/CMakeLists.txt
 
 # Include filepaths for source and include.
-include(${MODULE_ROOT_DIR}/otaJobsFilePaths.cmake)
-
-include(${MODULE_ROOT_DIR}/otaJobsDependencyFilePaths.cmake)
+include( ${MODULE_ROOT_DIR}/otaJobsFilePaths.cmake )
+include("${corejson_SOURCE_DIR}/jsonFilePaths.cmake")
 
 # ====================  Define your project name (edit) ========================
 set(project_name "coreota_jobs_handler")
@@ -17,8 +16,8 @@ set(project_name "coreota_jobs_handler")
 # =====================  Create your mock here  (edit)  ========================
 
 # list the files to mock here
-list(APPEND mock_list "${MODULE_ROOT_DIR}/source/include/ota_job_processor.h"
-     "${MODULE_ROOT_DIR}/source/include/job_parser.h")
+list(APPEND mock_list "${MODULE_ROOT_DIR}/source/include/job_parser.h")
+
 # list the directories your mocks need
 list(APPEND mock_include_list "${MODULE_ROOT_DIR}/source/include")
 # list the definitions of your mocks to control what to be included

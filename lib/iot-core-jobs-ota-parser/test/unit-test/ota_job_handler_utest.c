@@ -12,9 +12,8 @@
 
 #include "unity.h"
 
+#include "ota_job_processor.h"
 #include "mock_job_parser.h"
-#include "mock_ota_job_processor.h"
-#include "ota_job_handler.h"
 
 #define JOB_DOC_ID              "jobDocId"
 #define JOB_DOC_ID_LEN          8U
@@ -41,6 +40,19 @@ AfrOtaJobDocumentFields_t parsedFields;
 /* Called before each test method. */
 void setUp()
 {
+    parsedFields.signature = "expectedSignature";
+    parsedFields.signatureLen = SIZE_MAX;
+    parsedFields.filepath = "expectedFilepath";
+    parsedFields.filepathLen = SIZE_MAX;
+    parsedFields.certfile = "expectedCertfile";
+    parsedFields.certfileLen = SIZE_MAX;
+    parsedFields.authScheme = "expectedAuthScheme";
+    parsedFields.authSchemeLen = SIZE_MAX;
+    parsedFields.imageRef = "expectedImageRef";
+    parsedFields.imageRefLen = SIZE_MAX;
+    parsedFields.fileId = UINT32_MAX;
+    parsedFields.fileSize = UINT32_MAX;
+    parsedFields.fileType = UINT32_MAX;
 }
 
 /* Called after each test method. */
@@ -59,6 +71,28 @@ int suiteTearDown( int numFailures )
     return numFailures;
 }
 
+/*
+ * NOTE: In production, the string fields would not be null-terminated strings, however
+ * since we're mocking the return we can force them to be null-terminated for easier 
+ * validation.
+ */
+void verifyCallbackValues( AfrOtaJobDocumentFields_t * params )
+{
+    TEST_ASSERT_EQUAL_STRING("expectedSignature", params->signature);
+    TEST_ASSERT_EQUAL(SIZE_MAX, params->signatureLen);
+    TEST_ASSERT_EQUAL_STRING("expectedFilepath", params->filepath);
+    TEST_ASSERT_EQUAL(SIZE_MAX, params->filepathLen);
+    TEST_ASSERT_EQUAL_STRING("expectedCertfile", params->certfile);
+    TEST_ASSERT_EQUAL(SIZE_MAX, params->certfileLen);
+    TEST_ASSERT_EQUAL_STRING("expectedAuthScheme", params->authScheme);
+    TEST_ASSERT_EQUAL(SIZE_MAX, params->authSchemeLen);
+    TEST_ASSERT_EQUAL_STRING("expectedImageRef", params->imageRef);
+    TEST_ASSERT_EQUAL(SIZE_MAX, params->imageRefLen);
+    TEST_ASSERT_EQUAL(UINT32_MAX, params->fileId);
+    TEST_ASSERT_EQUAL(UINT32_MAX, params->fileSize);
+    TEST_ASSERT_EQUAL(UINT32_MAX, params->fileType);
+}
+
 static void expectPopulateJobDocWithFileIndex( const char * document,
                                                size_t docLength,
                                                int index )
@@ -70,7 +104,6 @@ static void expectPopulateJobDocWithFileIndex( const char * document,
                                           true );
     populateJobDocFields_IgnoreArg_result();
     populateJobDocFields_ReturnThruPtr_result( &parsedFields );
-    applicationSuppliedFunction_processAfrOtaDocument_Expect( &parsedFields );
 }
 
 /* ===============================   TESTS   =============================== */
@@ -81,10 +114,7 @@ void test_handleJobDoc_returnsTrue_whenIOTOtaJob( void )
                                        AFR_OTA_DOCUMENT_LENGTH,
                                        0 );
 
-    bool result = handleJobDoc( JOB_DOC_ID,
-                                JOB_DOC_ID_LEN,
-                                AFR_OTA_DOCUMENT,
-                                AFR_OTA_DOCUMENT_LENGTH );
+    bool result = otaParser_handleJobDoc( &verifyCallbackValues, JOB_DOC_ID, JOB_DOC_ID_LEN, AFR_OTA_DOCUMENT, AFR_OTA_DOCUMENT_LENGTH );
 
     TEST_ASSERT_TRUE( result );
 }
@@ -101,10 +131,7 @@ void test_handleJobDoc_returnsTrue_whenMultiFileIOTOtaJob( void )
                                        MULTI_FILE_OTA_DOCUMENT_LENGTH,
                                        2 );
 
-    bool result = handleJobDoc( JOB_DOC_ID,
-                                JOB_DOC_ID_LEN,
-                                MULTI_FILE_OTA_DOCUMENT,
-                                MULTI_FILE_OTA_DOCUMENT_LENGTH );
+    bool result = otaParser_handleJobDoc( &verifyCallbackValues, JOB_DOC_ID, JOB_DOC_ID_LEN, MULTI_FILE_OTA_DOCUMENT, MULTI_FILE_OTA_DOCUMENT_LENGTH );
 
     TEST_ASSERT_TRUE( result );
 }
@@ -142,10 +169,7 @@ void test_handleJobDoc_returnsTrue_whenTooManyFilesInIOTOtaJob( void )
                                        TOO_MANY_FILES_OTA_DOCUMENT_LENGTH,
                                        9 );
 
-    bool result = handleJobDoc( JOB_DOC_ID,
-                                JOB_DOC_ID_LEN,
-                                TOO_MANY_FILES_OTA_DOCUMENT,
-                                TOO_MANY_FILES_OTA_DOCUMENT_LENGTH );
+    bool result = otaParser_handleJobDoc( &verifyCallbackValues, JOB_DOC_ID, JOB_DOC_ID_LEN, TOO_MANY_FILES_OTA_DOCUMENT, TOO_MANY_FILES_OTA_DOCUMENT_LENGTH );
 
     TEST_ASSERT_TRUE( result );
 }
@@ -159,10 +183,7 @@ void test_handleJobDoc_returnsFalse_whenParsingFails( void )
                                           false );
     populateJobDocFields_IgnoreArg_result();
 
-    bool result = handleJobDoc( JOB_DOC_ID,
-                                JOB_DOC_ID_LEN,
-                                AFR_OTA_DOCUMENT,
-                                AFR_OTA_DOCUMENT_LENGTH );
+    bool result = otaParser_handleJobDoc( &verifyCallbackValues, JOB_DOC_ID, JOB_DOC_ID_LEN, AFR_OTA_DOCUMENT, AFR_OTA_DOCUMENT_LENGTH );
 
     TEST_ASSERT_FALSE( result );
 }
@@ -179,40 +200,28 @@ void test_handleJobDoc_returnsFalse_whenMultiFileParsingFails( void )
                                           false );
     populateJobDocFields_IgnoreArg_result();
 
-    bool result = handleJobDoc( JOB_DOC_ID,
-                                JOB_DOC_ID_LEN,
-                                MULTI_FILE_OTA_DOCUMENT,
-                                MULTI_FILE_OTA_DOCUMENT_LENGTH );
+    bool result = otaParser_handleJobDoc( &verifyCallbackValues, JOB_DOC_ID, JOB_DOC_ID_LEN, MULTI_FILE_OTA_DOCUMENT, MULTI_FILE_OTA_DOCUMENT_LENGTH );
 
     TEST_ASSERT_FALSE( result );
 }
 
 void test_handleJobDoc_returnsFalse_whenCustomJob( void )
 {
-    bool result = handleJobDoc( JOB_DOC_ID,
-                                JOB_DOC_ID_LEN,
-                                CUSTOM_DOCUMENT,
-                                CUSTOM_DOCUMENT_LENGTH );
+    bool result = otaParser_handleJobDoc( &verifyCallbackValues, JOB_DOC_ID, JOB_DOC_ID_LEN, CUSTOM_DOCUMENT, CUSTOM_DOCUMENT_LENGTH );
 
     TEST_ASSERT_FALSE( result );
 }
 
 void test_handleJobDoc_returnsFalse_givenNullJobDocument( void )
 {
-    bool result = handleJobDoc( JOB_DOC_ID,
-                                JOB_DOC_ID_LEN,
-                                NULL,
-                                CUSTOM_DOCUMENT_LENGTH );
+    bool result = otaParser_handleJobDoc( &verifyCallbackValues, JOB_DOC_ID, JOB_DOC_ID_LEN, NULL, CUSTOM_DOCUMENT_LENGTH );
 
     TEST_ASSERT_FALSE( result );
 }
 
 void test_handleJobDoc_returnsFalse_givenZeroDocumentLength( void )
 {
-    bool result = handleJobDoc( JOB_DOC_ID,
-                                JOB_DOC_ID_LEN,
-                                AFR_OTA_DOCUMENT,
-                                0U );
+    bool result = otaParser_handleJobDoc( &verifyCallbackValues, JOB_DOC_ID, JOB_DOC_ID_LEN, AFR_OTA_DOCUMENT, 0U );
 
     TEST_ASSERT_FALSE( result );
 }

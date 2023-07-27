@@ -8,12 +8,6 @@ project(
 # Allow the project to be organized into folders.
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-# Configure options to always show in CMake GUI.
-option(
-  BUILD_CLONE_SUBMODULES
-  "Set this to ON to automatically clone any required Git submodules. When OFF, submodules must be manually cloned."
-  OFF)
-
 if(NOT DEFINED CMAKE_C_STANDARD)
   set(CMAKE_C_STANDARD 99)
 endif()
@@ -36,39 +30,63 @@ set(MODULE_ROOT_DIR
     ${__MODULE_ROOT_DIR}
     CACHE INTERNAL "coreOTA-Jobs-Handler repository root.")
 
-# ====================================  Test Configuration
-# ========================================
+include(FetchContent)
 
-# Define a CMock resource path.
-set(CMOCK_DIR
-    ${MODULE_ROOT_DIR}/test/lib/CMock
-    CACHE INTERNAL "CMock library source directory.")
+FetchContent_Declare(
+  CMock
+  GIT_REPOSITORY https://github.com/ThrowTheSwitch/CMock.git
+  GIT_TAG ed29ce388f4478bda1bdfb274d371e961b671c2b)
 
-# Include CMock build configuration.
-include(lib/cmock_build.cmake)
+FetchContent_Declare(
+  CoreJSON
+  # hash: sha256-r0lJff61NK2rPtO7Wr6RudFNQiLt1D4M30V7/p60Zi0=
+  GIT_REPOSITORY https://github.com/FreeRTOS/coreJSON.git
+  GIT_TAG a0cd6122745a879225bf459dd257e79bdd63d37a)
 
-# Check if the CMock source directory exists, and if not present, clone the
-# submodule if BUILD_CLONE_SUBMODULES configuration is enabled.
-if(NOT EXISTS ${CMOCK_DIR}/src)
-  # Attempt to clone CMock.
-  if(${BUILD_CLONE_SUBMODULES})
-    clone_cmock()
-  else()
-    message(
-      FATAL_ERROR
-        "The required submodule CMock does not exist. Either clone it manually, or set BUILD_CLONE_SUBMODULES to 1 to automatically clone it during build."
-    )
-  endif()
-endif()
+FetchContent_MakeAvailable(CMock CoreJSON)
 
-# Add unit test and coverage configuration.
+add_library(unity STATIC
+                "${cmock_SOURCE_DIR}/vendor/unity/src/unity.c"
+                "${cmock_SOURCE_DIR}/vendor/unity/extras/fixture/src/unity_fixture.c"
+                "${cmock_SOURCE_DIR}/vendor/unity/extras/memory/src/unity_memory.c"
+                )
+target_include_directories(unity PUBLIC 
+                "${cmock_SOURCE_DIR}/vendor/unity/src"
+                "${cmock_SOURCE_DIR}/vendor/unity/extras/fixture/src"
+                "${cmock_SOURCE_DIR}/vendor/unity/extras/memory/src"
+                "${cmock_SOURCE_DIR}/src"
+                )
 
-# Use CTest utility for managing test runs. This has to be added BEFORE defining
-# test targets with add_test()
+set_target_properties(unity PROPERTIES
+                ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
+                POSITION_INDEPENDENT_CODE ON
+                )
+
+add_library(cmock STATIC)
+target_sources(cmock PRIVATE ${cmock_SOURCE_DIR}/src/cmock.c)
+target_include_directories(cmock PUBLIC
+                "${cmock_SOURCE_DIR}/src"
+                "${cmock_SOURCE_DIR}/vendor/unity/src/"
+                "${cmock_SOURCE_DIR}/examples"
+                "${cmock_SOURCE_DIR}/vendor/unity/extras/fixture/src"
+                "${cmock_SOURCE_DIR}/vendor/unity/extras/memory/src"
+                )
+set_target_properties(cmock PROPERTIES
+                ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
+                POSITION_INDEPENDENT_CODE ON
+                COMPILE_FLAGS "-Og"
+                )
+
+# coreJSON
+include("${corejson_SOURCE_DIR}/jsonFilePaths.cmake")
+add_library(coreJSON ${JSON_SOURCES})
+target_include_directories(coreJSON PUBLIC ${JSON_INCLUDE_PUBLIC_DIRS})
+
+#  ====================================  Test Configuration ========================================
+
+# Use CTest utility for managing test runs. This has to be added BEFORE
+# defining test targets with add_test()
 enable_testing()
-
-# Add build targets for CMock and Unit, required for unit testing.
-add_cmock_targets()
 
 # Add function to enable CMock based tests and coverage.
 include(${MODULE_ROOT_DIR}/tools/cmock/create_test.cmake)
@@ -80,9 +98,9 @@ add_subdirectory(unit-test)
 # ========================================
 
 # Add a target for running coverage on tests.
-add_custom_target(
-  coverage
-  COMMAND ${CMAKE_COMMAND} -DCMOCK_DIR=${CMOCK_DIR} -P
-          ${MODULE_ROOT_DIR}/tools/cmock/coverage.cmake
-  DEPENDS cmock unity
-  WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+add_custom_target( coverage
+    COMMAND ${CMAKE_COMMAND} -DCMOCK_DIR=${cmock_SOURCE_DIR}
+    -P ${MODULE_ROOT_DIR}/tools/cmock/coverage.cmake
+    DEPENDS cmock unity ota_job_handler_utest job_parser_utest
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+)
