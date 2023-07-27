@@ -7,7 +7,7 @@ project(
 # https://github.com/FreeRTOS/coreMQTT/blob/main/test/unit-test/CMakeLists.txt
 
 # Include filepaths for source and include.
-include( ${MODULE_ROOT_DIR}/otaJobsFilePaths.cmake )
+include(${MODULE_ROOT_DIR}/otaJobsFilePaths.cmake)
 include("${corejson_SOURCE_DIR}/jsonFilePaths.cmake")
 
 # ====================  Define your project name (edit) ========================

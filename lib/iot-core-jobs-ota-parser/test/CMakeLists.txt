@@ -45,47 +45,47 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(CMock CoreJSON)
 
-add_library(unity STATIC
-                "${cmock_SOURCE_DIR}/vendor/unity/src/unity.c"
-                "${cmock_SOURCE_DIR}/vendor/unity/extras/fixture/src/unity_fixture.c"
-                "${cmock_SOURCE_DIR}/vendor/unity/extras/memory/src/unity_memory.c"
-                )
-target_include_directories(unity PUBLIC 
-                "${cmock_SOURCE_DIR}/vendor/unity/src"
-                "${cmock_SOURCE_DIR}/vendor/unity/extras/fixture/src"
-                "${cmock_SOURCE_DIR}/vendor/unity/extras/memory/src"
-                "${cmock_SOURCE_DIR}/src"
-                )
+add_library(
+  unity STATIC
+  "${cmock_SOURCE_DIR}/vendor/unity/src/unity.c"
+  "${cmock_SOURCE_DIR}/vendor/unity/extras/fixture/src/unity_fixture.c"
+  "${cmock_SOURCE_DIR}/vendor/unity/extras/memory/src/unity_memory.c")
+target_include_directories(
+  unity
+  PUBLIC "${cmock_SOURCE_DIR}/vendor/unity/src"
+         "${cmock_SOURCE_DIR}/vendor/unity/extras/fixture/src"
+         "${cmock_SOURCE_DIR}/vendor/unity/extras/memory/src"
+         "${cmock_SOURCE_DIR}/src")
 
-set_target_properties(unity PROPERTIES
-                ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
-                POSITION_INDEPENDENT_CODE ON
-                )
+set_target_properties(
+  unity PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
+                   POSITION_INDEPENDENT_CODE ON)
 
 add_library(cmock STATIC)
 target_sources(cmock PRIVATE ${cmock_SOURCE_DIR}/src/cmock.c)
-target_include_directories(cmock PUBLIC
-                "${cmock_SOURCE_DIR}/src"
-                "${cmock_SOURCE_DIR}/vendor/unity/src/"
-                "${cmock_SOURCE_DIR}/examples"
-                "${cmock_SOURCE_DIR}/vendor/unity/extras/fixture/src"
-                "${cmock_SOURCE_DIR}/vendor/unity/extras/memory/src"
-                )
-set_target_properties(cmock PROPERTIES
-                ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
-                POSITION_INDEPENDENT_CODE ON
-                COMPILE_FLAGS "-Og"
-                )
+target_include_directories(
+  cmock
+  PUBLIC "${cmock_SOURCE_DIR}/src"
+         "${cmock_SOURCE_DIR}/vendor/unity/src/"
+         "${cmock_SOURCE_DIR}/examples"
+         "${cmock_SOURCE_DIR}/vendor/unity/extras/fixture/src"
+         "${cmock_SOURCE_DIR}/vendor/unity/extras/memory/src")
+set_target_properties(
+  cmock
+  PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
+             POSITION_INDEPENDENT_CODE ON
+             COMPILE_FLAGS "-Og")
 
 # coreJSON
 include("${corejson_SOURCE_DIR}/jsonFilePaths.cmake")
 add_library(coreJSON ${JSON_SOURCES})
 target_include_directories(coreJSON PUBLIC ${JSON_INCLUDE_PUBLIC_DIRS})
 
-#  ====================================  Test Configuration ========================================
+# ====================================  Test Configuration
+# ========================================
 
-# Use CTest utility for managing test runs. This has to be added BEFORE
-# defining test targets with add_test()
+# Use CTest utility for managing test runs. This has to be added BEFORE defining
+# test targets with add_test()
 enable_testing()
 
 # Add function to enable CMock based tests and coverage.
@@ -98,9 +98,9 @@ add_subdirectory(unit-test)
 # ========================================
 
 # Add a target for running coverage on tests.
-add_custom_target( coverage
-    COMMAND ${CMAKE_COMMAND} -DCMOCK_DIR=${cmock_SOURCE_DIR}
-    -P ${MODULE_ROOT_DIR}/tools/cmock/coverage.cmake
-    DEPENDS cmock unity ota_job_handler_utest job_parser_utest
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-)
+add_custom_target(
+  coverage
+  COMMAND ${CMAKE_COMMAND} -DCMOCK_DIR=${cmock_SOURCE_DIR} -P
+          ${MODULE_ROOT_DIR}/tools/cmock/coverage.cmake
+  DEPENDS cmock unity ota_job_handler_utest job_parser_utest
+  WORKING_DIRECTORY ${CMAKE_BINARY_DIR})

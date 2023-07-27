@@ -123,6 +123,20 @@ command in your `build/` directory:
 After the simulator stops printing output, check the IoT Core Console to verify
 that the OTA Job you created is marked as "Successful".
 
+## 4. Run the Unit Tests
+
+### 4.1 Running the OTA Parser Unit tests
+The unit tests are broken out by the 'module' they reside in (aka the /lib folder) and can be executed per module. To run the OTA parser unit tests you'll run the following commands
+
+From here you can build the unit tests...
+```
+cd lib/iot-core-jobs-ota-parser
+cmake -B build -S test
+make -C build
+```
+
+Once built, the test executables can be found under the `lib/iot-core-jobs-ota-parser/build/bin/tests/` directory
+
 ## Security
 
 See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more
