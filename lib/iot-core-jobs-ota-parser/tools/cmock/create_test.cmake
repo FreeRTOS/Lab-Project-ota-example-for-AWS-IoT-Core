@@ -8,7 +8,7 @@ function(create_test test_name test_src link_list dep_list include_list)
   add_custom_command(
     OUTPUT ${test_name}_runner.c
     COMMAND
-      ruby ${CMOCK_DIR}/vendor/unity/auto/generate_test_runner.rb
+      ruby ${cmock_SOURCE_DIR}/vendor/unity/auto/generate_test_runner.rb
       ${MODULE_ROOT_DIR}/tools/cmock/project.yml ${test_src_absolute}
       ${test_name}_runner.c
     DEPENDS ${test_src})
@@ -90,7 +90,7 @@ function(create_mock_list mock_name mock_list cmock_config mock_include_list
     get_filename_component(mock_file_dir ${mock_file} DIRECTORY)
     add_custom_command(
       OUTPUT ${mocks_dir}/mock_${mock_file_name}.c
-      COMMAND ruby ${CMOCK_DIR}/lib/cmock.rb -o${cmock_config} ${mock_file_abs}
+      COMMAND ruby ${cmock_SOURCE_DIR}/lib/cmock.rb -o${cmock_config} ${mock_file_abs}
       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
     target_sources(${mock_name} PUBLIC ${mocks_dir}/mock_${mock_file_name}.c)
 
