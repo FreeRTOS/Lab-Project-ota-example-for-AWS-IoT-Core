@@ -96,7 +96,7 @@
         formatter = pkgs.writeShellScriptBin "formatter" ''
           for f in "$@"; do
             if [ -d "$f" ]; then
-              (cd "$f"; ${fd}/bin/fd -t f -H -E '**/lib/*/*' -x ${format_cmd})
+              (cd "$f"; ${fd}/bin/fd -t f -H -x ${format_cmd})
             else
               ${format_cmd} "$f"
             fi

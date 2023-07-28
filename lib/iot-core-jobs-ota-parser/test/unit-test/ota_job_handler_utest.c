@@ -41,15 +41,15 @@ AfrOtaJobDocumentFields_t parsedFields;
 void setUp()
 {
     parsedFields.signature = "expectedSignature";
-    parsedFields.signatureLen = strlen("expectedSignature");
+    parsedFields.signatureLen = strlen( "expectedSignature" );
     parsedFields.filepath = "expectedFilepath";
-    parsedFields.filepathLen = strlen("expectedFilepath");
+    parsedFields.filepathLen = strlen( "expectedFilepath" );
     parsedFields.certfile = "expectedCertfile";
-    parsedFields.certfileLen = strlen("expectedCertfile");
+    parsedFields.certfileLen = strlen( "expectedCertfile" );
     parsedFields.authScheme = "expectedAuthScheme";
-    parsedFields.authSchemeLen = strlen("expectedAuthScheme");
+    parsedFields.authSchemeLen = strlen( "expectedAuthScheme" );
     parsedFields.imageRef = "expectedImageRef";
-    parsedFields.imageRefLen = strlen("expectedImageRef");
+    parsedFields.imageRefLen = strlen( "expectedImageRef" );
     parsedFields.fileId = UINT32_MAX;
     parsedFields.fileSize = UINT32_MAX;
     parsedFields.fileType = UINT32_MAX;
@@ -79,15 +79,15 @@ int suiteTearDown( int numFailures )
 void verifyCallbackValues( AfrOtaJobDocumentFields_t * params )
 {
     TEST_ASSERT_EQUAL_STRING( "expectedSignature", params->signature );
-    TEST_ASSERT_EQUAL( strlen("expectedSignature"), params->signatureLen );
+    TEST_ASSERT_EQUAL( strlen( "expectedSignature" ), params->signatureLen );
     TEST_ASSERT_EQUAL_STRING( "expectedFilepath", params->filepath );
-    TEST_ASSERT_EQUAL( strlen("expectedFilepath"), params->filepathLen );
+    TEST_ASSERT_EQUAL( strlen( "expectedFilepath" ), params->filepathLen );
     TEST_ASSERT_EQUAL_STRING( "expectedCertfile", params->certfile );
-    TEST_ASSERT_EQUAL( strlen("expectedCertfile"), params->certfileLen );
+    TEST_ASSERT_EQUAL( strlen( "expectedCertfile" ), params->certfileLen );
     TEST_ASSERT_EQUAL_STRING( "expectedAuthScheme", params->authScheme );
-    TEST_ASSERT_EQUAL( strlen("expectedAuthScheme"), params->authSchemeLen );
+    TEST_ASSERT_EQUAL( strlen( "expectedAuthScheme" ), params->authSchemeLen );
     TEST_ASSERT_EQUAL_STRING( "expectedImageRef", params->imageRef );
-    TEST_ASSERT_EQUAL( strlen("expectedImageRef"), params->imageRefLen );
+    TEST_ASSERT_EQUAL( strlen( "expectedImageRef" ), params->imageRefLen );
     TEST_ASSERT_EQUAL( UINT32_MAX, params->fileId );
     TEST_ASSERT_EQUAL( UINT32_MAX, params->fileSize );
     TEST_ASSERT_EQUAL( UINT32_MAX, params->fileType );
