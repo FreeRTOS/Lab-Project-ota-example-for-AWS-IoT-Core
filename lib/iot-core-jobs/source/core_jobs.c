@@ -64,7 +64,9 @@ bool isMessageJobStartNextAccepted( const char * topic,
     bool isMatch = false;
     char expectedBuffer[ TOPIC_BUFFER_SIZE + 1 ] = { 0 };
     char thingName[ MAX_THING_NAME_LENGTH + 1 ] = { 0 };
-    mqttWrapper_getThingName( thingName );
+    size_t thingNameLength = 0U;
+
+    mqttWrapper_getThingName( thingName, &thingNameLength );
     snprintf( expectedBuffer,
               TOPIC_BUFFER_SIZE,
               "%s%s%s",

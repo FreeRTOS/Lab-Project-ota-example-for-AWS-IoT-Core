@@ -16,11 +16,12 @@ void mqttWrapper_setCoreMqttContext( MQTTContext_t * mqttContext );
 
 MQTTContext_t * mqttWrapper_getCoreMqttContext( void );
 
-void mqttWrapper_setThingName( char * thingName );
+void mqttWrapper_setThingName( char * thingName, size_t thingNameLength );
 
-void mqttWrapper_getThingName( char * thingNameBuffer );
+void mqttWrapper_getThingName( char * thingNameBuffer,
+                               size_t * thingNameLength );
 
-bool mqttWrapper_connect( char * thingName );
+bool mqttWrapper_connect( char * thingName, size_t thingNameLength );
 
 bool mqttWrapper_isConnected( void );
 
