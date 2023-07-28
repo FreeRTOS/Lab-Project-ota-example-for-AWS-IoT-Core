@@ -16,6 +16,7 @@ static MQTTContext_t * globalCoreMqttContext = NULL;
 
 #define MAX_THING_NAME_SIZE 128U
 static char globalThingName[ MAX_THING_NAME_SIZE + 1 ];
+static size_t globalThingNameLength = 0U;
 
 void mqttWrapper_setCoreMqttContext( MQTTContext_t * mqttContext )
 {
@@ -28,21 +29,23 @@ MQTTContext_t * mqttWrapper_getCoreMqttContext( void )
     return globalCoreMqttContext;
 }
 
-void mqttWrapper_setThingName( char * thingName )
+void mqttWrapper_setThingName( char * thingName, size_t thingNameLength )
 {
     strncpy( globalThingName, thingName, MAX_THING_NAME_SIZE );
+    globalThingNameLength = thingNameLength;
 }
 
-void mqttWrapper_getThingName( char * thingNameBuffer )
+void mqttWrapper_getThingName( char * thingNameBuffer,
+                               size_t * thingNameLength )
 {
-    size_t thingNameLength = 0;
     assert( globalThingName[ 0 ] != 0 );
-    thingNameLength = strlen( globalThingName );
-    memcpy( thingNameBuffer, globalThingName, thingNameLength );
-    thingNameBuffer[ thingNameLength ] = '\0';
+
+    memcpy( thingNameBuffer, globalThingName, globalThingNameLength );
+    thingNameBuffer[ globalThingNameLength ] = '\0';
+    *thingNameLength = globalThingNameLength;
 }
 
-bool mqttWrapper_connect( char * thingName )
+bool mqttWrapper_connect( char * thingName, size_t thingNameLength )
 {
     MQTTConnectInfo_t connectInfo = { 0 };
     MQTTStatus_t mqttStatus = MQTTSuccess;
@@ -51,7 +54,7 @@ bool mqttWrapper_connect( char * thingName )
     assert( globalCoreMqttContext != NULL );
 
     connectInfo.pClientIdentifier = thingName;
-    connectInfo.clientIdentifierLength = ( uint16_t ) sizeof( thingName );
+    connectInfo.clientIdentifierLength = thingNameLength;
     connectInfo.pUserName = NULL;
     connectInfo.userNameLength = 0U;
     connectInfo.pPassword = NULL;

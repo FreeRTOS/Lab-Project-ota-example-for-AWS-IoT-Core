@@ -43,6 +43,7 @@ static size_t stringBuilder( char * buffer,
  * @param[in] streamName Name of the MQTT stream.
  * @param[in] streamNameLength Length of the MQTT stream name.
  * @param[in] thingName Name of the thing.
+ * @param[in] thingNameLength Length of the thing name of the Device.
  * @param[in] apiSuffix Last part of the MQTT topic.
  *
  * @return uint16_t Length of the MQTT topic, not including the terminator.
@@ -52,6 +53,7 @@ static uint16_t createTopic( char * topicBuffer,
                              char * streamName,
                              size_t streamNameLength,
                              char * thingName,
+                             size_t thingNameLength,
                              char * apiSuffix );
 
 /**
@@ -118,13 +120,12 @@ static uint16_t createTopic( char * topicBuffer,
                              char * streamName,
                              size_t streamNameLength,
                              char * thingName,
+                             size_t thingNameLength,
                              char * apiSuffix )
 {
     uint16_t topicLen = 0;
     char streamNameBuff[ STREAM_NAME_MAX_LEN + 1 ];
-
-    memset(streamNameBuff, '\0', STREAM_NAME_MAX_LEN + 1);
-    memcpy(streamNameBuff, streamName, streamNameLength);
+    char thingNameBuff[ MAX_THINGNAME_LEN + 1 ];
 
     /* NULL-terminated list of topic string parts. */
     const char * topicParts[] = { MQTT_API_THINGS,
@@ -136,10 +137,13 @@ static uint16_t createTopic( char * topicBuffer,
                                   NULL,
                                   NULL };
 
-    memset( streamNameBuff, '\0', STREAM_NAME_MAX_LEN );
+    memset( streamNameBuff, '\0', STREAM_NAME_MAX_LEN + 1 );
     memcpy( streamNameBuff, streamName, streamNameLength );
 
-    topicParts[ 1 ] = ( const char * ) thingName;
+    memset( thingNameBuff, '\0', MAX_THINGNAME_LEN + 1 );
+    memcpy( thingNameBuff, thingName, thingNameLength );
+
+    topicParts[ 1 ] = ( const char * ) thingNameBuff;
     topicParts[ 3 ] = ( const char * ) streamNameBuff;
     topicParts[ 4 ] = ( const char * ) apiSuffix;
 
@@ -154,6 +158,7 @@ uint8_t mqttDownloader_init( MqttFileDownloaderContext_t * context,
                              char * streamName,
                              size_t streamNameLength,
                              char * thingName,
+                             size_t thingNameLength,
                              uint8_t dataType )
 {
     char * streamDataApiSuffix = NULL;
@@ -190,6 +195,7 @@ uint8_t mqttDownloader_init( MqttFileDownloaderContext_t * context,
             streamName,
             streamNameLength,
             thingName,
+            thingNameLength,
             streamDataApiSuffix );
         if( context->topicStreamDataLength == 0 )
         {
@@ -216,6 +222,7 @@ uint8_t mqttDownloader_init( MqttFileDownloaderContext_t * context,
                                                   streamName,
                                                   streamNameLength,
                                                   thingName,
+                                                  thingNameLength,
                                                   getStreamApiSuffix );
         if( context->topicGetStreamLength == 0 )
         {

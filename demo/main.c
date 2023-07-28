@@ -23,6 +23,8 @@
 #include "transport/transport_wrapper.h"
 #include "utils/clock.h"
 
+#define MAX_THING_NAME_SIZE 128U
+
 static TransportInterface_t transport = { 0 };
 static MQTTContext_t mqttContext = { 0 };
 static uint8_t networkBuffer[ 5000U ];
@@ -68,17 +70,18 @@ int main( int argc, char * argv[] )
 
     transport_tlsInit( &transport );
     mqttResult = MQTT_Init( &mqttContext,
-                                         &transport,
-                                         Clock_GetTimeMs,
-                                         mqttEventCallback,
-                                         &fixedBuffer );
+                            &transport,
+                            Clock_GetTimeMs,
+                            mqttEventCallback,
+                            &fixedBuffer );
     assert( mqttResult == MQTTSuccess );
 
     xTaskCreate( otaAgentTask, "T_OTA", 6000, ( void * ) argv, 1, NULL );
     xTaskCreate( mqttProcessLoopTask, "T_MQTT", 6000, NULL, 2, NULL );
 
     mqttWrapper_setCoreMqttContext( &mqttContext );
-    mqttWrapper_setThingName( argv[ 5 ] );
+    mqttWrapper_setThingName( argv[ 5 ],
+                              strnlen( argv[ 5 ], MAX_THING_NAME_SIZE ) );
 
     vTaskStartScheduler();
 
@@ -121,8 +124,7 @@ static void mqttEventCallback( MQTTContext_t * mqttContext,
         assert( deserializedInfo->pPublishInfo != NULL );
         topic = ( char * ) deserializedInfo->pPublishInfo->pTopicName;
         topicLength = deserializedInfo->pPublishInfo->topicNameLength;
-        message = ( uint8_t * )
-                                deserializedInfo->pPublishInfo->pPayload;
+        message = ( uint8_t * ) deserializedInfo->pPublishInfo->pPayload;
         messageLength = deserializedInfo->pPublishInfo->payloadLength;
         handleIncomingMQTTMessage( topic, topicLength, message, messageLength );
     }
@@ -188,7 +190,8 @@ static void otaAgentTask( void * parameters )
                                         endpoint );
     assert( result );
 
-    result = mqttWrapper_connect( thingName );
+    result = mqttWrapper_connect( thingName,
+                                  strnlen( thingName, MAX_THING_NAME_SIZE ) );
     assert( result );
     printf( "Successfully connected to IoT Core\n" );
 
