@@ -81,6 +81,7 @@ Plug your ESP32-WROOM or ESP32-WROVER board into your computer. Open a terminal 
 
 ```bash
 nix develop --extra-experimental-features "nix-command flakes"
+git submodule update --init --recursive
 idf.py build
 idf.py flash
 ```
