@@ -44,7 +44,9 @@ void otaDemo_start( void )
     if( mqttWrapper_isConnected() )
     {
         char thingName[ MAX_THING_NAME_SIZE + 1 ] = { 0 };
-        mqttWrapper_getThingName( thingName );
+        size_t thingNameLength = 0U;
+
+        mqttWrapper_getThingName( thingName, &thingNameLength );
         coreJobs_startNextPendingJob( thingName,
                                       strnlen( thingName, MAX_THING_NAME_SIZE ),
                                       "test",
@@ -107,11 +109,17 @@ static bool handleJobsStartNextAcceptedCallback( const char * jobId,
 static void processOtaDocumentCallback( AfrOtaJobDocumentFields_t * params )
 {
     char thingName[ MAX_THING_NAME_SIZE + 1 ] = { 0 };
-    mqttWrapper_getThingName( thingName );
+    size_t thingNameLength = 0U;
 
-    numOfBlocksRemaining = params->fileSize / mqttFileDownloader_CONFIG_BLOCK_SIZE;
-    numOfBlocksRemaining += ( params->fileSize % mqttFileDownloader_CONFIG_BLOCK_SIZE > 0 ) ? 1
-                                                                         : 0;
+    mqttWrapper_getThingName( thingName, &thingNameLength );
+
+    numOfBlocksRemaining = params->fileSize /
+                           mqttFileDownloader_CONFIG_BLOCK_SIZE;
+    numOfBlocksRemaining += ( params->fileSize %
+                                  mqttFileDownloader_CONFIG_BLOCK_SIZE >
+                              0 )
+                                ? 1
+                                : 0;
     currentFileId = params->fileId;
     currentBlockOffset = 0;
     totalBytesReceived = 0;
@@ -120,6 +128,7 @@ static void processOtaDocumentCallback( AfrOtaJobDocumentFields_t * params )
                          params->imageRef,
                          params->imageRefLen,
                          thingName,
+                         thingNameLength,
                          DATA_TYPE_JSON );
 
     /* Request the first block */
@@ -165,7 +174,9 @@ static void finishDownload()
     /* TODO: Do something with the completed download */
     /* Start the bootloader */
     char thingName[ MAX_THING_NAME_SIZE + 1 ] = { 0 };
-    mqttWrapper_getThingName( thingName );
+    size_t thingNameLength = 0U;
+
+    mqttWrapper_getThingName( thingName, &thingNameLength );
     coreJobs_updateJobStatus( thingName,
                               strnlen( thingName, MAX_THING_NAME_SIZE ),
                               globalJobId,
