@@ -70,7 +70,7 @@ bool otaParser_handleJobDoc( OtaDocProcessor_t docCallback,
                                                   &fileValueLength,
                                                   NULL ) ) )
         {
-            AfrOtaJobDocumentFields_t fields;
+            AfrOtaJobDocumentFields_t fields = { 0 };
             docHandled &= populateJobDocFields( jobDoc,
                                                 jobDocLength,
                                                 fileIndex,
