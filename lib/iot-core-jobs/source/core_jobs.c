@@ -57,8 +57,9 @@ static size_t getUpdateJobExecutionMsg( JobStatus_t status,
                                         char * buffer,
                                         size_t bufferSize );
 
-bool isMessageJobStartNextAccepted( const char * topic,
-                                    const size_t topicLength )
+/* TODO: Consider creating a 'thingName topic matching' function. This could simply call that function */
+bool coreJobs_isStartNextAccepted( const char * topic,
+                                   const size_t topicLength )
 {
     /* TODO: Inefficient - better implementation shouldn't use snprintf */
     bool isMatch = false;
@@ -79,66 +80,39 @@ bool isMessageJobStartNextAccepted( const char * topic,
     return isMatch;
 }
 
-bool getJobStartNextFields( const uint8_t * message,
-                            const size_t messageLength,
-                            char ** jobId,
-                            size_t * jobIdLength,
-                            char ** jobDoc,
-                            size_t * jobDocLength )
+size_t coreJobs_getJobId(const char * message, size_t messageLength, char * jobId)
 {
+    size_t jobIdLength = 0U;
     JSONStatus_t jsonResult = JSONNotFound;
-    jsonResult = JSON_Validate( ( char * ) message, messageLength );
+    jsonResult = JSON_Validate( message, messageLength );
     if( jsonResult == JSONSuccess )
     {
-        jsonResult = JSON_Search( ( char * ) message,
+        jsonResult = JSON_Search( message,
                                   messageLength,
                                   "execution.jobId",
                                   sizeof( "execution.jobId" ) - 1,
                                   jobId,
                                   jobIdLength );
     }
+    return jobIdLength;
+}
+
+size_t coreJobs_getJobDocument(const char * message, size_t messageLength, char * jobDoc)
+{
+    size_t jobDocLength = 0U;
+    JSONStatus_t jsonResult = JSONNotFound;
+    jsonResult = JSON_Validate( message, messageLength );
     if( jsonResult == JSONSuccess )
     {
-        jsonResult = JSON_Search( ( char * ) message,
+        jsonResult = JSON_Search( message,
                                   messageLength,
                                   "execution.jobDocument",
                                   sizeof( "execution.jobDocument" ) - 1,
                                   jobDoc,
                                   jobDocLength );
     }
-    return jsonResult == JSONSuccess;
-}
 
-/*
- * Can be called on any incoming MQTT message
- * If the incoming MQTT message is intended for an AWS IoT Jobs topic, then
- * this function parses the Job doc and distributes it through the Jobs
- * chain of responsibilities, then returns true. Returns false otherwise.
- */
-bool coreJobs_handleIncomingMQTTMessage(
-    const IncomingJobDocHandler_t jobDocHandler,
-    const char * topic,
-    const size_t topicLength,
-    const uint8_t * message,
-    size_t messageLength )
-{
-    bool willHandle = false;
-    char * jobId = NULL;
-    size_t jobIdLength = 0U;
-    char * jobDoc = NULL;
-    size_t jobDocLength = 0U;
-
-    willHandle = isMessageJobStartNextAccepted( topic, topicLength );
-    willHandle = willHandle && getJobStartNextFields( message,
-                                                      messageLength,
-                                                      &jobId,
-                                                      &jobIdLength,
-                                                      &jobDoc,
-                                                      &jobDocLength );
-
-    willHandle = willHandle &&
-                 ( *jobDocHandler )( jobId, jobIdLength, jobDoc, jobDocLength );
-    return willHandle;
+    return jobDocLength;
 }
 
 bool coreJobs_startNextPendingJob( char * thingname,
