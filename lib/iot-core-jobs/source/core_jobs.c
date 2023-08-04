@@ -80,7 +80,7 @@ bool coreJobs_isStartNextAccepted( const char * topic,
     return isMatch;
 }
 
-size_t coreJobs_getJobId(const char * message, size_t messageLength, char * jobId)
+size_t coreJobs_getJobId(const char * message, size_t messageLength, char ** jobId)
 {
     size_t jobIdLength = 0U;
     JSONStatus_t jsonResult = JSONNotFound;
@@ -92,12 +92,12 @@ size_t coreJobs_getJobId(const char * message, size_t messageLength, char * jobI
                                   "execution.jobId",
                                   sizeof( "execution.jobId" ) - 1,
                                   jobId,
-                                  jobIdLength );
+                                  &jobIdLength );
     }
     return jobIdLength;
 }
 
-size_t coreJobs_getJobDocument(const char * message, size_t messageLength, char * jobDoc)
+size_t coreJobs_getJobDocument(const char * message, size_t messageLength, char ** jobDoc)
 {
     size_t jobDocLength = 0U;
     JSONStatus_t jsonResult = JSONNotFound;
@@ -109,7 +109,7 @@ size_t coreJobs_getJobDocument(const char * message, size_t messageLength, char 
                                   "execution.jobDocument",
                                   sizeof( "execution.jobDocument" ) - 1,
                                   jobDoc,
-                                  jobDocLength );
+                                  &jobDocLength );
     }
 
     return jobDocLength;

@@ -62,6 +62,7 @@ bool otaDemo_handleIncomingMQTTMessage( char * topic,
     if ( handled )
     {
         handled = jobHandlerChain(message, messageLength);
+        printf( "Handled? %d", handled);
     }
     else {
         handled = mqttDownloader_handleIncomingMessage(
@@ -97,9 +98,8 @@ static bool jobHandlerChain(uint8_t * message, size_t messageLength)
         strncpy( globalJobId, jobId, jobIdLength );
     }
 
-    jobDocLength = coreJobs_getJobDocument(message, messageLength, jobDoc);
-    jobIdLength = coreJobs_getJobId(message, messageLength, jobId);
-
+    jobDocLength = coreJobs_getJobDocument(message, messageLength, &jobDoc);
+    jobIdLength = coreJobs_getJobId(message, messageLength, &jobId);
 
     if ( jobDocLength != 0U && jobIdLength != 0U ) 
     {

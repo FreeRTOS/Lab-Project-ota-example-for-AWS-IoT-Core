@@ -78,7 +78,7 @@ bool coreJobs_updateJobStatus( char * thingname,
  * @param jobId [Out] The job ID
  * @return size_t The job ID length
  */
-size_t coreJobs_getJobId(const char * message, size_t messageLength, char * jobId);
+size_t coreJobs_getJobId(const char * message, size_t messageLength, char ** jobId);
 
 /**
  * @brief Retrieves the job document from a given message (if applicable)
@@ -88,7 +88,7 @@ size_t coreJobs_getJobId(const char * message, size_t messageLength, char * jobI
  * @param jobDoc [Out] The job document
  * @return size_t The length of the job document
  */
-size_t coreJobs_getJobDocument(const char * message, size_t messageLength, char * jobDoc);
+size_t coreJobs_getJobDocument(const char * message, size_t messageLength, char ** jobDoc);
 
 bool coreJobs_isStartNextAccepted( const char * topic,
                                    const size_t topicLength );
