@@ -35,8 +35,15 @@ list(APPEND mock_define_list "")
 # list the files you would like to test here
 list(APPEND real_source_files ${CORE_JOBS_SOURCES} ${JSON_SOURCES} ${MQTT_SOURCES})
 # list the directories the module under test includes
-list(APPEND real_include_directories . ${CORE_JOBS_INCLUDES}
-     ${JSON_INCLUDE_PUBLIC_DIRS})
+list(APPEND real_include_directories . 
+    ${CORE_JOBS_INCLUDES}
+    ${JSON_INCLUDE_PUBLIC_DIRS}
+    ${MQTT_INCLUDE_PUBLIC_DIRS}
+    "${MODULE_ROOT_DIR}/test/unit-test/dependencies/"
+    "${MODULE_ROOT_DIR}/test/unit-test/dependencies/coreMQTT/"
+    "${MODULE_ROOT_DIR}/test/unit-test/dependencies/coreMQTT/api_cfg"
+    "${freertos_kernel_SOURCE_DIR}/include/"
+    "${MODULE_ROOT_DIR}/test/unit-test/dependencies/FreeRTOS-Kernel")
 
 # =====================  Create UnitTest Code here (edit)  =====================
 
