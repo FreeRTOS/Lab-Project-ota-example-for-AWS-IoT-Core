@@ -62,21 +62,30 @@ bool coreJobs_isStartNextAccepted( const char * topic,
                                    const size_t topicLength )
 {
     /* TODO: Inefficient - better implementation shouldn't use snprintf */
-    bool isMatch = false;
     char expectedBuffer[ TOPIC_BUFFER_SIZE + 1 ] = { 0 };
     char thingName[ MAX_THING_NAME_LENGTH + 1 ] = { 0 };
     size_t thingNameLength = 0U;
+    bool isMatch = true;
 
-    mqttWrapper_getThingName( thingName, &thingNameLength );
-    snprintf( expectedBuffer,
+    if ( topic == NULL || topicLength == 0 )
+    {
+        isMatch = false;
+    }
+
+    if ( isMatch )
+    {
+        mqttWrapper_getThingName( thingName, &thingNameLength );
+        snprintf( expectedBuffer,
               TOPIC_BUFFER_SIZE,
               "%s%s%s",
               "$aws/things/",
               thingName,
               "/jobs/start-next/accepted" );
-    isMatch = ( uint32_t ) strnlen( expectedBuffer, TOPIC_BUFFER_SIZE ) ==
+        isMatch = ( uint32_t ) strnlen( expectedBuffer, TOPIC_BUFFER_SIZE ) ==
               topicLength;
-    isMatch = isMatch && strncmp( expectedBuffer, topic, topicLength ) == 0;
+        isMatch = isMatch && strncmp( expectedBuffer, topic, topicLength ) == 0;
+    }
+    
     return isMatch;
 }
 
