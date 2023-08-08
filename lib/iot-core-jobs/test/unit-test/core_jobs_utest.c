@@ -42,6 +42,36 @@ int suiteTearDown( int numFailures )
     return numFailures;
 }
 
+/* =============================   CALLBACKS   ============================= */
+
+bool startJob_publishCallback(char * topic,
+                          size_t topicLength,
+                          uint8_t * message,
+                          size_t messageLength,
+                          int NumCalls)
+{
+    TEST_ASSERT_EQUAL_MEMORY(topic, "$aws/things/thingname/jobs/start-next", strlen("$aws/things/thingname/jobs/start-next"));
+    TEST_ASSERT_EQUAL_INT(strlen("$aws/things/thingname/jobs/start-next"), topicLength);
+    TEST_ASSERT_EQUAL_MEMORY(message, "{\"clientToken\":\"clientToken\"}", strlen("{\"clientToken\":\"clientToken\"}"));
+    TEST_ASSERT_EQUAL_INT( strlen("{\"clientToken\":\"clientToken\"}"), messageLength);
+
+    return true;
+}
+
+bool updateJob_publishCallback(char * topic,
+                          size_t topicLength,
+                          uint8_t * message,
+                          size_t messageLength,
+                          int NumCalls)
+{
+    TEST_ASSERT_EQUAL_MEMORY(topic, "$aws/things/thingname/jobs/jobId/update", strlen("$aws/things/thingname/jobs/jobId/update"));
+    TEST_ASSERT_EQUAL_INT(strlen("$aws/things/thingname/jobs/jobId/update"), topicLength);
+    TEST_ASSERT_EQUAL_MEMORY(message, "{\"status\":\"SUCCEEDED\",\"expectedVersion\":\"1.0.1\"}", strlen("{\"status\":\"SUCCEEDED\",\"expectedVersion\":\"1.0.1\"}"));
+    TEST_ASSERT_EQUAL_INT( strlen("{\"status\":\"SUCCEEDED\",\"expectedVersion\":\"1.0.1\"}"), messageLength);
+
+    return true;
+}
+
 /* ===============================   TESTS   =============================== */
 
 void test_isStartNextAccepted_isStartNextMsg( void )
@@ -161,55 +191,55 @@ void test_getJobId_returnsZeroLengthJob_givenZeroMessageLength( void )
 void test_getJobDocument_returnsDoc( void )
 {
     char * message = "{\"execution\":{\"jobId\":\"identification\",\"jobDocument\":\"document\"}}";
-    char * jobId = NULL;
+    char * jobDocument = NULL;
 
-    size_t result = coreJobs_getJobDocument(message, strlen(message), &jobId);
+    size_t result = coreJobs_getJobDocument(message, strlen(message), &jobDocument);
 
     TEST_ASSERT_EQUAL(strlen("document"), result);
-    TEST_ASSERT_EQUAL_MEMORY("document", jobId, result);
+    TEST_ASSERT_EQUAL_MEMORY("document", jobDocument, result);
 }
 
 void test_getJobDocument_cannotFindDoc( void )
 {
     char * message = "{\"execution\":{\"jobId\":\"identification\"}}";
-    char * jobId = NULL;
+    char * jobDocument = NULL;
 
-    size_t result = coreJobs_getJobDocument(message, strlen(message), &jobId);
+    size_t result = coreJobs_getJobDocument(message, strlen(message), &jobDocument);
 
     TEST_ASSERT_EQUAL(0U, result);
-    TEST_ASSERT_NULL(jobId);
+    TEST_ASSERT_NULL(jobDocument);
 }
 
 void test_getJobDocument_malformedJson( void )
 {
     char * message = "clearlyNotJson";
-    char * jobId = NULL;
+    char * jobDocument = NULL;
 
-    size_t result = coreJobs_getJobDocument(message, strlen(message), &jobId);
+    size_t result = coreJobs_getJobDocument(message, strlen(message), &jobDocument);
 
     TEST_ASSERT_EQUAL(0U, result);
-    TEST_ASSERT_NULL(jobId);
+    TEST_ASSERT_NULL(jobDocument);
 }
 
 void test_getJobDocument_returnsZeroLengthJob_givenNullMessage( void )
 {
-    char * jobId = NULL;
+    char * jobDocument = NULL;
 
-    size_t result = coreJobs_getJobDocument(NULL, 10U, &jobId);
+    size_t result = coreJobs_getJobDocument(NULL, 10U, &jobDocument);
 
     TEST_ASSERT_EQUAL(0U, result);
-    TEST_ASSERT_NULL(jobId);
+    TEST_ASSERT_NULL(jobDocument);
 }
 
 void test_getJobDocument_returnsZeroLengthJob_givenZeroMessageLength( void )
 {
     char * message = "{\"execution\":{\"jobId\":\"identification\",\"jobDocument\":\"document\"}}";
-    char * jobId = NULL;
+    char * jobDocument = NULL;
 
-    size_t result = coreJobs_getJobDocument(message, 0U, &jobId);
+    size_t result = coreJobs_getJobDocument(message, 0U, &jobDocument);
 
     TEST_ASSERT_EQUAL(0U, result);
-    TEST_ASSERT_NULL(jobId);
+    TEST_ASSERT_NULL(jobDocument);
 }
 
 void test_startNextPendingJob_startsJob( void )
@@ -217,13 +247,51 @@ void test_startNextPendingJob_startsJob( void )
     char * thingName = "thingname";
     char * clientToken = "clientToken";
 
-    mqttWrapper_publish_ExpectAndReturn(NULL, strlen("$aws/things/thingname/jobs/start-next"), NULL, strlen("{\"clientToken\":\"clientToken\"}"), true);
-    mqttWrapper_publish_IgnoreArg_topic();
-    mqttWrapper_publish_IgnoreArg_message();
+    mqttWrapper_publish_Stub(startJob_publishCallback);
 
     bool result = coreJobs_startNextPendingJob(thingName, (size_t) strlen(thingName), clientToken, (size_t) strlen(clientToken));
 
     TEST_ASSERT_TRUE(result);
+}
+
+void test_startNextPendingJob_returnsFalse_givenNullThingname( void )
+{
+    char * thingName = NULL;
+    char * clientToken = "clientToken";
+
+    bool result = coreJobs_startNextPendingJob(thingName, 10U, clientToken, (size_t) strlen(clientToken));
+
+    TEST_ASSERT_FALSE(result);
+}
+
+void test_startNextPendingJob_returnsFalse_givenNullClientToken( void )
+{
+    char * thingName = "thingname";
+    char * clientToken = NULL;
+
+    bool result = coreJobs_startNextPendingJob(thingName, (size_t) strlen(thingName), clientToken, 1U);
+
+    TEST_ASSERT_FALSE(result);
+}
+
+void test_startNextPendingJob_returnsFalse_gienZeroThingnameLength( void )
+{
+    char * thingName = "thingname";
+    char * clientToken = "clientToken";
+
+    bool result = coreJobs_startNextPendingJob(thingName, 0U, clientToken, (size_t) strlen(clientToken));
+
+    TEST_ASSERT_FALSE(result);
+}
+
+void test_startNextPendingJob_returnsFalse_givenZeroClientTokenLength( void )
+{
+    char * thingName = "thingname";
+    char * clientToken = "clientToken";
+
+    bool result = coreJobs_startNextPendingJob(thingName, (size_t) strlen(thingName), clientToken, 0U);
+
+    TEST_ASSERT_FALSE(result);
 }
 
 void test_updateJobStatus_updatesStatus( void )
@@ -232,10 +300,8 @@ void test_updateJobStatus_updatesStatus( void )
     char * jobId = "jobId";
     char * expectedVersion = "1.0.1";
 
-    mqttWrapper_publish_ExpectAndReturn(NULL, strlen("$aws/things/thingname/jobs/jobId/update"), NULL, strlen("{\"status\":\"SUCCEEDED\",\"expectedVersion\":\"1.0.1\"}"), true);
-    mqttWrapper_publish_IgnoreArg_topic();
-    mqttWrapper_publish_IgnoreArg_message();
-    
+    mqttWrapper_publish_Stub();
+
 
     bool result = coreJobs_updateJobStatus(thingName,
             (size_t) strlen(thingName),
@@ -248,3 +314,104 @@ void test_updateJobStatus_updatesStatus( void )
     TEST_ASSERT_TRUE(result);
 }
 
+void test_updateJobStatus_returnsFalse_givenNullThingname( void )
+{
+    char * thingName = NULL;
+    char * jobId = "jobId";
+    char * expectedVersion = "1.0.1";
+
+    bool result = coreJobs_updateJobStatus(thingName,
+            1U,
+            jobId,
+            (size_t) strlen(jobId),
+            Succeeded,
+            expectedVersion,
+            (size_t) strlen(expectedVersion));
+
+    TEST_ASSERT_FALSE(result);
+}
+
+void test_updateJobStatus_returnsFalse_givenNullJobId( void )
+{
+    char * thingName = "thingname";
+    char * jobId = NULL;
+    char * expectedVersion = "1.0.1";
+
+    bool result = coreJobs_updateJobStatus(thingName,
+            (size_t) strlen(thingName),
+            jobId,
+            1U,
+            Succeeded,
+            expectedVersion,
+            (size_t) strlen(expectedVersion));
+
+    TEST_ASSERT_FALSE(result);
+}
+
+void test_updateJobStatus_returnsFalse_givenNullVersion( void )
+{
+    char * thingName = "thingname";
+    char * jobId = "jobId";
+    char * expectedVersion = NULL;
+
+    bool result = coreJobs_updateJobStatus(thingName,
+            (size_t) strlen(thingName),
+            jobId,
+            (size_t) strlen(jobId),
+            Succeeded,
+            expectedVersion,
+            1U);
+
+    TEST_ASSERT_FALSE(result);
+}
+
+void test_updateJobStatus_returnsFalse_givenZeroThingnameLength( void )
+{
+    char * thingName = "thingname";
+    char * jobId = "jobId";
+    char * expectedVersion = "1.0.1";
+
+    bool result = coreJobs_updateJobStatus(thingName,
+            0U,
+            jobId,
+            (size_t) strlen(jobId),
+            Succeeded,
+            expectedVersion,
+            (size_t) strlen(expectedVersion));
+
+    TEST_ASSERT_FALSE(result);
+}
+
+void test_updateJobStatus_returnsFalse_givenZeroJobIdLength( void )
+{
+    char * thingName = "thingname";
+    char * jobId = "jobId";
+    char * expectedVersion = "1.0.1";
+
+    bool result = coreJobs_updateJobStatus(thingName,
+            (size_t) strlen(thingName),
+            jobId,
+            0U,
+            Succeeded,
+            expectedVersion,
+            (size_t) strlen(expectedVersion));
+
+    TEST_ASSERT_FALSE(result);
+}
+
+void test_updateJobStatus_returnsFalse_givenZeroVersionLength( void )
+{
+    char * thingName = "thingname";
+    char * jobId = "jobId";
+    char * expectedVersion = "1.0.1";
+
+    bool result = coreJobs_updateJobStatus(thingName,
+            (size_t) strlen(thingName),
+            jobId,
+            (size_t) strlen(jobId),
+            Succeeded,
+            expectedVersion,
+            0U);
+
+    TEST_ASSERT_FALSE(result);
+}
