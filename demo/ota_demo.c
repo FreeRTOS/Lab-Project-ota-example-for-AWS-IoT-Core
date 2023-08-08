@@ -30,14 +30,11 @@ static uint32_t totalBytesReceived = 0;
 static uint8_t downloadedData[ CONFIG_MAX_FILE_SIZE ] = { 0 };
 char globalJobId[ MAX_JOB_ID_LENGTH ] = { 0 };
 
-static bool handleJobsStartNextAcceptedCallback( const char * jobId,
-                                                 const size_t jobIdLength,
-                                                 const char * jobDoc,
-                                                 const size_t jobDocLength );
 static void handleMqttStreamsBlockArrivedCallback(
     MqttFileDownloaderDataBlockInfo_t * dataBlock );
 static void processOtaDocumentCallback( AfrOtaJobDocumentFields_t * params );
 static void finishDownload();
+static bool jobHandlerChain(uint8_t * message, size_t messageLength);
 
 void otaDemo_start( void )
 {
@@ -60,20 +57,23 @@ bool otaDemo_handleIncomingMQTTMessage( char * topic,
                                         uint8_t * message,
                                         size_t messageLength )
 {
-    bool handled = coreJobs_handleIncomingMQTTMessage(
-        &handleJobsStartNextAcceptedCallback,
-        topic,
-        topicLength,
-        message,
-        messageLength );
+    bool handled = coreJobs_isStartNextAccepted( topic, topicLength );
 
-    handled = handled || mqttDownloader_handleIncomingMessage(
+    if ( handled )
+    {
+        handled = jobHandlerChain(message, messageLength);
+        printf( "Handled? %d", handled);
+    }
+    else {
+        handled = mqttDownloader_handleIncomingMessage(
                              &mqttFileDownloaderContext,
                              &handleMqttStreamsBlockArrivedCallback,
                              topic,
                              topicLength,
                              message,
                              messageLength );
+    }
+
     if( !handled )
     {
         printf( "Unrecognized incoming MQTT message received on topic: "
@@ -86,22 +86,30 @@ bool otaDemo_handleIncomingMQTTMessage( char * topic,
     return handled;
 }
 
-/* TODO: Implement for the Jobs library */
-static bool handleJobsStartNextAcceptedCallback( const char * jobId,
-                                                 const size_t jobIdLength,
-                                                 const char * jobDoc,
-                                                 const size_t jobDocLength )
+static bool jobHandlerChain(uint8_t * message, size_t messageLength)
 {
+    char * jobDoc;
+    size_t jobDocLength = 0U;
+    char * jobId;
+    size_t jobIdLength = 0U;
     bool handled = false;
-    if( globalJobId[ 0 ] == 0 )
-    {
+
+    if ( globalJobId[ 0 ] == 0 ) {
         strncpy( globalJobId, jobId, jobIdLength );
+    }
+
+    jobDocLength = coreJobs_getJobDocument(message, messageLength, &jobDoc);
+    jobIdLength = coreJobs_getJobId(message, messageLength, &jobId);
+
+    if ( jobDocLength != 0U && jobIdLength != 0U ) 
+    {
         handled = otaParser_handleJobDoc( &processOtaDocumentCallback,
                                           jobId,
                                           jobIdLength,
                                           jobDoc,
                                           jobDocLength );
     }
+
     return handled;
 }
 
@@ -186,4 +194,5 @@ static void finishDownload()
                               "2",
                               1U );
     printf( "\033[1;32mOTA Completed successfully!\033[0m\n" );
+    globalJobId[0] = 0U;
 }
