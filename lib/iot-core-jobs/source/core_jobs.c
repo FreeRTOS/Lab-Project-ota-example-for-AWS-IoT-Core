@@ -95,7 +95,7 @@ size_t coreJobs_getJobId(const char * message, size_t messageLength, char ** job
     jsonResult = JSON_Validate( message, messageLength );
     if( jsonResult == JSONSuccess )
     {
-        jsonResult = JSON_Search( message,
+        jsonResult = JSON_Search( ( char * ) message,
                                   messageLength,
                                   "execution.jobId",
                                   sizeof( "execution.jobId" ) - 1,
@@ -112,7 +112,7 @@ size_t coreJobs_getJobDocument(const char * message, size_t messageLength, char 
     jsonResult = JSON_Validate( message, messageLength );
     if( jsonResult == JSONSuccess )
     {
-        jsonResult = JSON_Search( message,
+        jsonResult = JSON_Search( ( char * ) message,
                                   messageLength,
                                   "execution.jobDocument",
                                   sizeof( "execution.jobDocument" ) - 1,

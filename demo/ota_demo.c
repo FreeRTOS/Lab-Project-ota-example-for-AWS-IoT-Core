@@ -34,7 +34,7 @@ static void handleMqttStreamsBlockArrivedCallback(
     MqttFileDownloaderDataBlockInfo_t * dataBlock );
 static void processOtaDocumentCallback( AfrOtaJobDocumentFields_t * params );
 static void finishDownload();
-static bool jobHandlerChain(uint8_t * message, size_t messageLength);
+static bool jobHandlerChain( char * message, size_t messageLength );
 
 void otaDemo_start( void )
 {
@@ -59,19 +59,20 @@ bool otaDemo_handleIncomingMQTTMessage( char * topic,
 {
     bool handled = coreJobs_isStartNextAccepted( topic, topicLength );
 
-    if ( handled )
+    if( handled )
     {
-        handled = jobHandlerChain(message, messageLength);
-        printf( "Handled? %d", handled);
+        handled = jobHandlerChain( ( char * ) message, messageLength );
+        printf( "Handled? %d", handled );
     }
-    else {
+    else
+    {
         handled = mqttDownloader_handleIncomingMessage(
-                             &mqttFileDownloaderContext,
-                             &handleMqttStreamsBlockArrivedCallback,
-                             topic,
-                             topicLength,
-                             message,
-                             messageLength );
+            &mqttFileDownloaderContext,
+            &handleMqttStreamsBlockArrivedCallback,
+            topic,
+            topicLength,
+            message,
+            messageLength );
     }
 
     if( !handled )
@@ -86,7 +87,7 @@ bool otaDemo_handleIncomingMQTTMessage( char * topic,
     return handled;
 }
 
-static bool jobHandlerChain(uint8_t * message, size_t messageLength)
+static bool jobHandlerChain( char * message, size_t messageLength )
 {
     char * jobDoc;
     size_t jobDocLength = 0U;
@@ -94,14 +95,15 @@ static bool jobHandlerChain(uint8_t * message, size_t messageLength)
     size_t jobIdLength = 0U;
     bool handled = false;
 
-    if ( globalJobId[ 0 ] == 0 ) {
+    if( globalJobId[ 0 ] == 0 )
+    {
         strncpy( globalJobId, jobId, jobIdLength );
     }
 
-    jobDocLength = coreJobs_getJobDocument(message, messageLength, &jobDoc);
-    jobIdLength = coreJobs_getJobId(message, messageLength, &jobId);
+    jobDocLength = coreJobs_getJobDocument( message, messageLength, &jobDoc );
+    jobIdLength = coreJobs_getJobId( message, messageLength, &jobId );
 
-    if ( jobDocLength != 0U && jobIdLength != 0U ) 
+    if( jobDocLength != 0U && jobIdLength != 0U )
     {
         handled = otaParser_handleJobDoc( &processOtaDocumentCallback,
                                           jobId,
@@ -194,5 +196,5 @@ static void finishDownload()
                               "2",
                               1U );
     printf( "\033[1;32mOTA Completed successfully!\033[0m\n" );
-    globalJobId[0] = 0U;
+    globalJobId[ 0 ] = 0U;
 }
