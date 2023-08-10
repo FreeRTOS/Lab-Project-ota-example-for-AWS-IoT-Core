@@ -35,10 +35,9 @@ typedef struct AfrOtaJobDocumentFields
 
 typedef void ( *OtaDocProcessor_t )( AfrOtaJobDocumentFields_t * params );
 
-bool otaParser_handleJobDoc( OtaDocProcessor_t docCallback,
-                             const char * jobId,
-                             const size_t jobIdLength,
-                             const char * jobDoc,
-                             const size_t jobDocLength );
+int otaParser_parseJobDocFile( const char * jobDoc,
+                                   const size_t jobDocLength,
+                                   const uint8_t fileIndex,
+                                   AfrOtaJobDocumentFields_t * fields );
 
 #endif /*OTA_JOB_PROCESSOR_H*/
