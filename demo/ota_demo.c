@@ -93,6 +93,7 @@ static bool jobHandlerChain( uint8_t * message, size_t messageLength )
     size_t jobDocLength = 0U;
     char * jobId;
     size_t jobIdLength = 0U;
+    int8_t fileIndex = 0;
 
     jobDocLength = coreJobs_getJobDocument( ( const char * ) message, messageLength, &jobDoc );
     jobIdLength = coreJobs_getJobId( ( const char * ) message, messageLength, &jobId );
@@ -102,16 +103,23 @@ static bool jobHandlerChain( uint8_t * message, size_t messageLength )
         strncpy( globalJobId, jobId, jobIdLength );
     }
 
-    AfrOtaJobDocumentFields_t jobFields = { 0 };
-    int8_t fileIndex = 0;
-    do
+    if( jobDocLength != 0U && jobIdLength != 0U )
     {
-        fileIndex = otaParser_parseJobDocFile( jobDoc,
-                                               jobDocLength,
-                                               fileIndex,
-                                               &jobFields );
-        processJobFile( &jobFields );
-    } while( fileIndex > 0 );
+        AfrOtaJobDocumentFields_t jobFields = { 0 };
+
+        do
+        {
+            fileIndex = otaParser_parseJobDocFile( jobDoc,
+                                                jobDocLength,
+                                                fileIndex,
+                                                &jobFields );
+
+            if ( fileIndex >= 0 )
+            {
+                processJobFile( &jobFields );
+            }
+        } while( fileIndex > 0 );
+    }
 
     // File index will be -1 if an error occured, and 0 if all files were
     // processed
