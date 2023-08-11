@@ -125,7 +125,6 @@ static bool jobHandlerChain( char * message, size_t messageLength )
     // File index will be -1 if an error occured, and 0 if all files were
     // processed
     return fileIndex == 0;
-    }
 }
 
 /* AFR OTA library callback */
