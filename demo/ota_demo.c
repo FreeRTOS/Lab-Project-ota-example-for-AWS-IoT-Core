@@ -94,17 +94,16 @@ static bool jobHandlerChain( uint8_t * message, size_t messageLength )
     char * jobId;
     size_t jobIdLength = 0U;
 
+    jobDocLength = coreJobs_getJobDocument( ( const char * ) message, messageLength, &jobDoc );
+    jobIdLength = coreJobs_getJobId( message, messageLength, &jobId );
+
     if( globalJobId[ 0 ] == 0 )
     {
         strncpy( globalJobId, jobId, jobIdLength );
     }
 
-    jobDocLength = coreJobs_getJobDocument( ( const char * ) message,
-                                            messageLength,
-                                            &jobDoc );
-
     AfrOtaJobDocumentFields_t jobFields = { 0 };
-    uint8_t fileIndex = 0U;
+    int8_t fileIndex = 0U;
     do
     {
         fileIndex = otaParser_parseJobDocFile( jobDoc,
