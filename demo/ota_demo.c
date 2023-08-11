@@ -95,13 +95,13 @@ static bool jobHandlerChain( char * message, size_t messageLength )
     size_t jobIdLength = 0U;
     bool handled = false;
 
+    jobDocLength = coreJobs_getJobDocument( message, messageLength, &jobDoc );
+    jobIdLength = coreJobs_getJobId( message, messageLength, &jobId );
+
     if( globalJobId[ 0 ] == 0 )
     {
         strncpy( globalJobId, jobId, jobIdLength );
     }
-
-    jobDocLength = coreJobs_getJobDocument( message, messageLength, &jobDoc );
-    jobIdLength = coreJobs_getJobId( message, messageLength, &jobId );
 
     if( jobDocLength != 0U && jobIdLength != 0U )
     {
