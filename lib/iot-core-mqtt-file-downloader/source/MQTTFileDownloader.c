@@ -411,68 +411,16 @@ static uint8_t handleJsonMessage( uint8_t * decodedData,
     return handleStatus;
 }
 
-bool mqttDownloader_handleIncomingMessage( MqttFileDownloaderContext_t * context,
-                                           MqttFileBlockHandler_t blockCallback,
-                                           char * topic,
-                                           size_t topicLength,
-                                           uint8_t * message,
-                                           size_t messageLength )
+bool mqttDownloader_isDataBlockReceived( MqttFileDownloaderContext_t * context,
+                                         char * topic,
+                                         size_t topicLength )
 {
     bool handled = false;
-    uint8_t decodingStatus = MQTTFileDownloaderSuccess;
-    uint8_t decodedData[ mqttFileDownloader_CONFIG_BLOCK_SIZE ];
-    size_t decodedDataLength = 0;
-    MqttFileDownloaderDataBlockInfo_t dataBlock;
 
-    printf( "MQTT streams handling incoming message \n" );
-
-    /* Verify the received publish is for the we have subscribed to. */
     if( ( topicLength == strlen( context->topicStreamData ) ) &&
         ( 0 == strncmp( context->topicStreamData, topic, topicLength ) ) )
     {
         handled = true;
-
-        printf( "Incoming Publish Topic Length: %lu Name: %.*s matches "
-                "subscribed topic.\r\n"
-                "Incoming Publish Message length: %lu Message: %.*s\r\n",
-                topicLength,
-                ( int ) topicLength,
-                topic,
-                messageLength,
-                ( int ) messageLength,
-                ( char * ) message );
-
-        dataBlock.payload = NULL;
-        dataBlock.payloadLength = 0U;
-
-        memset( decodedData, '\0', mqttFileDownloader_CONFIG_BLOCK_SIZE );
-
-        if( context->dataType == DATA_TYPE_JSON )
-        {
-            decodingStatus = handleJsonMessage( decodedData,
-                                                &decodedDataLength,
-                                                message,
-                                                messageLength );
-        }
-        else
-        {
-            decodingStatus = handleCborMessage( decodedData,
-                                                &decodedDataLength,
-                                                message,
-                                                messageLength );
-        }
-
-        if( decodingStatus != MQTTFileDownloaderSuccess )
-        {
-            printf( "Failed to decode the data received \n" );
-        }
-        else
-        {
-            dataBlock.payload = decodedData;
-            dataBlock.payloadLength = decodedDataLength;
-
-            blockCallback( &dataBlock );
-        }
     }
     else
     {
@@ -483,4 +431,46 @@ bool mqttDownloader_handleIncomingMessage( MqttFileDownloaderContext_t * context
     }
 
     return handled;
+}
+
+bool mqttDownloader_processReceivedDataBlock(
+    MqttFileDownloaderContext_t * context,
+    uint8_t * message,
+    size_t messageLength,
+    uint8_t * data,
+    size_t * dataLength )
+{
+    bool processed = false;
+    uint8_t decodingStatus = MQTTFileDownloaderSuccess;
+
+    printf( "MQTT streams handling incoming message \n" );
+    printf( "Incoming data block %.*s\n", ( int ) messageLength, message );
+
+    memset( data, '\0', mqttFileDownloader_CONFIG_BLOCK_SIZE );
+
+    if( context->dataType == DATA_TYPE_JSON )
+    {
+        decodingStatus = handleJsonMessage( data,
+                                            dataLength,
+                                            message,
+                                            messageLength );
+    }
+    else
+    {
+        decodingStatus = handleCborMessage( data,
+                                            dataLength,
+                                            message,
+                                            messageLength );
+    }
+
+    if( decodingStatus != MQTTFileDownloaderSuccess )
+    {
+        printf( "Failed to decode the data received \n" );
+    }
+    else
+    {
+        processed = true;
+    }
+
+    return processed;
 }
