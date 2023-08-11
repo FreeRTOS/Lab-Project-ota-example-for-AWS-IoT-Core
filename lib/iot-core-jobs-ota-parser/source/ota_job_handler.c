@@ -27,14 +27,14 @@ static bool isJobFileIndexValid( const char * jobDoc, const size_t jobDocLength,
  * @param fields A pointer to an job document fields structure populated by call
  * @return int8_t The next file index in the job. Returns 0 if no additional files are available. Returns -1 if error.
  */
-int otaParser_parseJobDocFile( const char * jobDoc,
+int8_t otaParser_parseJobDocFile( const char * jobDoc,
                                    const size_t jobDocLength,
                                    const uint8_t fileIndex,
                                    AfrOtaJobDocumentFields_t * fields )
 {
     bool fieldsPopulated = false;
     bool isFileIndexValid = false;
-    uint8_t nextFileIndex = -1;
+    int8_t nextFileIndex = -1;
 
     if( ( jobDoc != NULL ) && ( jobDocLength > 0U ) )
     {
@@ -44,7 +44,10 @@ int otaParser_parseJobDocFile( const char * jobDoc,
                                                     jobDocLength,
                                                     fileIndex,
                                                     fields );
-
+        }
+        
+        if ( fieldsPopulated )
+        {
             nextFileIndex =  (isJobFileIndexValid(jobDoc, jobDocLength, fileIndex + 1U)) ? fileIndex + 1U : 0U;
         }
     }

@@ -12,7 +12,6 @@
 
 #include <stdint.h>
 
-#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -35,7 +34,7 @@ typedef struct AfrOtaJobDocumentFields
 
 typedef void ( *OtaDocProcessor_t )( AfrOtaJobDocumentFields_t * params );
 
-int otaParser_parseJobDocFile( const char * jobDoc,
+int8_t otaParser_parseJobDocFile( const char * jobDoc,
                                    const size_t jobDocLength,
                                    const uint8_t fileIndex,
                                    AfrOtaJobDocumentFields_t * fields );
