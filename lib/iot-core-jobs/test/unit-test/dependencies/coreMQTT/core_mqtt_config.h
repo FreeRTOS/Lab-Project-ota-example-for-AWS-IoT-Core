@@ -10,8 +10,6 @@
 #ifndef CORE_MQTT_CONFIG_H
 #define CORE_MQTT_CONFIG_H
 
-#define MQTT_RECV_POLLING_TIMEOUT_MS    ( 1000 )
-#define MQTT_COMMAND_CONTEXTS_POOL_SIZE ( 10 )
-#define MQTT_STATE_ARRAY_MAX_COUNT ( 20U )
+// This header is required by CoreMQTT
 
 #endif
