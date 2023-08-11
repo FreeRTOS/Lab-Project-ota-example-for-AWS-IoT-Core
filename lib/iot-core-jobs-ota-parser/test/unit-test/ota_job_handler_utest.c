@@ -7,7 +7,6 @@
  * the License.
  */
 
-#include <stdbool.h>
 #include <string.h>
 
 #include "unity.h"
@@ -108,22 +107,21 @@ static void expectPopulateJobDocWithFileIndex( const char * document,
 
 /* ===============================   TESTS   =============================== */
 
-void test_handleJobDoc_returnsTrue_whenIOTOtaJob( void )
+void test_parseJobDocFile_returnsZero_whenSingleFileJob( void )
 {
     expectPopulateJobDocWithFileIndex( AFR_OTA_DOCUMENT,
                                        AFR_OTA_DOCUMENT_LENGTH,
                                        0 );
 
-    bool result = otaParser_handleJobDoc( &verifyCallbackValues,
-                                          JOB_DOC_ID,
-                                          JOB_DOC_ID_LEN,
-                                          AFR_OTA_DOCUMENT,
-                                          AFR_OTA_DOCUMENT_LENGTH );
+    int8_t result = otaParser_parseJobDocFile( AFR_OTA_DOCUMENT,
+                                          AFR_OTA_DOCUMENT_LENGTH,
+                                          0U,
+                                          &parsedFields);
 
-    TEST_ASSERT_TRUE( result );
+    TEST_ASSERT_EQUAL( 0, result );
 }
 
-void test_handleJobDoc_returnsTrue_whenMultiFileIOTOtaJob( void )
+void test_parseJobDocFile_returnsNextIndex_whenMultiFileIOTOtaJob( void )
 {
     expectPopulateJobDocWithFileIndex( MULTI_FILE_OTA_DOCUMENT,
                                        MULTI_FILE_OTA_DOCUMENT_LENGTH,
@@ -131,62 +129,47 @@ void test_handleJobDoc_returnsTrue_whenMultiFileIOTOtaJob( void )
     expectPopulateJobDocWithFileIndex( MULTI_FILE_OTA_DOCUMENT,
                                        MULTI_FILE_OTA_DOCUMENT_LENGTH,
                                        1 );
+
+    int8_t result = otaParser_parseJobDocFile( MULTI_FILE_OTA_DOCUMENT,
+                                             MULTI_FILE_OTA_DOCUMENT_LENGTH,
+                                             0U,
+                                             &parsedFields );
+
+    TEST_ASSERT_EQUAL( 1, result );
+
+    result = otaParser_parseJobDocFile( MULTI_FILE_OTA_DOCUMENT,
+                                            MULTI_FILE_OTA_DOCUMENT_LENGTH,
+                                            1U,
+                                            &parsedFields );
+
+    TEST_ASSERT_EQUAL( 2, result );
+}
+
+void test_parseJobDocFile_returnsZero_whenLastFileIndex( void )
+{
     expectPopulateJobDocWithFileIndex( MULTI_FILE_OTA_DOCUMENT,
                                        MULTI_FILE_OTA_DOCUMENT_LENGTH,
                                        2 );
 
-    bool result = otaParser_handleJobDoc( &verifyCallbackValues,
-                                          JOB_DOC_ID,
-                                          JOB_DOC_ID_LEN,
-                                          MULTI_FILE_OTA_DOCUMENT,
-                                          MULTI_FILE_OTA_DOCUMENT_LENGTH );
+    int8_t result = otaParser_parseJobDocFile( MULTI_FILE_OTA_DOCUMENT,
+                                             MULTI_FILE_OTA_DOCUMENT_LENGTH,
+                                             2U,
+                                             &parsedFields);
 
-    TEST_ASSERT_TRUE( result );
+    TEST_ASSERT_EQUAL( 0, result );
 }
 
-void test_handleJobDoc_returnsTrue_whenTooManyFilesInIOTOtaJob( void )
+void test_parseJobDocFile_returnsNegativeOne_whenIndexOutOfRange( void )
 {
-    expectPopulateJobDocWithFileIndex( TOO_MANY_FILES_OTA_DOCUMENT,
-                                       TOO_MANY_FILES_OTA_DOCUMENT_LENGTH,
-                                       0 );
-    expectPopulateJobDocWithFileIndex( TOO_MANY_FILES_OTA_DOCUMENT,
-                                       TOO_MANY_FILES_OTA_DOCUMENT_LENGTH,
-                                       1 );
-    expectPopulateJobDocWithFileIndex( TOO_MANY_FILES_OTA_DOCUMENT,
-                                       TOO_MANY_FILES_OTA_DOCUMENT_LENGTH,
-                                       2 );
-    expectPopulateJobDocWithFileIndex( TOO_MANY_FILES_OTA_DOCUMENT,
-                                       TOO_MANY_FILES_OTA_DOCUMENT_LENGTH,
-                                       3 );
-    expectPopulateJobDocWithFileIndex( TOO_MANY_FILES_OTA_DOCUMENT,
-                                       TOO_MANY_FILES_OTA_DOCUMENT_LENGTH,
-                                       4 );
-    expectPopulateJobDocWithFileIndex( TOO_MANY_FILES_OTA_DOCUMENT,
-                                       TOO_MANY_FILES_OTA_DOCUMENT_LENGTH,
-                                       5 );
-    expectPopulateJobDocWithFileIndex( TOO_MANY_FILES_OTA_DOCUMENT,
-                                       TOO_MANY_FILES_OTA_DOCUMENT_LENGTH,
-                                       6 );
-    expectPopulateJobDocWithFileIndex( TOO_MANY_FILES_OTA_DOCUMENT,
-                                       TOO_MANY_FILES_OTA_DOCUMENT_LENGTH,
-                                       7 );
-    expectPopulateJobDocWithFileIndex( TOO_MANY_FILES_OTA_DOCUMENT,
-                                       TOO_MANY_FILES_OTA_DOCUMENT_LENGTH,
-                                       8 );
-    expectPopulateJobDocWithFileIndex( TOO_MANY_FILES_OTA_DOCUMENT,
-                                       TOO_MANY_FILES_OTA_DOCUMENT_LENGTH,
-                                       9 );
+    int8_t result = otaParser_parseJobDocFile( AFR_OTA_DOCUMENT,
+                                       AFR_OTA_DOCUMENT_LENGTH,
+                                             1U,
+                                             &parsedFields);
 
-    bool result = otaParser_handleJobDoc( &verifyCallbackValues,
-                                          JOB_DOC_ID,
-                                          JOB_DOC_ID_LEN,
-                                          TOO_MANY_FILES_OTA_DOCUMENT,
-                                          TOO_MANY_FILES_OTA_DOCUMENT_LENGTH );
-
-    TEST_ASSERT_TRUE( result );
+    TEST_ASSERT_EQUAL( -1, result );
 }
 
-void test_handleJobDoc_returnsFalse_whenParsingFails( void )
+void test_parseJobDocFile_returnsNegativeOne_whenParsingFails( void )
 {
     populateJobDocFields_ExpectAndReturn( AFR_OTA_DOCUMENT,
                                           AFR_OTA_DOCUMENT_LENGTH,
@@ -195,65 +178,57 @@ void test_handleJobDoc_returnsFalse_whenParsingFails( void )
                                           false );
     populateJobDocFields_IgnoreArg_result();
 
-    bool result = otaParser_handleJobDoc( &verifyCallbackValues,
-                                          JOB_DOC_ID,
-                                          JOB_DOC_ID_LEN,
-                                          AFR_OTA_DOCUMENT,
-                                          AFR_OTA_DOCUMENT_LENGTH );
+    int8_t result = otaParser_parseJobDocFile( AFR_OTA_DOCUMENT,
+                                             AFR_OTA_DOCUMENT_LENGTH,
+                                             0U,
+                                             &parsedFields );
 
-    TEST_ASSERT_FALSE( result );
+    TEST_ASSERT_EQUAL( -1, result );
 }
 
-void test_handleJobDoc_returnsFalse_whenMultiFileParsingFails( void )
+void test_parseJobDocFile_returnsNegativeOne_whenMultiFileParsingFails( void )
 {
-    expectPopulateJobDocWithFileIndex( MULTI_FILE_OTA_DOCUMENT,
-                                       MULTI_FILE_OTA_DOCUMENT_LENGTH,
-                                       0 );
     populateJobDocFields_ExpectAndReturn( MULTI_FILE_OTA_DOCUMENT,
                                           MULTI_FILE_OTA_DOCUMENT_LENGTH,
-                                          1,
+                                          0,
                                           NULL,
                                           false );
     populateJobDocFields_IgnoreArg_result();
 
-    bool result = otaParser_handleJobDoc( &verifyCallbackValues,
-                                          JOB_DOC_ID,
-                                          JOB_DOC_ID_LEN,
-                                          MULTI_FILE_OTA_DOCUMENT,
-                                          MULTI_FILE_OTA_DOCUMENT_LENGTH );
+    int8_t result = otaParser_parseJobDocFile( MULTI_FILE_OTA_DOCUMENT,
+                                             MULTI_FILE_OTA_DOCUMENT_LENGTH,
+                                             0,
+                                             &parsedFields );
 
-    TEST_ASSERT_FALSE( result );
+    TEST_ASSERT_EQUAL( -1, result );
 }
 
-void test_handleJobDoc_returnsFalse_whenCustomJob( void )
+void test_parseJobDocFile_returnsNegativeOne_whenCustomJob( void )
 {
-    bool result = otaParser_handleJobDoc( &verifyCallbackValues,
-                                          JOB_DOC_ID,
-                                          JOB_DOC_ID_LEN,
-                                          CUSTOM_DOCUMENT,
-                                          CUSTOM_DOCUMENT_LENGTH );
+    int8_t result = otaParser_parseJobDocFile( CUSTOM_DOCUMENT,
+                                             CUSTOM_DOCUMENT_LENGTH,
+                                             0U,
+                                             &parsedFields );
 
-    TEST_ASSERT_FALSE( result );
+    TEST_ASSERT_EQUAL( -1, result );
 }
 
-void test_handleJobDoc_returnsFalse_givenNullJobDocument( void )
+void test_parseJobDocFile_returnsFalse_givenNullJobDocument( void )
 {
-    bool result = otaParser_handleJobDoc( &verifyCallbackValues,
-                                          JOB_DOC_ID,
-                                          JOB_DOC_ID_LEN,
-                                          NULL,
-                                          CUSTOM_DOCUMENT_LENGTH );
+    int8_t result = otaParser_parseJobDocFile( NULL,
+                                            CUSTOM_DOCUMENT_LENGTH,
+                                            0U,
+                                            &parsedFields );
 
-    TEST_ASSERT_FALSE( result );
+    TEST_ASSERT_EQUAL( -1, result );
 }
 
-void test_handleJobDoc_returnsFalse_givenZeroDocumentLength( void )
+void test_parseJobDocFile_returnsFalse_givenZeroDocumentLength( void )
 {
-    bool result = otaParser_handleJobDoc( &verifyCallbackValues,
-                                          JOB_DOC_ID,
-                                          JOB_DOC_ID_LEN,
-                                          AFR_OTA_DOCUMENT,
-                                          0U );
+    int8_t result = otaParser_parseJobDocFile( AFR_OTA_DOCUMENT,
+                                          0U,
+                                          0U,
+                                          &parsedFields  );
 
-    TEST_ASSERT_FALSE( result );
+    TEST_ASSERT_EQUAL( -1, result );
 }

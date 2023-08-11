@@ -32,7 +32,7 @@ char globalJobId[ MAX_JOB_ID_LENGTH ] = { 0 };
 
 static void handleMqttStreamsBlockArrivedCallback(
     MqttFileDownloaderDataBlockInfo_t * dataBlock );
-static void processOtaDocumentCallback( AfrOtaJobDocumentFields_t * params );
+static void processJobFile( AfrOtaJobDocumentFields_t * params );
 static void finishDownload();
 static bool jobHandlerChain( char * message, size_t messageLength );
 
@@ -61,7 +61,8 @@ bool otaDemo_handleIncomingMQTTMessage( char * topic,
 
     if( handled )
     {
-        handled = jobHandlerChain( ( char * ) message, messageLength );
+        handled = jobHandlerChain( message, messageLength );
+
         printf( "Handled? %d", handled );
     }
     else
@@ -93,7 +94,7 @@ static bool jobHandlerChain( char * message, size_t messageLength )
     size_t jobDocLength = 0U;
     char * jobId;
     size_t jobIdLength = 0U;
-    bool handled = false;
+    int8_t fileIndex = 0;
 
     jobDocLength = coreJobs_getJobDocument( message, messageLength, &jobDoc );
     jobIdLength = coreJobs_getJobId( message, messageLength, &jobId );
@@ -105,18 +106,29 @@ static bool jobHandlerChain( char * message, size_t messageLength )
 
     if( jobDocLength != 0U && jobIdLength != 0U )
     {
-        handled = otaParser_handleJobDoc( &processOtaDocumentCallback,
-                                          jobId,
-                                          jobIdLength,
-                                          jobDoc,
-                                          jobDocLength );
+        AfrOtaJobDocumentFields_t jobFields = { 0 };
+
+        do
+        {
+            fileIndex = otaParser_parseJobDocFile( jobDoc,
+                                                jobDocLength,
+                                                fileIndex,
+                                                &jobFields );
+
+            if ( fileIndex >= 0 )
+            {
+                processJobFile( &jobFields );
+            }
+        } while( fileIndex > 0 );
     }
 
-    return handled;
+    // File index will be -1 if an error occured, and 0 if all files were
+    // processed
+    return fileIndex == 0;
 }
 
 /* AFR OTA library callback */
-static void processOtaDocumentCallback( AfrOtaJobDocumentFields_t * params )
+static void processJobFile( AfrOtaJobDocumentFields_t * params )
 {
     char thingName[ MAX_THING_NAME_SIZE + 1 ] = { 0 };
     size_t thingNameLength = 0U;
