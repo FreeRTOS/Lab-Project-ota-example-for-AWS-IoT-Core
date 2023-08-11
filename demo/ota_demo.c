@@ -95,7 +95,7 @@ static bool jobHandlerChain( uint8_t * message, size_t messageLength )
     size_t jobIdLength = 0U;
 
     jobDocLength = coreJobs_getJobDocument( ( const char * ) message, messageLength, &jobDoc );
-    jobIdLength = coreJobs_getJobId( message, messageLength, &jobId );
+    jobIdLength = coreJobs_getJobId( ( const char * ) message, messageLength, &jobId );
 
     if( globalJobId[ 0 ] == 0 )
     {
@@ -103,7 +103,7 @@ static bool jobHandlerChain( uint8_t * message, size_t messageLength )
     }
 
     AfrOtaJobDocumentFields_t jobFields = { 0 };
-    int8_t fileIndex = 0U;
+    int8_t fileIndex = 0;
     do
     {
         fileIndex = otaParser_parseJobDocFile( jobDoc,
@@ -111,11 +111,11 @@ static bool jobHandlerChain( uint8_t * message, size_t messageLength )
                                                fileIndex,
                                                &jobFields );
         processJobFile( &jobFields );
-    } while( fileIndex > 0U );
+    } while( fileIndex > 0 );
 
-    // File index will be -1 if an error occured, and 0U if all files were
+    // File index will be -1 if an error occured, and 0 if all files were
     // processed
-    return fileIndex == 0U;
+    return fileIndex == 0;
 }
 
 /* AFR OTA library callback */

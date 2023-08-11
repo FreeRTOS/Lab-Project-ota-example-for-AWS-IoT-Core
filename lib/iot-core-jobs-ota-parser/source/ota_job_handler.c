@@ -33,7 +33,6 @@ int8_t otaParser_parseJobDocFile( const char * jobDoc,
                                    AfrOtaJobDocumentFields_t * fields )
 {
     bool fieldsPopulated = false;
-    bool isFileIndexValid = false;
     int8_t nextFileIndex = -1;
 
     if( ( jobDoc != NULL ) && ( jobDocLength > 0U ) )
