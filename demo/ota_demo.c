@@ -34,7 +34,7 @@ static void handleMqttStreamsBlockArrivedCallback(
     MqttFileDownloaderDataBlockInfo_t * dataBlock );
 static void processJobFile( AfrOtaJobDocumentFields_t * params );
 static void finishDownload();
-static bool jobHandlerChain( uint8_t * message, size_t messageLength );
+static bool jobHandlerChain( char * message, size_t messageLength );
 
 void otaDemo_start( void )
 {
@@ -62,6 +62,7 @@ bool otaDemo_handleIncomingMQTTMessage( char * topic,
     if( handled )
     {
         handled = jobHandlerChain( message, messageLength );
+
         printf( "Handled? %d", handled );
     }
     else
@@ -87,7 +88,7 @@ bool otaDemo_handleIncomingMQTTMessage( char * topic,
     return handled;
 }
 
-static bool jobHandlerChain( uint8_t * message, size_t messageLength )
+static bool jobHandlerChain( char * message, size_t messageLength )
 {
     char * jobDoc;
     size_t jobDocLength = 0U;
@@ -95,8 +96,8 @@ static bool jobHandlerChain( uint8_t * message, size_t messageLength )
     size_t jobIdLength = 0U;
     int8_t fileIndex = 0;
 
-    jobDocLength = coreJobs_getJobDocument( ( const char * ) message, messageLength, &jobDoc );
-    jobIdLength = coreJobs_getJobId( ( const char * ) message, messageLength, &jobId );
+    jobDocLength = coreJobs_getJobDocument( message, messageLength, &jobDoc );
+    jobIdLength = coreJobs_getJobId( message, messageLength, &jobId );
 
     if( globalJobId[ 0 ] == 0 )
     {
@@ -124,6 +125,7 @@ static bool jobHandlerChain( uint8_t * message, size_t messageLength )
     // File index will be -1 if an error occured, and 0 if all files were
     // processed
     return fileIndex == 0;
+    }
 }
 
 /* AFR OTA library callback */
