@@ -70,20 +70,27 @@ bool coreJobs_updateJobStatus( char * thingname,
                                char * expectedVersion,
                                size_t expectedVersionLength );
 
-/*
- * ------------------------ MQTT API Functions  --------------------------
- * Called by the platform wrapper, implemented by coreJobs
- *
- * Can be called on any incoming MQTT message
- * If the incoming MQTT message is intended for an AWS IoT Jobs topic, then this
- * function parses the Job doc and distributes it through the Jobs chain of
- * responsibilities, then returns true. Returns false otherwise.
+/**
+ * @brief Retrieves the job ID from a given message (if applicable)
+ * 
+ * @param message [In] A JSON formatted message which
+ * @param messageLength [In] The length of the message
+ * @param jobId [Out] The job ID
+ * @return size_t The job ID length
  */
-bool coreJobs_handleIncomingMQTTMessage(
-    const IncomingJobDocHandler_t jobDocHandler,
-    const char * topic,
-    const size_t topicLength,
-    const uint8_t * message,
-    size_t messageLength );
+size_t coreJobs_getJobId(const char * message, size_t messageLength, char ** jobId);
+
+/**
+ * @brief Retrieves the job document from a given message (if applicable)
+ * 
+ * @param message [In] A JSON formatted message which
+ * @param messageLength [In] The length of the message
+ * @param jobDoc [Out] The job document
+ * @return size_t The length of the job document
+ */
+size_t coreJobs_getJobDocument(const char * message, size_t messageLength, char ** jobDoc);
+
+bool coreJobs_isStartNextAccepted( const char * topic,
+                                   const size_t topicLength );
 
 #endif
