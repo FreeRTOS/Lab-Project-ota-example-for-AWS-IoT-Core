@@ -117,6 +117,20 @@ void test_isStartNextAccepted_isStartNextMsgForAnotherThing( void )
     TEST_ASSERT_FALSE(result);
 }
 
+void test_isStartNextAccepted_isStartNextMsgForSameLengthThing( void )
+{
+    char * thingName = "thingname";
+    char topic[] = "$aws/things/different/jobs/start-next/accepted";
+    size_t topicLength = strlen(topic);
+
+    mqttWrapper_getThingName_ExpectAnyArgs();
+    mqttWrapper_getThingName_ReturnArrayThruPtr_thingNameBuffer(thingName, strlen(thingName));
+
+    bool result = coreJobs_isStartNextAccepted(topic, strlen(topic));
+
+    TEST_ASSERT_FALSE(result);
+}
+
 void test_isStartNextAccepted_nullTopic( void )
 {
     bool result = coreJobs_isStartNextAccepted(NULL, 1U);
@@ -300,8 +314,7 @@ void test_updateJobStatus_updatesStatus( void )
     char * jobId = "jobId";
     char * expectedVersion = "1.0.1";
 
-    mqttWrapper_publish_Stub();
-
+    mqttWrapper_publish_Stub(updateJob_publishCallback);
 
     bool result = coreJobs_updateJobStatus(thingName,
             (size_t) strlen(thingName),
