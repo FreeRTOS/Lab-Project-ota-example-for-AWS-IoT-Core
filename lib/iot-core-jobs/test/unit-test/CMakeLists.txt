@@ -21,11 +21,8 @@ list(APPEND mock_list
 # list the directories your mocks need
 list(APPEND mock_include_list
  "${MODULE_ROOT_DIR}/source/include"
- "${MODULE_ROOT_DIR}/test/unit-test/dependencies/FreeRTOS-Kernel"
  "${MODULE_ROOT_DIR}/test/unit-test/dependencies/coreMQTT/"
- "${MODULE_ROOT_DIR}/test/unit-test/dependencies/coreMQTT/api_cfg"
  ${MQTT_INCLUDE_PUBLIC_DIRS}
- "${freertos_kernel_SOURCE_DIR}/include/"
  )
 
 # list the definitions of your mocks to control what to be included
@@ -41,10 +38,7 @@ list(APPEND real_include_directories .
     ${JSON_INCLUDE_PUBLIC_DIRS}
     ${MQTT_INCLUDE_PUBLIC_DIRS}
     "${MODULE_ROOT_DIR}/test/unit-test/dependencies/"
-    "${MODULE_ROOT_DIR}/test/unit-test/dependencies/coreMQTT/"
-    "${MODULE_ROOT_DIR}/test/unit-test/dependencies/coreMQTT/api_cfg"
-    "${freertos_kernel_SOURCE_DIR}/include/"
-    "${MODULE_ROOT_DIR}/test/unit-test/dependencies/FreeRTOS-Kernel")
+    "${MODULE_ROOT_DIR}/test/unit-test/dependencies/coreMQTT/")
 
 # =====================  Create UnitTest Code here (edit)  =====================
 
