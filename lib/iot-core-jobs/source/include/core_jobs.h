@@ -14,6 +14,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#define MAX_JOB_ID_LENGTH       64U
+
 typedef enum JobStatus
 {
     Queued,
@@ -90,7 +92,30 @@ size_t coreJobs_getJobId(const char * message, size_t messageLength, char ** job
  */
 size_t coreJobs_getJobDocument(const char * message, size_t messageLength, char ** jobDoc);
 
+/**
+ * @brief Checks if a message comes from the start-next/accepted reserved topic
+ * 
+ * @param topic The topic to check against
+ * @param topicLength The expected topic length 
+ * @return true If the topic is the start-next/accepted topic
+ * @return false If the topic is not the start-next/accepted topic
+ */
 bool coreJobs_isStartNextAccepted( const char * topic,
                                    const size_t topicLength );
+
+/**
+ * @brief Checks if a message comes from the update/accepted reserved topic
+ * 
+ * @param topic The topic to check against
+ * @param topicLength The expected topic length 
+ * @param jobId Corresponding Job ID which the update was accepted for
+ * @param jobIdLength The Job ID length
+ * @return true If the topic is the update/accepted topic
+ * @return false If the topic is not the update/accepted topic
+ */
+bool coreJobs_isJobUpdateAccepted( const char * topic,
+                                   const size_t topicLength,
+                                   const char * jobId,
+                                   const size_t jobIdLength );
 
 #endif

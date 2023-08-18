@@ -57,23 +57,43 @@ bool otaDemo_handleIncomingMQTTMessage( char * topic,
                                         uint8_t * message,
                                         size_t messageLength )
 {
-    bool handled = coreJobs_isStartNextAccepted( topic, topicLength );
+    bool handled = false;
 
-    if( handled )
+    if( globalJobId[ 0 ] != 0 )
     {
-        handled = jobHandlerChain( message, messageLength );
+        handled = coreJobs_isJobUpdateAccepted( topic,
+                                                topicLength,
+                                                ( const char * ) &globalJobId,
+                                                strnlen( globalJobId,
+                                                         MAX_JOB_ID_LENGTH ) );
 
-        printf( "Handled? %d", handled );
+        if( handled )
+        {
+            printf( "Clearing Job ID since update was accepted" );
+            globalJobId[ 0 ] = 0;
+        }
     }
-    else
+
+    if( !handled )
     {
-        handled = mqttDownloader_handleIncomingMessage(
-            &mqttFileDownloaderContext,
-            &handleMqttStreamsBlockArrivedCallback,
-            topic,
-            topicLength,
-            message,
-            messageLength );
+        handled = coreJobs_isStartNextAccepted( topic, topicLength );
+
+        if( handled )
+        {
+            handled = jobHandlerChain( ( char * ) message, messageLength );
+
+            printf( "Handled? %d", handled );
+        }
+        else
+        {
+            handled = mqttDownloader_handleIncomingMessage(
+                &mqttFileDownloaderContext,
+                &handleMqttStreamsBlockArrivedCallback,
+                topic,
+                topicLength,
+                message,
+                messageLength );
+        }
     }
 
     if( !handled )
@@ -111,11 +131,11 @@ static bool jobHandlerChain( char * message, size_t messageLength )
         do
         {
             fileIndex = otaParser_parseJobDocFile( jobDoc,
-                                                jobDocLength,
-                                                fileIndex,
-                                                &jobFields );
+                                                   jobDocLength,
+                                                   fileIndex,
+                                                   &jobFields );
 
-            if ( fileIndex >= 0 )
+            if( fileIndex >= 0 )
             {
                 processJobFile( &jobFields );
             }
@@ -208,5 +228,4 @@ static void finishDownload()
                               "2",
                               1U );
     printf( "\033[1;32mOTA Completed successfully!\033[0m\n" );
-    globalJobId[ 0 ] = 0U;
 }

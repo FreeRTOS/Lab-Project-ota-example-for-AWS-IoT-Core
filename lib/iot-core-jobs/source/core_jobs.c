@@ -55,37 +55,36 @@ static size_t getUpdateJobExecutionMsg( JobStatus_t status,
                                         size_t expectedVersionLength,
                                         char * buffer,
                                         size_t bufferSize );
+static bool isThingnameTopicMatch(const char * topic,
+                                    const size_t topicLength,
+                                    const char * topicSuffix,
+                                    const size_t topicSuffixLength );
 
 /* TODO: Consider creating a 'thingName topic matching' function. This could simply call that function */
 bool coreJobs_isStartNextAccepted( const char * topic,
                                    const size_t topicLength )
 {
-    /* TODO: Inefficient - better implementation shouldn't use snprintf */
-    char expectedBuffer[ TOPIC_BUFFER_SIZE + 1 ] = { 0 };
-    char thingName[ MAX_THING_NAME_LENGTH + 1 ] = { 0 };
-    size_t thingNameLength = 0U;
-    bool isMatch = true;
+    return isThingnameTopicMatch(topic, topicLength, "/jobs/start-next/accepted", strlen("/jobs/start-next/accepted"));
+}
 
-    if ( topic == NULL || topicLength == 0 )
-    {
-        isMatch = false;
-    }
+bool coreJobs_isJobUpdateAccepted( const char * topic,
+                                   const size_t topicLength,
+                                   const char * jobId,
+                                   const size_t jobIdLength )
+{
+    /* Max suffix size = max topic size - "$aws/<thingname>" prefix */
+    char suffixBuffer[ TOPIC_BUFFER_SIZE - MAX_THING_NAME_LENGTH - 4U] = { 0 };
+    char jobIdTerminated[ MAX_JOB_ID_LENGTH + 1 ] = { 0 };
 
-    if ( isMatch )
-    {
-        mqttWrapper_getThingName( thingName, &thingNameLength );
-        snprintf( expectedBuffer,
-              TOPIC_BUFFER_SIZE,
+    memcpy(&jobIdTerminated, jobId, jobIdLength);
+    snprintf( suffixBuffer,
+              TOPIC_BUFFER_SIZE - MAX_THING_NAME_LENGTH - 4U,
               "%s%s%s",
-              "$aws/things/",
-              thingName,
-              "/jobs/start-next/accepted" );
-        isMatch = ( uint32_t ) strnlen( expectedBuffer, TOPIC_BUFFER_SIZE ) ==
-              topicLength;
-        isMatch = isMatch && strncmp( expectedBuffer, topic, topicLength ) == 0;
-    }
+              "/jobs/",
+              jobIdTerminated,
+              "/update/accepted" );
 
-    return isMatch;
+    return isThingnameTopicMatch(topic, topicLength, suffixBuffer, TOPIC_BUFFER_SIZE - MAX_THING_NAME_LENGTH - 4U);
 }
 
 size_t coreJobs_getJobId(const char * message, size_t messageLength, char ** jobId)
@@ -95,7 +94,7 @@ size_t coreJobs_getJobId(const char * message, size_t messageLength, char ** job
     jsonResult = JSON_Validate( message, messageLength );
     if( jsonResult == JSONSuccess )
     {
-        jsonResult = JSON_Search( message,
+        jsonResult = JSON_Search( ( char * ) message,
                                   messageLength,
                                   "execution.jobId",
                                   sizeof( "execution.jobId" ) - 1,
@@ -112,7 +111,7 @@ size_t coreJobs_getJobDocument(const char * message, size_t messageLength, char 
     jsonResult = JSON_Validate( message, messageLength );
     if( jsonResult == JSONSuccess )
     {
-        jsonResult = JSON_Search( message,
+        jsonResult = JSON_Search( ( char * ) message,
                                   messageLength,
                                   "execution.jobDocument",
                                   sizeof( "execution.jobDocument" ) - 1,
@@ -291,4 +290,39 @@ static size_t getUpdateJobExecutionMsg( JobStatus_t status,
     }
 
     return messageLength;
+}
+
+static bool isThingnameTopicMatch(const char * topic,
+                                    const size_t topicLength,
+                                    const char * topicSuffix,
+                                    const size_t topicSuffixLength )
+{
+    /* TODO: Inefficient - better implementation shouldn't use snprintf */
+    char expectedTopicBuffer[ TOPIC_BUFFER_SIZE + 1 ] = { 0 };
+    char thingName[ MAX_THING_NAME_LENGTH + 1 ] = { 0 };
+    char suffixTerminated[ MAX_JOB_ID_LENGTH + 1 ] = { 0 };
+    size_t thingNameLength = 0U;
+    bool isMatch = true;
+
+    if ( topic == NULL || topicLength == 0 )
+    {
+        isMatch = false;
+    }
+
+    if ( isMatch )
+    {
+        mqttWrapper_getThingName( thingName, &thingNameLength );
+        memcpy(&suffixTerminated, topicSuffix, topicSuffixLength);
+        snprintf( expectedTopicBuffer,
+              TOPIC_BUFFER_SIZE,
+              "%s%s%s",
+              "$aws/things/",
+              thingName,
+              suffixTerminated );
+        isMatch = ( uint32_t ) strnlen( expectedTopicBuffer, TOPIC_BUFFER_SIZE ) ==
+              topicLength;
+        isMatch = isMatch && strncmp( expectedTopicBuffer, topic, topicLength ) == 0;
+    }
+
+    return isMatch;
 }
