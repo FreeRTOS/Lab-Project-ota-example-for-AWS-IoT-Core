@@ -36,6 +36,9 @@ static const size_t jobStatusStringLengths[ 5U ] = {
     sizeof( "REJECTED" ) - 1U
 };
 
+static const char * jobUpdateStatusString[ 2U ] = { "accepted", "rejected" };
+static const char * jobUpdateStatusStringLengths[ 2U ] = { sizeof("accepted") - 1U, sizeof("rejected") - 1U };
+
 static size_t getStartNextPendingJobExecutionTopic( const char * thingname,
                                                     size_t thingnameLength,
                                                     char * buffer,
@@ -67,22 +70,27 @@ bool coreJobs_isStartNextAccepted( const char * topic,
     return isThingnameTopicMatch(topic, topicLength, "/jobs/start-next/accepted", strlen("/jobs/start-next/accepted"));
 }
 
-bool coreJobs_isJobUpdateAccepted( const char * topic,
-                                   const size_t topicLength,
-                                   const char * jobId,
-                                   const size_t jobIdLength )
+bool coreJobs_isJobUpdateStatus( const char * topic,
+                                const size_t topicLength,
+                                const char * jobId,
+                                const size_t jobIdLength,
+                                JobUpdateStatus_t expectedStatus )
 {
     /* Max suffix size = max topic size - "$aws/<thingname>" prefix */
     char suffixBuffer[ TOPIC_BUFFER_SIZE - MAX_THING_NAME_LENGTH - 4U] = { 0 };
     char jobIdTerminated[ MAX_JOB_ID_LENGTH + 1 ] = { 0 };
+    char updateStatusString[ 10 ] = { 0 };
 
     memcpy(&jobIdTerminated, jobId, jobIdLength);
+    memcpy(&updateStatusString, jobUpdateStatusString[ expectedStatus ], jobUpdateStatusStringLengths[ expectedStatus ]);
+
     snprintf( suffixBuffer,
               TOPIC_BUFFER_SIZE - MAX_THING_NAME_LENGTH - 4U,
-              "%s%s%s",
+              "%s%s%s%s",
               "/jobs/",
               jobIdTerminated,
-              "/update/accepted" );
+              "/update/",
+              updateStatusString );
 
     return isThingnameTopicMatch(topic, topicLength, suffixBuffer, strnlen(suffixBuffer, TOPIC_BUFFER_SIZE - MAX_THING_NAME_LENGTH - 4U));
 }

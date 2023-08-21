@@ -25,6 +25,12 @@ typedef enum JobStatus
     Rejected
 } JobStatus_t;
 
+typedef enum JobUpdateStatus
+{
+    JobUpdateStatus_Accepted,
+    JobUpdateStatus_Rejected
+} JobUpdateStatus_t;
+
 typedef bool ( *IncomingJobDocHandler_t )( const char * jobId,
                                            const size_t jobIdLength,
                                            const char * jobDoc,
@@ -110,12 +116,14 @@ bool coreJobs_isStartNextAccepted( const char * topic,
  * @param topicLength The expected topic length 
  * @param jobId Corresponding Job ID which the update was accepted for
  * @param jobIdLength The Job ID length
- * @return true If the topic is the update/accepted topic
- * @return false If the topic is not the update/accepted topic
+ * @param expectedStatus The job update status reported by AWS IoT Jobs
+ * @return true If the topic is the update/<expectedStatus> topic
+ * @return false If the topic is not the update/<expectedStatus> topic
  */
-bool coreJobs_isJobUpdateAccepted( const char * topic,
-                                   const size_t topicLength,
-                                   const char * jobId,
-                                   const size_t jobIdLength );
+bool coreJobs_isJobUpdateStatus( const char * topic,
+                                const size_t topicLength,
+                                const char * jobId,
+                                const size_t jobIdLength,
+                                JobUpdateStatus_t expectedStatus );
 
 #endif

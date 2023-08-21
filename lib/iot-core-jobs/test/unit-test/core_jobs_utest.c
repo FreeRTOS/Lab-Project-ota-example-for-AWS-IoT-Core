@@ -19,15 +19,14 @@
 #include "mock_mqtt_wrapper.h"
 
 /* =======================+====   TEST GLOBALS ===========+================= */
+
 char * thingName = "thingname";
 char * version = "1.0.1";
 
 char * jobId = "job-id";
 size_t jobIdLength = strlen("job-id");
 
-
 /* ===========================   UNITY FIXTURES ============================ */
-
 
 /* Called before each test method. */
 void setUp()
@@ -408,7 +407,7 @@ void test_updateJobStatus_returnsFalse_givenZeroVersionLength( void )
     TEST_ASSERT_FALSE(result);
 }
 
-void test_isJobUpdateAccepted_isUpdateAcceptedMsg()
+void test_isJobUpdateStatus_isUpdateAcceptedMsg()
 {
     char topic[] = "$aws/things/thingname/jobs/job-id/update/accepted";
     size_t topicLength = strlen(topic);
@@ -416,12 +415,25 @@ void test_isJobUpdateAccepted_isUpdateAcceptedMsg()
     mqttWrapper_getThingName_ExpectAnyArgs();
     mqttWrapper_getThingName_ReturnArrayThruPtr_thingNameBuffer(thingName, strlen(thingName));
 
-    bool result = coreJobs_isJobUpdateAccepted(topic, topicLength, jobId, jobIdLength);
+    bool result = coreJobs_isJobUpdateStatus(topic, topicLength, jobId, jobIdLength, JobUpdateStatus_Accepted);
 
     TEST_ASSERT_TRUE(result);
 }
 
-void test_isJobUpdateAccepted_isUpdateAcceptedMsg_forNotCurrentJob()
+void test_isJobUpdateStatus_isUpdateRejectedMsg()
+{
+    char topic[] = "$aws/things/thingname/jobs/job-id/update/rejected";
+    size_t topicLength = strlen(topic);
+
+    mqttWrapper_getThingName_ExpectAnyArgs();
+    mqttWrapper_getThingName_ReturnArrayThruPtr_thingNameBuffer(thingName, strlen(thingName));
+
+    bool result = coreJobs_isJobUpdateStatus(topic, topicLength, jobId, jobIdLength, JobUpdateStatus_Rejected);
+
+    TEST_ASSERT_TRUE(result);
+}
+
+void test_isJobUpdateStatus_isUpdateMsg_notForCurrentJob()
 {
     /* Note: topic length remains the same length */
     char topic[100] = "$aws/things/thingname/jobs/jobtwo/update/accepted";
@@ -430,7 +442,7 @@ void test_isJobUpdateAccepted_isUpdateAcceptedMsg_forNotCurrentJob()
     mqttWrapper_getThingName_ExpectAnyArgs();
     mqttWrapper_getThingName_ReturnArrayThruPtr_thingNameBuffer(thingName, strlen(thingName));
 
-    bool result = coreJobs_isJobUpdateAccepted(topic, topicLength, jobId, jobIdLength);
+    bool result = coreJobs_isJobUpdateStatus(topic, topicLength, jobId, jobIdLength, JobUpdateStatus_Accepted);
 
     TEST_ASSERT_FALSE(result);
 
@@ -440,12 +452,12 @@ void test_isJobUpdateAccepted_isUpdateAcceptedMsg_forNotCurrentJob()
     mqttWrapper_getThingName_ExpectAnyArgs();
     mqttWrapper_getThingName_ReturnArrayThruPtr_thingNameBuffer(thingName, strlen(thingName));
 
-    result = coreJobs_isJobUpdateAccepted(topic, topicLength, jobId, jobIdLength);
+    result = coreJobs_isJobUpdateStatus(topic, topicLength, jobId, jobIdLength, JobUpdateStatus_Accepted);
 
     TEST_ASSERT_FALSE(result);
 }
 
-void test_isJobUpdateAccepted_isNotUpdateAcceptedMsg()
+void test_isJobUpdateStatus_isNotUpdateAcceptedMsg()
 {
     char topic[] = "$aws/things/thingname/jobs/some-other-topic";
     size_t topicLength = strlen(topic);
@@ -453,21 +465,21 @@ void test_isJobUpdateAccepted_isNotUpdateAcceptedMsg()
     mqttWrapper_getThingName_ExpectAnyArgs();
     mqttWrapper_getThingName_ReturnArrayThruPtr_thingNameBuffer(thingName, strlen(thingName));
 
-    bool result = coreJobs_isJobUpdateAccepted(topic, topicLength, jobId, jobIdLength);
+    bool result = coreJobs_isJobUpdateStatus(topic, topicLength, jobId, jobIdLength, JobUpdateStatus_Accepted);
 
     TEST_ASSERT_FALSE(result);
 }
 
-void test_isJobUpdateAccepted_hasNullTopic()
+void test_isJobUpdateStatus_hasNullTopic()
 {
-    bool result = coreJobs_isJobUpdateAccepted(NULL, 1U, jobId, jobIdLength);
+    bool result = coreJobs_isJobUpdateStatus(NULL, 1U, jobId, jobIdLength, JobUpdateStatus_Accepted);
 
     TEST_ASSERT_FALSE(result);
 }
 
-void test_isJobUpdateAccepted_hasZeroTopicLength()
+void test_isJobUpdateStatus_hasZeroTopicLength()
 {
-    bool result = coreJobs_isJobUpdateAccepted("$aws/things/thingname/jobs/start-next/accepted", 0U, jobId, jobIdLength);
+    bool result = coreJobs_isJobUpdateStatus("$aws/things/thingname/jobs/start-next/accepted", 0U, jobId, jobIdLength, JobUpdateStatus_Accepted);
 
     TEST_ASSERT_FALSE(result);
     

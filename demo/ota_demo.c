@@ -34,7 +34,7 @@ static void handleMqttStreamsBlockArrivedCallback(
     MqttFileDownloaderDataBlockInfo_t * dataBlock );
 static void processJobFile( AfrOtaJobDocumentFields_t * params );
 static void finishDownload();
-static bool jobMetadataHandlerChain( char * topic, size_t topicLength )
+static bool jobMetadataHandlerChain( char * topic, size_t topicLength );
 static bool jobHandlerChain( char * message, size_t messageLength );
 
 void otaDemo_start( void )
@@ -102,15 +102,31 @@ static bool jobMetadataHandlerChain( char * topic, size_t topicLength )
 
     if( globalJobId[ 0 ] != 0 )
     {
-        handled = coreJobs_isJobUpdateAccepted( topic,
-                                                topicLength,
-                                                ( const char * ) &globalJobId,
-                                                strnlen( globalJobId,
-                                                         MAX_JOB_ID_LENGTH ) );
+        handled = coreJobs_isJobUpdateStatus( topic,
+                                              topicLength,
+                                              ( const char * ) &globalJobId,
+                                              strnlen( globalJobId,
+                                                       MAX_JOB_ID_LENGTH ),
+                                              Accepted );
 
         if( handled )
         {
-            printf( "Clearing Job ID since update was accepted" );
+            printf( "Job was accepted! Clearing Job ID.\n" );
+            globalJobId[ 0 ] = 0;
+        }
+        else
+        {
+            handled = coreJobs_isJobUpdateStatus( topic,
+                                                  topicLength,
+                                                  ( const char * ) &globalJobId,
+                                                  strnlen( globalJobId,
+                                                           MAX_JOB_ID_LENGTH ),
+                                                  Rejected );
+        }
+
+        if( handled )
+        {
+            printf( "Job was rejected! Clearing Job ID.\n" );
             globalJobId[ 0 ] = 0;
         }
     }
