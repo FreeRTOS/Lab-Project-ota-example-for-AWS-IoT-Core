@@ -59,20 +59,7 @@ bool otaDemo_handleIncomingMQTTMessage( char * topic,
 {
     bool handled = false;
 
-    if( globalJobId[ 0 ] != 0 )
-    {
-        handled = coreJobs_isJobUpdateAccepted( topic,
-                                                topicLength,
-                                                ( const char * ) &globalJobId,
-                                                strnlen( globalJobId,
-                                                         MAX_JOB_ID_LENGTH ) );
-
-        if( handled )
-        {
-            printf( "Clearing Job ID since update was accepted" );
-            globalJobId[ 0 ] = 0;
-        }
-    }
+    handled = jobMetadataHandlerChain( topic, topicLength );
 
     if( !handled )
     {
@@ -105,6 +92,28 @@ bool otaDemo_handleIncomingMQTTMessage( char * topic,
                 ( unsigned int ) messageLength,
                 ( char * ) message );
     }
+    return handled;
+}
+
+static bool jobMetadataHandlerChain( char * topic, size_t topicLength )
+{
+    bool handled = false;
+
+    if( globalJobId[ 0 ] != 0 )
+    {
+        handled = coreJobs_isJobUpdateAccepted( topic,
+                                                topicLength,
+                                                ( const char * ) &globalJobId,
+                                                strnlen( globalJobId,
+                                                         MAX_JOB_ID_LENGTH ) );
+
+        if( handled )
+        {
+            printf( "Clearing Job ID since update was accepted" );
+            globalJobId[ 0 ] = 0;
+        }
+    }
+
     return handled;
 }
 
