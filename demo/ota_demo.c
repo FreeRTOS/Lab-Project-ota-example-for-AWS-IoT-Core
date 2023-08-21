@@ -34,6 +34,7 @@ static void handleMqttStreamsBlockArrivedCallback(
     MqttFileDownloaderDataBlockInfo_t * dataBlock );
 static void processJobFile( AfrOtaJobDocumentFields_t * params );
 static void finishDownload();
+static bool jobMetadataHandlerChain( char * topic, size_t topicLength )
 static bool jobHandlerChain( char * message, size_t messageLength );
 
 void otaDemo_start( void )
