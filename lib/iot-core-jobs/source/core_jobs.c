@@ -84,7 +84,7 @@ bool coreJobs_isJobUpdateAccepted( const char * topic,
               jobIdTerminated,
               "/update/accepted" );
 
-    return isThingnameTopicMatch(topic, topicLength, suffixBuffer, TOPIC_BUFFER_SIZE - MAX_THING_NAME_LENGTH - 4U);
+    return isThingnameTopicMatch(topic, topicLength, suffixBuffer, strnlen(suffixBuffer, TOPIC_BUFFER_SIZE - MAX_THING_NAME_LENGTH - 4U));
 }
 
 size_t coreJobs_getJobId(const char * message, size_t messageLength, char ** jobId)
