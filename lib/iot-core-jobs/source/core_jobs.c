@@ -21,6 +21,7 @@
 /* This accounts for the message fields and expected version size (up to '999')
  */
 #define UPDATE_JOB_MSG_LENGTH 48U
+#define UPDATE_JOB_STATUS_MAX_LENGTH 8U
 
 static const char * jobStatusString[ 5U ] = { "QUEUED",
                                               "IN_PROGRESS",
@@ -79,7 +80,7 @@ bool coreJobs_isJobUpdateStatus( const char * topic,
     /* Max suffix size = max topic size - "$aws/<thingname>" prefix */
     char suffixBuffer[ TOPIC_BUFFER_SIZE - MAX_THING_NAME_LENGTH - 4U] = { 0 };
     char jobIdTerminated[ MAX_JOB_ID_LENGTH + 1 ] = { 0 };
-    char updateStatusString[ 10 ] = { 0 };
+    char updateStatusString[ UPDATE_JOB_STATUS_MAX_LENGTH + 1 ] = { 0 };
 
     memcpy(&jobIdTerminated, jobId, jobIdLength);
     memcpy(&updateStatusString, jobUpdateStatusString[ expectedStatus ], jobUpdateStatusStringLengths[ expectedStatus ]);
@@ -320,7 +321,7 @@ static bool isThingnameTopicMatch(const char * topic,
     if ( isMatch )
     {
         mqttWrapper_getThingName( thingName, &thingNameLength );
-        memcpy(&suffixTerminated, topicSuffix, topicSuffixLength);
+        memcpy(suffixTerminated, topicSuffix, topicSuffixLength);
         snprintf( expectedTopicBuffer,
               TOPIC_BUFFER_SIZE,
               "%s%s%s",
