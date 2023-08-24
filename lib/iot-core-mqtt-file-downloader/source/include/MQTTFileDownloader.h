@@ -131,6 +131,19 @@ uint8_t mqttDownloader_requestDataBlock( MqttFileDownloaderContext_t * context,
                                          uint32_t numberOfBlocksRequested );
 
 /**
+ * @brief Checks if the incoming Publish message contains MQTT Data block.
+ *
+ * @param[in] context MQTT file downloader context pointer.
+ * @param[in] topic incoming Publish message MQTT topic.
+ * @param[in] topicLength incoming Publish message MQTT topic length.
+ *
+ * @return returns True if the message contains Data block else False.
+ */
+bool mqttDownloader_isDataBlockReceived( MqttFileDownloaderContext_t * context,
+                                         char * topic,
+                                         size_t topicLength );
+
+/**
  * @brief Process incoming Publish message.
  *
  * @param[in] context MQTT file downloader context pointer.
@@ -138,11 +151,11 @@ uint8_t mqttDownloader_requestDataBlock( MqttFileDownloaderContext_t * context,
  *
  * @return returns True if the message is handled else False.
  */
-bool mqttDownloader_handleIncomingMessage( MqttFileDownloaderContext_t * context,
-                                           MqttFileBlockHandler_t blockCallback,
-                                           char * topic,
-                                           size_t topicLength,
-                                           uint8_t * message,
-                                           size_t messageLength );
+bool mqttDownloader_processReceivedDataBlock(
+    MqttFileDownloaderContext_t * context,
+    uint8_t * message,
+    size_t messageLength,
+    uint8_t * data,
+    size_t * dataLength );
 
 #endif /* #ifndef MQTT_FILE_DOWNLOADER_H */

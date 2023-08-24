@@ -30,8 +30,7 @@ static uint32_t totalBytesReceived = 0;
 static uint8_t downloadedData[ CONFIG_MAX_FILE_SIZE ] = { 0 };
 char globalJobId[ MAX_JOB_ID_LENGTH ] = { 0 };
 
-static void handleMqttStreamsBlockArrivedCallback(
-    MqttFileDownloaderDataBlockInfo_t * dataBlock );
+static void handleMqttStreamsBlockArrived( uint8_t * data, size_t dataLength );
 static void processJobFile( AfrOtaJobDocumentFields_t * params );
 static void finishDownload();
 static bool jobMetadataHandlerChain( char * topic, size_t topicLength );
@@ -74,15 +73,22 @@ bool otaDemo_handleIncomingMQTTMessage( char * topic,
         }
         else
         {
-            handled = mqttDownloader_handleIncomingMessage(
-                &mqttFileDownloaderContext,
-                &handleMqttStreamsBlockArrivedCallback,
-                topic,
-                topicLength,
-                message,
-                messageLength );
+            handled = mqttDownloader_isDataBlockReceived( &mqttFileDownloaderContext,
+                                                      topic,
+                                                      topicLength );
+            if( handled )
+            {
+                uint8_t decodedData[ mqttFileDownloader_CONFIG_BLOCK_SIZE ];
+                size_t decodedDataLength = 0;
+                handled = mqttDownloader_processReceivedDataBlock(
+                    &mqttFileDownloaderContext,
+                    message,
+                    messageLength,
+                    decodedData,
+                    &decodedDataLength );
+                handleMqttStreamsBlockArrived( decodedData, decodedDataLength );
+            }
         }
-    }
 
     if( !handled )
     {
@@ -208,17 +214,13 @@ static void processJobFile( AfrOtaJobDocumentFields_t * params )
 }
 
 /* Implemented for the MQTT Streams library */
-static void handleMqttStreamsBlockArrivedCallback(
-    MqttFileDownloaderDataBlockInfo_t * dataBlock )
+static void handleMqttStreamsBlockArrived( uint8_t * data, size_t dataLength )
 {
-    assert( ( totalBytesReceived + dataBlock->payloadLength ) <
-            CONFIG_MAX_FILE_SIZE );
+    assert( ( totalBytesReceived + dataLength ) < CONFIG_MAX_FILE_SIZE );
 
-    memcpy( downloadedData + totalBytesReceived,
-            dataBlock->payload,
-            dataBlock->payloadLength );
+    memcpy( downloadedData + totalBytesReceived, data, dataLength );
 
-    totalBytesReceived += dataBlock->payloadLength;
+    totalBytesReceived += dataLength;
     numOfBlocksRemaining--;
 
     if( numOfBlocksRemaining == 0 )
