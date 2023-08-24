@@ -38,12 +38,6 @@ FetchContent_Declare(
   GIT_TAG ed29ce388f4478bda1bdfb274d371e961b671c2b)
 
 FetchContent_Declare(
-  FreeRTOS_Kernel
-  # hash: sha256-UXge9cJcbTaMlaCbrAVQ03AwQ2WQll5aL8BqFlN4Q/Y=
-  GIT_REPOSITORY https://github.com/FreeRTOS/FreeRTOS-Kernel.git
-  GIT_TAG 6d65558ba01141d7c50ff6f93a4054cc5f16940e)
-
-FetchContent_Declare(
   CoreMQTT
   # hash: sha256-iT+mjlduomUTWYEdpoRwoLxJzI0daPjypxlXlXie7nc=
   GIT_REPOSITORY https://github.com/FreeRTOS/coreMQTT.git
@@ -55,14 +49,7 @@ FetchContent_Declare(
   GIT_REPOSITORY https://github.com/FreeRTOS/coreJSON.git
   GIT_TAG a0cd6122745a879225bf459dd257e79bdd63d37a)
 
-# FreeRTOS-Kernel build options
-add_library(freertos_config INTERFACE)
-target_include_directories(
-  freertos_config SYSTEM
-  INTERFACE "${CMAKE_CURRENT_LIST_DIR}/unit-test/dependencies/FreeRTOS-Kernel")
-
-
-FetchContent_MakeAvailable(CMock FreeRTOS_Kernel CoreMQTT CoreJSON)
+FetchContent_MakeAvailable(CMock CoreMQTT CoreJSON)
 
 # Unity + CMock
 add_library(
@@ -110,7 +97,7 @@ target_include_directories(
   PUBLIC ${MQTT_INCLUDE_PUBLIC_DIRS}
   PRIVATE "${CMAKE_CURRENT_LIST_DIR}/unit-test/dependencies/coreMQTT"
   INTERFACE "${CMAKE_CURRENT_LIST_DIR}/unit-test/dependencies/coreMQTT/api_cfg")
-target_link_libraries(coreMQTT PRIVATE freertos_kernel)
+target_link_libraries(coreMQTT)
 
 
 # ====================================  Test Configuration

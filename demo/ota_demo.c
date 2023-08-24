@@ -33,6 +33,7 @@ char globalJobId[ MAX_JOB_ID_LENGTH ] = { 0 };
 static void handleMqttStreamsBlockArrived( uint8_t * data, size_t dataLength );
 static void processJobFile( AfrOtaJobDocumentFields_t * params );
 static void finishDownload();
+static bool jobMetadataHandlerChain( char * topic, size_t topicLength );
 static bool jobHandlerChain( char * message, size_t messageLength );
 
 void otaDemo_start( void )
@@ -56,32 +57,38 @@ bool otaDemo_handleIncomingMQTTMessage( char * topic,
                                         uint8_t * message,
                                         size_t messageLength )
 {
-    bool handled = coreJobs_isStartNextAccepted( topic, topicLength );
+    bool handled = false;
 
-    if( handled )
-    {
-        handled = jobHandlerChain( message, messageLength );
+    handled = jobMetadataHandlerChain( topic, topicLength );
 
-        printf( "Handled? %d \n", handled );
-    }
-    else
+    if( !handled )
     {
-        handled = mqttDownloader_isDataBlockReceived( &mqttFileDownloaderContext,
-                                                      topic,
-                                                      topicLength );
+        handled = coreJobs_isStartNextAccepted( topic, topicLength );
+
         if( handled )
         {
-            uint8_t decodedData[ mqttFileDownloader_CONFIG_BLOCK_SIZE ];
-            size_t decodedDataLength = 0;
-            handled = mqttDownloader_processReceivedDataBlock(
-                &mqttFileDownloaderContext,
-                message,
-                messageLength,
-                decodedData,
-                &decodedDataLength );
-            handleMqttStreamsBlockArrived( decodedData, decodedDataLength );
+            handled = jobHandlerChain( ( char * ) message, messageLength );
+
+            printf( "Handled? %d", handled );
         }
-    }
+        else
+        {
+            handled = mqttDownloader_isDataBlockReceived( &mqttFileDownloaderContext,
+                                                      topic,
+                                                      topicLength );
+            if( handled )
+            {
+                uint8_t decodedData[ mqttFileDownloader_CONFIG_BLOCK_SIZE ];
+                size_t decodedDataLength = 0;
+                handled = mqttDownloader_processReceivedDataBlock(
+                    &mqttFileDownloaderContext,
+                    message,
+                    messageLength,
+                    decodedData,
+                    &decodedDataLength );
+                handleMqttStreamsBlockArrived( decodedData, decodedDataLength );
+            }
+        }
 
     if( !handled )
     {
@@ -92,6 +99,44 @@ bool otaDemo_handleIncomingMQTTMessage( char * topic,
                 ( unsigned int ) messageLength,
                 ( char * ) message );
     }
+    return handled;
+}
+
+static bool jobMetadataHandlerChain( char * topic, size_t topicLength )
+{
+    bool handled = false;
+
+    if( globalJobId[ 0 ] != 0 )
+    {
+        handled = coreJobs_isJobUpdateStatus( topic,
+                                              topicLength,
+                                              ( const char * ) &globalJobId,
+                                              strnlen( globalJobId,
+                                                       MAX_JOB_ID_LENGTH ),
+                                              Accepted );
+
+        if( handled )
+        {
+            printf( "Job was accepted! Clearing Job ID.\n" );
+            globalJobId[ 0 ] = 0;
+        }
+        else
+        {
+            handled = coreJobs_isJobUpdateStatus( topic,
+                                                  topicLength,
+                                                  ( const char * ) &globalJobId,
+                                                  strnlen( globalJobId,
+                                                           MAX_JOB_ID_LENGTH ),
+                                                  Rejected );
+        }
+
+        if( handled )
+        {
+            printf( "Job was rejected! Clearing Job ID.\n" );
+            globalJobId[ 0 ] = 0;
+        }
+    }
+
     return handled;
 }
 
@@ -211,5 +256,4 @@ static void finishDownload()
                               "2",
                               1U );
     printf( "\033[1;32mOTA Completed successfully!\033[0m\n" );
-    globalJobId[ 0 ] = 0U;
 }

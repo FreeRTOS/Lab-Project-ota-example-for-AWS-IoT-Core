@@ -18,8 +18,15 @@
 
 #include "mock_mqtt_wrapper.h"
 
-/* ===========================   UNITY FIXTURES ============================ */
+/* =======================+====   TEST GLOBALS ===========+================= */
 
+char * thingName = "thingname";
+char * version = "1.0.1";
+
+char * jobId = "job-id";
+size_t jobIdLength = strlen("job-id");
+
+/* ===========================   UNITY FIXTURES ============================ */
 
 /* Called before each test method. */
 void setUp()
@@ -64,8 +71,8 @@ bool updateJob_publishCallback(char * topic,
                           size_t messageLength,
                           int NumCalls)
 {
-    TEST_ASSERT_EQUAL_MEMORY(topic, "$aws/things/thingname/jobs/jobId/update", strlen("$aws/things/thingname/jobs/jobId/update"));
-    TEST_ASSERT_EQUAL_INT(strlen("$aws/things/thingname/jobs/jobId/update"), topicLength);
+    TEST_ASSERT_EQUAL_MEMORY(topic, "$aws/things/thingname/jobs/job-id/update", strlen("$aws/things/thingname/jobs/job-id/update"));
+    TEST_ASSERT_EQUAL_INT(strlen("$aws/things/thingname/jobs/job-id/update"), topicLength);
     TEST_ASSERT_EQUAL_MEMORY(message, "{\"status\":\"SUCCEEDED\",\"expectedVersion\":\"1.0.1\"}", strlen("{\"status\":\"SUCCEEDED\",\"expectedVersion\":\"1.0.1\"}"));
     TEST_ASSERT_EQUAL_INT( strlen("{\"status\":\"SUCCEEDED\",\"expectedVersion\":\"1.0.1\"}"), messageLength);
 
@@ -91,7 +98,6 @@ void test_isStartNextAccepted_isStartNextMsg( void )
 
 void test_isStartNextAccepted_isNotStartNextMsg( void )
 {
-    char * thingName = "thingname";
     char topic[] = "thingname/random/topic";
     size_t topicLength = strlen(topic);
 
@@ -105,7 +111,6 @@ void test_isStartNextAccepted_isNotStartNextMsg( void )
 
 void test_isStartNextAccepted_isStartNextMsgForAnotherThing( void )
 {
-    char * thingName = "thingname";
     char topic[] = "$aws/things/differntThignName/jobs/start-next/accepted";
     size_t topicLength = strlen(topic);
 
@@ -119,7 +124,6 @@ void test_isStartNextAccepted_isStartNextMsgForAnotherThing( void )
 
 void test_isStartNextAccepted_isStartNextMsgForSameLengthThing( void )
 {
-    char * thingName = "thingname";
     char topic[] = "$aws/things/different/jobs/start-next/accepted";
     size_t topicLength = strlen(topic);
 
@@ -258,7 +262,6 @@ void test_getJobDocument_returnsZeroLengthJob_givenZeroMessageLength( void )
 
 void test_startNextPendingJob_startsJob( void )
 {
-    char * thingName = "thingname";
     char * clientToken = "clientToken";
 
     mqttWrapper_publish_Stub(startJob_publishCallback);
@@ -280,7 +283,6 @@ void test_startNextPendingJob_returnsFalse_givenNullThingname( void )
 
 void test_startNextPendingJob_returnsFalse_givenNullClientToken( void )
 {
-    char * thingName = "thingname";
     char * clientToken = NULL;
 
     bool result = coreJobs_startNextPendingJob(thingName, (size_t) strlen(thingName), clientToken, 1U);
@@ -290,7 +292,6 @@ void test_startNextPendingJob_returnsFalse_givenNullClientToken( void )
 
 void test_startNextPendingJob_returnsFalse_gienZeroThingnameLength( void )
 {
-    char * thingName = "thingname";
     char * clientToken = "clientToken";
 
     bool result = coreJobs_startNextPendingJob(thingName, 0U, clientToken, (size_t) strlen(clientToken));
@@ -300,7 +301,6 @@ void test_startNextPendingJob_returnsFalse_gienZeroThingnameLength( void )
 
 void test_startNextPendingJob_returnsFalse_givenZeroClientTokenLength( void )
 {
-    char * thingName = "thingname";
     char * clientToken = "clientToken";
 
     bool result = coreJobs_startNextPendingJob(thingName, (size_t) strlen(thingName), clientToken, 0U);
@@ -310,10 +310,6 @@ void test_startNextPendingJob_returnsFalse_givenZeroClientTokenLength( void )
 
 void test_updateJobStatus_updatesStatus( void )
 {
-    char * thingName = "thingname";
-    char * jobId = "jobId";
-    char * expectedVersion = "1.0.1";
-
     mqttWrapper_publish_Stub(updateJob_publishCallback);
 
     bool result = coreJobs_updateJobStatus(thingName,
@@ -321,8 +317,8 @@ void test_updateJobStatus_updatesStatus( void )
             jobId,
             (size_t) strlen(jobId),
             Succeeded,
-            expectedVersion,
-            (size_t) strlen(expectedVersion));
+            version,
+            (size_t) strlen(version));
 
     TEST_ASSERT_TRUE(result);
 }
@@ -330,41 +326,35 @@ void test_updateJobStatus_updatesStatus( void )
 void test_updateJobStatus_returnsFalse_givenNullThingname( void )
 {
     char * thingName = NULL;
-    char * jobId = "jobId";
-    char * expectedVersion = "1.0.1";
 
     bool result = coreJobs_updateJobStatus(thingName,
             1U,
             jobId,
             (size_t) strlen(jobId),
             Succeeded,
-            expectedVersion,
-            (size_t) strlen(expectedVersion));
+            version,
+            (size_t) strlen(version));
 
     TEST_ASSERT_FALSE(result);
 }
 
 void test_updateJobStatus_returnsFalse_givenNullJobId( void )
 {
-    char * thingName = "thingname";
     char * jobId = NULL;
-    char * expectedVersion = "1.0.1";
 
     bool result = coreJobs_updateJobStatus(thingName,
             (size_t) strlen(thingName),
             jobId,
             1U,
             Succeeded,
-            expectedVersion,
-            (size_t) strlen(expectedVersion));
+            version,
+            (size_t) strlen(version));
 
     TEST_ASSERT_FALSE(result);
 }
 
 void test_updateJobStatus_returnsFalse_givenNullVersion( void )
 {
-    char * thingName = "thingname";
-    char * jobId = "jobId";
     char * expectedVersion = NULL;
 
     bool result = coreJobs_updateJobStatus(thingName,
@@ -380,51 +370,117 @@ void test_updateJobStatus_returnsFalse_givenNullVersion( void )
 
 void test_updateJobStatus_returnsFalse_givenZeroThingnameLength( void )
 {
-    char * thingName = "thingname";
-    char * jobId = "jobId";
-    char * expectedVersion = "1.0.1";
-
     bool result = coreJobs_updateJobStatus(thingName,
             0U,
             jobId,
             (size_t) strlen(jobId),
             Succeeded,
-            expectedVersion,
-            (size_t) strlen(expectedVersion));
+            version,
+            (size_t) strlen(version));
 
     TEST_ASSERT_FALSE(result);
 }
 
 void test_updateJobStatus_returnsFalse_givenZeroJobIdLength( void )
 {
-    char * thingName = "thingname";
-    char * jobId = "jobId";
-    char * expectedVersion = "1.0.1";
-
     bool result = coreJobs_updateJobStatus(thingName,
             (size_t) strlen(thingName),
             jobId,
             0U,
             Succeeded,
-            expectedVersion,
-            (size_t) strlen(expectedVersion));
+            version,
+            (size_t) strlen(version));
 
     TEST_ASSERT_FALSE(result);
 }
 
 void test_updateJobStatus_returnsFalse_givenZeroVersionLength( void )
 {
-    char * thingName = "thingname";
-    char * jobId = "jobId";
-    char * expectedVersion = "1.0.1";
-
     bool result = coreJobs_updateJobStatus(thingName,
             (size_t) strlen(thingName),
             jobId,
             (size_t) strlen(jobId),
             Succeeded,
-            expectedVersion,
+            version,
             0U);
 
     TEST_ASSERT_FALSE(result);
+}
+
+void test_isJobUpdateStatus_isUpdateAcceptedMsg()
+{
+    char topic[] = "$aws/things/thingname/jobs/job-id/update/accepted";
+    size_t topicLength = strlen(topic);
+
+    mqttWrapper_getThingName_ExpectAnyArgs();
+    mqttWrapper_getThingName_ReturnArrayThruPtr_thingNameBuffer(thingName, strlen(thingName));
+
+    bool result = coreJobs_isJobUpdateStatus(topic, topicLength, jobId, jobIdLength, JobUpdateStatus_Accepted);
+
+    TEST_ASSERT_TRUE(result);
+}
+
+void test_isJobUpdateStatus_isUpdateRejectedMsg()
+{
+    char topic[] = "$aws/things/thingname/jobs/job-id/update/rejected";
+    size_t topicLength = strlen(topic);
+
+    mqttWrapper_getThingName_ExpectAnyArgs();
+    mqttWrapper_getThingName_ReturnArrayThruPtr_thingNameBuffer(thingName, strlen(thingName));
+
+    bool result = coreJobs_isJobUpdateStatus(topic, topicLength, jobId, jobIdLength, JobUpdateStatus_Rejected);
+
+    TEST_ASSERT_TRUE(result);
+}
+
+void test_isJobUpdateStatus_isUpdateMsg_notForCurrentJob()
+{
+    /* Note: topic length remains the same length */
+    char topic[100] = "$aws/things/thingname/jobs/jobtwo/update/accepted";
+    size_t topicLength = strlen(topic);
+
+    mqttWrapper_getThingName_ExpectAnyArgs();
+    mqttWrapper_getThingName_ReturnArrayThruPtr_thingNameBuffer(thingName, strlen(thingName));
+
+    bool result = coreJobs_isJobUpdateStatus(topic, topicLength, jobId, jobIdLength, JobUpdateStatus_Accepted);
+
+    TEST_ASSERT_FALSE(result);
+
+    strcpy(topic, "$aws/things/thingname/jobs/different-length/update/accepted");
+    topicLength = strlen(topic);
+
+    mqttWrapper_getThingName_ExpectAnyArgs();
+    mqttWrapper_getThingName_ReturnArrayThruPtr_thingNameBuffer(thingName, strlen(thingName));
+
+    result = coreJobs_isJobUpdateStatus(topic, topicLength, jobId, jobIdLength, JobUpdateStatus_Accepted);
+
+    TEST_ASSERT_FALSE(result);
+}
+
+void test_isJobUpdateStatus_isNotUpdateAcceptedMsg()
+{
+    char topic[] = "$aws/things/thingname/jobs/some-other-topic";
+    size_t topicLength = strlen(topic);
+
+    mqttWrapper_getThingName_ExpectAnyArgs();
+    mqttWrapper_getThingName_ReturnArrayThruPtr_thingNameBuffer(thingName, strlen(thingName));
+
+    bool result = coreJobs_isJobUpdateStatus(topic, topicLength, jobId, jobIdLength, JobUpdateStatus_Accepted);
+
+    TEST_ASSERT_FALSE(result);
+}
+
+void test_isJobUpdateStatus_hasNullTopic()
+{
+    bool result = coreJobs_isJobUpdateStatus(NULL, 1U, jobId, jobIdLength, JobUpdateStatus_Accepted);
+
+    TEST_ASSERT_FALSE(result);
+}
+
+void test_isJobUpdateStatus_hasZeroTopicLength()
+{
+    bool result = coreJobs_isJobUpdateStatus("$aws/things/thingname/jobs/start-next/accepted", 0U, jobId, jobIdLength, JobUpdateStatus_Accepted);
+
+    TEST_ASSERT_FALSE(result);
+    
 }
