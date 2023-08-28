@@ -135,5 +135,5 @@ add_custom_target(
   coverage
   COMMAND ${CMAKE_COMMAND} -DCMOCK_DIR=${cmock_SOURCE_DIR} -P
           ${MODULE_ROOT_DIR}/tools/cmock/coverage.cmake
-  DEPENDS cmock unity tinycbor mqtt_file_downloader_utest
+  DEPENDS cmock unity tinycbor mqtt_file_downloader_utest mqtt_file_downloader_base64_utest mqtt_file_downloader_cbor_utest
   WORKING_DIRECTORY ${CMAKE_BINARY_DIR})

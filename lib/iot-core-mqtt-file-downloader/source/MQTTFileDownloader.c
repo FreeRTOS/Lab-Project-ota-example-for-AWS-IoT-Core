@@ -154,6 +154,7 @@ static uint16_t createTopic( char * topicBuffer,
     return topicLen;
 }
 
+/* TODO - Defend agains NULL streamName or thingName and 0 lengths*/
 uint8_t mqttDownloader_init( MqttFileDownloaderContext_t * context,
                              char * streamName,
                              size_t streamNameLength,
@@ -262,8 +263,7 @@ uint8_t mqttDownloader_requestDataBlock( MqttFileDownloaderContext_t * context,
     {
         requestStatus = MQTTFileDownloaderBadParameter;
     }
-
-    if( ( context->topicStreamDataLength == 0 ) ||
+    else if( ( context->topicStreamDataLength == 0 ) ||
         ( context->topicGetStreamLength == 0 ) )
     {
         requestStatus = MQTTFileDownloaderNotInitialized;
@@ -286,7 +286,6 @@ uint8_t mqttDownloader_requestDataBlock( MqttFileDownloaderContext_t * context,
                       "\"l\": %u,"
                       "\"o\": %u,"
                       "\"n\": %u"
-
                       "}",
                       fileId,
                       blockSize,
@@ -341,8 +340,6 @@ static uint8_t handleCborMessage( uint8_t * decodedData,
     uint8_t * payload = decodedData;
     size_t payloadSize = mqttFileDownloader_CONFIG_BLOCK_SIZE;
     uint8_t handleStatus = MQTTFileDownloaderSuccess;
-
-    memset( decodedData, '\0', mqttFileDownloader_CONFIG_BLOCK_SIZE );
 
     cborDecodeRet = CBOR_Decode_GetStreamResponseMessage( message,
                                                           messageLength,
@@ -411,13 +408,14 @@ static uint8_t handleJsonMessage( uint8_t * decodedData,
     return handleStatus;
 }
 
+/* TODO - Handle NULL topic or zero topic length */
 bool mqttDownloader_isDataBlockReceived( MqttFileDownloaderContext_t * context,
                                          char * topic,
                                          size_t topicLength )
 {
     bool handled = false;
 
-    if( ( topicLength == strlen( context->topicStreamData ) ) &&
+    if( ( topicLength == context->topicStreamDataLength ) &&
         ( 0 == strncmp( context->topicStreamData, topic, topicLength ) ) )
     {
         handled = true;
