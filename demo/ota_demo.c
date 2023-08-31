@@ -89,6 +89,7 @@ bool otaDemo_handleIncomingMQTTMessage( char * topic,
                 handleMqttStreamsBlockArrived( decodedData, decodedDataLength );
             }
         }
+    }
 
     if( !handled )
     {
@@ -113,7 +114,7 @@ static bool jobMetadataHandlerChain( char * topic, size_t topicLength )
                                               ( const char * ) &globalJobId,
                                               strnlen( globalJobId,
                                                        MAX_JOB_ID_LENGTH ),
-                                              Accepted );
+                                              JobUpdateStatus_Accepted );
 
         if( handled )
         {
@@ -127,7 +128,7 @@ static bool jobMetadataHandlerChain( char * topic, size_t topicLength )
                                                   ( const char * ) &globalJobId,
                                                   strnlen( globalJobId,
                                                            MAX_JOB_ID_LENGTH ),
-                                                  Rejected );
+                                                  JobUpdateStatus_Rejected );
         }
 
         if( handled )
