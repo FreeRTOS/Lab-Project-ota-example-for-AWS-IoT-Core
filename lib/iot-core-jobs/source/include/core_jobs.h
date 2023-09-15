@@ -14,6 +14,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#define MAX_JOB_ID_LENGTH       64U
+
 typedef enum JobStatus
 {
     Queued,
@@ -22,6 +24,12 @@ typedef enum JobStatus
     Succeeded,
     Rejected
 } JobStatus_t;
+
+typedef enum JobUpdateStatus
+{
+    JobUpdateStatus_Accepted,
+    JobUpdateStatus_Rejected
+} JobUpdateStatus_t;
 
 typedef bool ( *IncomingJobDocHandler_t )( const char * jobId,
                                            const size_t jobIdLength,
@@ -70,20 +78,52 @@ bool coreJobs_updateJobStatus( char * thingname,
                                char * expectedVersion,
                                size_t expectedVersionLength );
 
-/*
- * ------------------------ MQTT API Functions  --------------------------
- * Called by the platform wrapper, implemented by coreJobs
- *
- * Can be called on any incoming MQTT message
- * If the incoming MQTT message is intended for an AWS IoT Jobs topic, then this
- * function parses the Job doc and distributes it through the Jobs chain of
- * responsibilities, then returns true. Returns false otherwise.
+/**
+ * @brief Retrieves the job ID from a given message (if applicable)
+ * 
+ * @param message [In] A JSON formatted message which
+ * @param messageLength [In] The length of the message
+ * @param jobId [Out] The job ID
+ * @return size_t The job ID length
  */
-bool coreJobs_handleIncomingMQTTMessage(
-    const IncomingJobDocHandler_t jobDocHandler,
-    const char * topic,
-    const size_t topicLength,
-    const uint8_t * message,
-    size_t messageLength );
+size_t coreJobs_getJobId(const char * message, size_t messageLength, char ** jobId);
+
+/**
+ * @brief Retrieves the job document from a given message (if applicable)
+ * 
+ * @param message [In] A JSON formatted message which
+ * @param messageLength [In] The length of the message
+ * @param jobDoc [Out] The job document
+ * @return size_t The length of the job document
+ */
+size_t coreJobs_getJobDocument(const char * message, size_t messageLength, char ** jobDoc);
+
+/**
+ * @brief Checks if a message comes from the start-next/accepted reserved topic
+ * 
+ * @param topic The topic to check against
+ * @param topicLength The expected topic length 
+ * @return true If the topic is the start-next/accepted topic
+ * @return false If the topic is not the start-next/accepted topic
+ */
+bool coreJobs_isStartNextAccepted( const char * topic,
+                                   const size_t topicLength );
+
+/**
+ * @brief Checks if a message comes from the update/accepted reserved topic
+ * 
+ * @param topic The topic to check against
+ * @param topicLength The expected topic length 
+ * @param jobId Corresponding Job ID which the update was accepted for
+ * @param jobIdLength The Job ID length
+ * @param expectedStatus The job update status reported by AWS IoT Jobs
+ * @return true If the topic is the update/<expectedStatus> topic
+ * @return false If the topic is not the update/<expectedStatus> topic
+ */
+bool coreJobs_isJobUpdateStatus( const char * topic,
+                                const size_t topicLength,
+                                const char * jobId,
+                                const size_t jobIdLength,
+                                JobUpdateStatus_t expectedStatus );
 
 #endif

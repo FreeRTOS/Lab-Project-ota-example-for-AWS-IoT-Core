@@ -16,74 +16,77 @@
 #include "job_parser.h"
 #include "ota_job_processor.h"
 
+static bool isFreeRTOSOtaJob( const char * jobDoc, const size_t jobDocLength );
+static bool isJobFileIndexValid( const char * jobDoc, const size_t jobDocLength, const uint8_t fileIndex );
+
 /**
  * @brief Signals if the job document provided is a FreeRTOS OTA update document
  *
- * @param jobId The JobID from the AWS IoT Job
- * @param jobIdLength The length of the JobID
  * @param jobDoc The job document contained in the AWS IoT Job
  * @param jobDocLength The length of the job document
- * @return true The job document is for a FreeRTOS OTA update
- * @return false The job document is NOT for an FreeRTOS OTA update
+ * @param fields A pointer to an job document fields structure populated by call
+ * @return int8_t The next file index in the job. Returns 0 if no additional files are available. Returns -1 if error.
  */
-bool otaParser_handleJobDoc( OtaDocProcessor_t docCallback,
-                             const char * jobId,
-                             const size_t jobIdLength,
-                             const char * jobDoc,
-                             const size_t jobDocLength )
+int8_t otaParser_parseJobDocFile( const char * jobDoc,
+                                   const size_t jobDocLength,
+                                   const uint8_t fileIndex,
+                                   AfrOtaJobDocumentFields_t * fields )
 {
-    bool docHandled = false;
+    bool fieldsPopulated = false;
+    int8_t nextFileIndex = -1;
+
+    if( ( jobDoc != NULL ) && ( jobDocLength > 0U ) )
+    {
+        if ( isFreeRTOSOtaJob(jobDoc, jobDocLength) && isJobFileIndexValid(jobDoc, jobDocLength, fileIndex) )
+        {
+            fieldsPopulated = populateJobDocFields( jobDoc,
+                                                    jobDocLength,
+                                                    fileIndex,
+                                                    fields );
+        }
+        
+        if ( fieldsPopulated )
+        {
+            nextFileIndex =  (isJobFileIndexValid(jobDoc, jobDocLength, fileIndex + 1U)) ? fileIndex + 1U : 0U;
+        }
+    }
+    return nextFileIndex;
+}
+
+static bool isFreeRTOSOtaJob( const char * jobDoc, const size_t jobDocLength )
+{
     JSONStatus_t isFreeRTOSOta = JSONIllegalDocument;
     const char * afrOtaDocHeader;
     size_t afrOtaDocHeaderLength = 0U;
 
-    ( void ) jobId;
-    ( void ) jobIdLength;
+    /* FreeRTOS OTA updates have a top level "afr_ota" job document key.
+        * Check for this to ensure the docuemnt is an FreeRTOS OTA update */
+    isFreeRTOSOta = JSON_SearchConst( jobDoc,
+                                        jobDocLength,
+                                        "afr_ota",
+                                        7U,
+                                        &afrOtaDocHeader,
+                                        &afrOtaDocHeaderLength,
+                                        NULL );
 
-    if( ( jobDoc != NULL ) && ( jobDocLength > 0U ) )
-    {
-        /* FreeRTOS OTA updates have a top level "afr_ota" job document key.
-         * Check for this to ensure the docuemnt is an FreeRTOS OTA update */
-        isFreeRTOSOta = JSON_SearchConst( jobDoc,
-                                          jobDocLength,
-                                          "afr_ota",
-                                          7U,
-                                          &afrOtaDocHeader,
-                                          &afrOtaDocHeaderLength,
-                                          NULL );
-    }
+    return ( JSONSuccess == isFreeRTOSOta );
+}
 
-    if( isFreeRTOSOta == JSONSuccess )
-    {
+static bool isJobFileIndexValid( const char * jobDoc, const size_t jobDocLength, const uint8_t fileIndex )
+{
+        JSONStatus_t isFreeRTOSOta = JSONIllegalDocument;
         const char * fileValue;
         size_t fileValueLength = 0U;
-        int fileIndex = 0;
-        char files[ 17U ] = "afr_ota.files[0]";
-        docHandled = true;
+        char file[ 17U ] = "afr_ota.files[i]";
+        file[ 14U ] = ( char ) ( ( int ) '0' + fileIndex );
 
-        while( docHandled && ( fileIndex <= 9 ) &&
-               ( JSONSuccess == JSON_SearchConst( jobDoc,
-                                                  jobDocLength,
-                                                  files,
-                                                  16U,
-                                                  &fileValue,
-                                                  &fileValueLength,
-                                                  NULL ) ) )
-        {
-            AfrOtaJobDocumentFields_t fields;
-            docHandled &= populateJobDocFields( jobDoc,
-                                                jobDocLength,
-                                                fileIndex,
-                                                &fields );
+        isFreeRTOSOta = JSON_SearchConst( jobDoc,
+                                          jobDocLength,
+                                          file,
+                                          16U,
+                                          &fileValue,
+                                          &fileValueLength,
+                                          NULL );
 
-            if( docHandled )
-            {
-                docCallback( &fields );
-            }
-
-            files[ 14U ] = ( char ) ( ++fileIndex + ( int ) '0' );
-        }
-    }
-
-    return docHandled;
+    return ( JSONSuccess == isFreeRTOSOta );
 }

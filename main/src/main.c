@@ -40,6 +40,7 @@ static void handleIncomingMQTTMessage( char * topic,
                                        size_t topicLength,
                                        uint8_t * message,
                                        size_t messageLength );
+static void mqttProcessLoopTask( void * parameters );
 
 int app_main( void )
 {
@@ -69,11 +70,12 @@ int app_main( void )
     pfCred_getThingName( thingName, &thingNameSize );
 
     mqttWrapper_setCoreMqttContext( &mqttContext );
-    mqttWrapper_setThingName( thingName );
+    mqttWrapper_setThingName( thingName, thingNameSize );
 
     pfWifi_startNetwork();
 
-    xTaskCreate( mainTask, "MAIN", 6000, NULL, 5, NULL );
+    xTaskCreate( mainTask, "MAIN", 12000, NULL, 1, NULL );
+    xTaskCreate( mqttProcessLoopTask, "MQTT", 6000, NULL, 1, NULL );
 
     return 0;
 }
@@ -82,7 +84,7 @@ void mainTask( void * pvParamters )
 {
     ( void ) pvParamters;
 
-    ESP_LOGE( "MAIN", "Main task started" );
+    ESP_LOGE( "MAIN", "Main task started: v1.0.0" );
     char endpoint[ 256U ] = { 0 };
     size_t endpointLength = 256U;
     pfCred_getEndpoint( endpoint, &endpointLength );
@@ -90,7 +92,11 @@ void mainTask( void * pvParamters )
 
     bool result = pfTransport_tlsConnect( endpoint, endpointLength );
     assert( result );
-    result = mqttWrapper_connect();
+
+    char thingName[ 128U + 1 ] = { 0 };
+    size_t thingNameSize = 0U;
+    mqttWrapper_getThingName( thingName, &thingNameSize );
+    result = mqttWrapper_connect(thingName, thingNameSize);
     assert( result );
     ESP_LOGE( "MAIN", "Connected to IoT Core" );
 
@@ -98,10 +104,27 @@ void mainTask( void * pvParamters )
 
     while( true )
     {
-        // TODO: Make the application which will happen alongside OTA
-        // Yield so the idle will get a few cycles and the WDT will be avoided
-        MQTT_ProcessLoop( mqttWrapper_getCoreMqttContext() );
         vTaskDelay( pdMS_TO_TICKS( 10 ) );
+    }
+}
+
+static void mqttProcessLoopTask( void * parameters )
+{
+    ( void ) parameters;
+
+    while( true )
+    {
+        if( mqttWrapper_isConnected() )
+        {
+            MQTTStatus_t status = MQTT_ProcessLoop( mqttWrapper_getCoreMqttContext() );
+
+            if( status == MQTTRecvFailed )
+            {
+                printf( "ERROR: MQTT Receive failed. Closing connection.\n" );
+                exit( 1 );
+            }
+        }
+        vTaskDelay( 10 );
     }
 }
 

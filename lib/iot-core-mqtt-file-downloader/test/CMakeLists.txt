@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.16.0)
 
 project(
-  "AWS IoT Jobs OTA Handler Tests"
+  "MQTT Stream Downloader Tests"
   VERSION 1.0.0
   LANGUAGES C)
 
@@ -28,7 +28,7 @@ get_filename_component(__MODULE_ROOT_DIR "${CMAKE_CURRENT_LIST_DIR}/.."
                        ABSOLUTE)
 set(MODULE_ROOT_DIR
     ${__MODULE_ROOT_DIR}
-    CACHE INTERNAL "coreOTA-Jobs-Handler repository root.")
+    CACHE INTERNAL "core-mqtt-file-downloader repository root.")
 
 include(FetchContent)
 
@@ -38,13 +38,49 @@ FetchContent_Declare(
   GIT_TAG ed29ce388f4478bda1bdfb274d371e961b671c2b)
 
 FetchContent_Declare(
+  tinycbor
+  # hash: sha256-otueOD8tkzbHHVuOBI6krewYoeteRGAAQWSf0r19P5s=
+  GIT_REPOSITORY https://github.com/intel/tinycbor.git
+  GIT_TAG 9924cfed3b95ad6de299ae675064430fdb886216)
+
+FetchContent_Declare(
   CoreJSON
   # hash: sha256-r0lJff61NK2rPtO7Wr6RudFNQiLt1D4M30V7/p60Zi0=
   GIT_REPOSITORY https://github.com/FreeRTOS/coreJSON.git
   GIT_TAG a0cd6122745a879225bf459dd257e79bdd63d37a)
 
-FetchContent_MakeAvailable(CMock CoreJSON)
+FetchContent_Declare(
+  CoreMQTT
+  # hash: sha256-iT+mjlduomUTWYEdpoRwoLxJzI0daPjypxlXlXie7nc=
+  GIT_REPOSITORY https://github.com/FreeRTOS/coreMQTT.git
+  GIT_TAG d41f4572ff4e91d1d3116093331aa23936038f35)
 
+FetchContent_MakeAvailable(CMock tinycbor CoreJSON CoreMQTT)
+
+# tinycbor
+add_library(
+  tinycbor
+  "${tinycbor_SOURCE_DIR}/src/cborparser.c"
+  "${tinycbor_SOURCE_DIR}/src/cborencoder.c"
+  "${tinycbor_SOURCE_DIR}/src/cborencoder_close_container_checked.c")
+target_include_directories(tinycbor PUBLIC "${tinycbor_SOURCE_DIR}/src")
+
+# coreJSON
+include("${corejson_SOURCE_DIR}/jsonFilePaths.cmake")
+add_library(coreJSON ${JSON_SOURCES})
+target_include_directories(coreJSON PUBLIC ${JSON_INCLUDE_PUBLIC_DIRS})
+
+# coreMQTT
+include("${coremqtt_SOURCE_DIR}/mqttFilePaths.cmake")
+add_library(coreMQTT ${MQTT_SOURCES} ${MQTT_SERIALIZER_SOURCES})
+target_include_directories(
+  coreMQTT
+  PUBLIC ${MQTT_INCLUDE_PUBLIC_DIRS}
+  PRIVATE "${CMAKE_CURRENT_LIST_DIR}/unit-test/dependencies/coreMQTT"
+  INTERFACE "${CMAKE_CURRENT_LIST_DIR}/unit-test/dependencies/coreMQTT/api_cfg")
+target_link_libraries(coreMQTT)
+
+# cmock
 add_library(
   unity STATIC
   "${cmock_SOURCE_DIR}/vendor/unity/src/unity.c"
@@ -76,10 +112,7 @@ set_target_properties(
              POSITION_INDEPENDENT_CODE ON
              COMPILE_FLAGS "-Og")
 
-# coreJSON
-include("${corejson_SOURCE_DIR}/jsonFilePaths.cmake")
-add_library(coreJSON ${JSON_SOURCES})
-target_include_directories(coreJSON PUBLIC ${JSON_INCLUDE_PUBLIC_DIRS})
+
 
 # ====================================  Test Configuration
 # ========================================
@@ -102,5 +135,5 @@ add_custom_target(
   coverage
   COMMAND ${CMAKE_COMMAND} -DCMOCK_DIR=${cmock_SOURCE_DIR} -P
           ${MODULE_ROOT_DIR}/tools/cmock/coverage.cmake
-  DEPENDS cmock unity ota_job_handler_utest job_parser_utest
+  DEPENDS cmock unity tinycbor mqtt_file_downloader_utest
   WORKING_DIRECTORY ${CMAKE_BINARY_DIR})

@@ -7,6 +7,7 @@ idf_component_register(
        src/transport/transport.c
        src/wifi/wifi.c
        src/key_value_store/key_value_store.c
+       src/os/ota_os_freertos.c
        src/ota_demo/ota_demo.c
   PRIV_REQUIRES
     app_update
