@@ -180,6 +180,24 @@ static bool jobHandlerChain( char * message, size_t messageLength )
     return fileIndex == 0;
 }
 
+static void requestDataBlock( void )
+{
+    char getStreamRequest[ GET_STREAM_REQUEST_BUFFER_SIZE ];
+    size_t getStreamRequestLength = 0U;
+
+    getStreamRequestLength = mqttDownloader_createGetDataBlockRequest( mqttFileDownloaderContext.dataType,
+                                        currentFileId,
+                                        mqttFileDownloader_CONFIG_BLOCK_SIZE,
+                                        currentBlockOffset,
+                                        NUM_OF_BLOCKS_REQUESTED,
+                                        getStreamRequest );
+
+    mqttWrapper_publish( mqttFileDownloaderContext.topicGetStream,
+                         mqttFileDownloaderContext.topicGetStreamLength,
+                         ( uint8_t * ) getStreamRequest,
+                         getStreamRequestLength );
+}
+
 /* AFR OTA library callback */
 static void processJobFile( AfrOtaJobDocumentFields_t * params )
 {
@@ -204,14 +222,13 @@ static void processJobFile( AfrOtaJobDocumentFields_t * params )
                          params->imageRefLen,
                          thingName,
                          thingNameLength,
-                         DATA_TYPE_JSON );
+                         DATA_TYPE_CBOR );
+
+    mqttWrapper_subscribe( mqttFileDownloaderContext.topicStreamData,
+                            mqttFileDownloaderContext.topicStreamDataLength );
 
     /* Request the first block */
-    mqttDownloader_requestDataBlock( &mqttFileDownloaderContext,
-                                     currentFileId,
-                                     mqttFileDownloader_CONFIG_BLOCK_SIZE,
-                                     currentBlockOffset,
-                                     NUM_OF_BLOCKS_REQUESTED );
+    requestDataBlock();
 }
 
 /* Implemented for the MQTT Streams library */
@@ -232,11 +249,7 @@ static void handleMqttStreamsBlockArrived( uint8_t * data, size_t dataLength )
     else
     {
         currentBlockOffset++;
-        mqttDownloader_requestDataBlock( &mqttFileDownloaderContext,
-                                         currentFileId,
-                                         mqttFileDownloader_CONFIG_BLOCK_SIZE,
-                                         currentBlockOffset,
-                                         NUM_OF_BLOCKS_REQUESTED );
+        requestDataBlock();
     }
 }
 

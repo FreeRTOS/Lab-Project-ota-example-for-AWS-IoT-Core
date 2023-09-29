@@ -39,6 +39,10 @@ FetchContent_Declare(
   # hash: sha256-otueOD8tkzbHHVuOBI6krewYoeteRGAAQWSf0r19P5s=
   GIT_REPOSITORY https://github.com/intel/tinycbor.git
   GIT_TAG 9924cfed3b95ad6de299ae675064430fdb886216)
+FetchContent_Declare(
+  iot-core-mqtt-file-downloader
+  GIT_REPOSITORY https://github.com/aws/aws-iot-core-mqtt-file-streams-embedded-c/
+  GIT_TAG 903fcd8dc0e7e90375dd305ce9cd417f40a690f4)
 
 # FreeRTOS-Kernel build options
 add_library(freertos_config INTERFACE)
@@ -54,7 +58,7 @@ set(FREERTOS_PORT
     CACHE STRING "" FORCE)
 
 FetchContent_MakeAvailable(FreeRTOS_Kernel coreMQTT backoffAlgorithm coreJSON
-                           tinycbor)
+                           iot-core-mqtt-file-downloader tinycbor)
 
 # coreMQTT
 include("${coremqtt_SOURCE_DIR}/mqttFilePaths.cmake")
@@ -112,7 +116,7 @@ target_include_directories(iot-core-jobs-ota-parser
 
 # iot-core-mqtt-file-downloader
 include(
-  "${CMAKE_CURRENT_LIST_DIR}/lib/iot-core-mqtt-file-downloader/mqttFileDownloaderFilePaths.cmake"
+  "${iot-core-mqtt-file-downloader_SOURCE_DIR}/mqttFileDownloaderFilePaths.cmake"
 )
 add_library(iot-core-mqtt-file-downloader ${MQTT_FILE_DOWNLOADER_SOURCES})
 target_compile_options(iot-core-mqtt-file-downloader PRIVATE -std=c89 -pedantic)
