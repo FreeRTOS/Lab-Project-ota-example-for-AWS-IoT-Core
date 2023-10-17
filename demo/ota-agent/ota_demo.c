@@ -58,6 +58,8 @@ static void freeOtaDataEventBuffer( OtaDataEvent_t * const buffer );
 
 static void handleMqttStreamsBlockArrived( uint8_t *data, size_t dataLength );
 
+static void requestDataBlock( void );
+
 
 static void freeOtaDataEventBuffer( OtaDataEvent_t * const pxBuffer )
 {
@@ -202,6 +204,25 @@ static bool receivedJobDocumentHandler( OtaJobEventData_t * jobDoc )
     return handled;
 }
 
+static void requestDataBlock( void )
+{
+    char getStreamRequest[ GET_STREAM_REQUEST_BUFFER_SIZE ];
+    size_t getStreamRequestLength = 0U;
+
+    getStreamRequestLength = mqttDownloader_createGetDataBlockRequest( mqttFileDownloaderContext.dataType,
+                                        currentFileId,
+                                        mqttFileDownloader_CONFIG_BLOCK_SIZE,
+                                        currentBlockOffset,
+                                        NUM_OF_BLOCKS_REQUESTED,
+                                        getStreamRequest );
+
+    mqttWrapper_publish( mqttFileDownloaderContext.topicGetStream,
+                         mqttFileDownloaderContext.topicGetStreamLength,
+                         ( uint8_t * ) getStreamRequest,
+                         getStreamRequestLength );
+}
+
+
 static void processOTAEvents() {
     OtaEventMsg_t recvEvent = { 0 };
     OtaEvent_t recvEventId = 0;
@@ -244,11 +265,7 @@ static void processOTAEvents() {
         otaAgentState = OtaAgentStateRequestingFileBlock;
         printf("Request File Block event Received \n");
         printf("-----------------------------------\n");
-        mqttDownloader_requestDataBlock( &mqttFileDownloaderContext,
-                                        currentFileId,
-                                        mqttFileDownloader_CONFIG_BLOCK_SIZE,
-                                        currentBlockOffset,
-                                        NUM_OF_BLOCKS_REQUESTED );
+        requestDataBlock();
         break;
     case OtaAgentEventReceivedFileBlock:
         printf("Received File Block event Received \n");
