@@ -20,7 +20,7 @@
 
 /* OTA OS POSIX Interface Includes.*/
 
-#include "ota_demo.h"
+#include "ota-agent/ota_demo.h"
 #include "ota_os_freertos.h"
 
 /* OTA Event queue attributes.*/

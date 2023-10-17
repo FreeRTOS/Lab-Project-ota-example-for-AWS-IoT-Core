@@ -16,7 +16,7 @@
 #include "mqtt_wrapper.h"
 #include "ota_demo.h"
 #include "ota_job_processor.h"
-#include "ota_os_freertos.h"
+#include "os/ota_os_freertos.h"
 #include "FreeRTOS.h"
 #include "semphr.h"
 
