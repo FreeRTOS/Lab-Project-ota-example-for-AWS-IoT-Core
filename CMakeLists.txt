@@ -137,7 +137,7 @@ add_executable(
 
 target_include_directories(
   coreOTA_Demo
-  PUBLIC "${CMAKE_CURRENT_LIST_DIR}/source" "${CMAKE_CURRENT_LIST_DIR}/demo/ota"
+  PUBLIC "${CMAKE_CURRENT_LIST_DIR}/source" "${CMAKE_CURRENT_LIST_DIR}/demo/"
          "${CMAKE_CURRENT_LIST_DIR}/cfg")
 
 target_link_libraries(
@@ -156,4 +156,38 @@ target_link_libraries(
 find_library(LIBRT rt)
 if(LIBRT)
   target_link_libraries(coreOTA_Demo PRIVATE rt)
+endif()
+
+add_executable(
+  coreOTA_Agent_Demo
+  ./demo/ota-agent/main.c
+  ./demo/ota-agent/ota_demo.c
+  ./demo/os/ota_os_freertos.c
+  ./demo/transport/openssl_posix.c
+  ./demo/transport/sockets_posix.c
+  ./demo/transport/transport_wrapper.c
+  ./demo/utils/clock_posix.c
+  ./demo/utils/freertos_hooks.c)
+
+target_include_directories(
+  coreOTA_Agent_Demo
+  PUBLIC "${CMAKE_CURRENT_LIST_DIR}/source" "${CMAKE_CURRENT_LIST_DIR}/demo/"
+         "${CMAKE_CURRENT_LIST_DIR}/cfg")
+
+target_link_libraries(
+  coreOTA_Agent_Demo
+  PRIVATE coreMQTT
+          mqtt_wrapper
+          OpenSSL::SSL
+          coreJSON
+          tinycbor
+          backoffAlgorithm
+          freertos_kernel
+          iot-core-jobs
+          iot-core-jobs-ota-parser
+          iot-core-mqtt-file-downloader)
+
+find_library(LIBRT rt)
+if(LIBRT)
+  target_link_libraries(coreOTA_Agent_Demo PRIVATE rt)
 endif()
