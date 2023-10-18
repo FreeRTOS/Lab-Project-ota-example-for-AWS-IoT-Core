@@ -9,10 +9,18 @@ allow for customization for new fields and extensibility to new services. Using
 this library will allow you to easily configure OTA updates from a variety of
 sources and keep OTA functionality separated from any on-device application.
 
-This repository contains an example of an OTA orchestrator using FreeRTOS and
-coreMQTT. The example will check IoT Core for an existing OTA Job, download its
-associated file, output the file over the command line, and report success back
-to IoT Core.
+This repository contains the following two example OTA orchestrators. Both
+orchestrators use FreeRTOS, coreMQTT and IoT Jobs library.
+
+1. **Simple OTA Orchestrator**: It is a simple orchestrator which checks IoT Core
+for an existing OTA Job, download its associated file, output the file over the
+command line, and report success back to IoT Core.
+2. **OTA Agent Orchestrator**: This orchestrator is designed to mimic the
+OTA agent found in the old OTA repository. The OTA agent orchestrator operates by
+managing a state machine that tracks the current status of the download process.
+The state machine is influenced by receiving events that are sourced by either
+internal calls or the main application. The OTA agent requires a loop to be
+running to receive and process these incoming events before it can start.
 
 ## 0. Concepts and Architecture
 
@@ -91,7 +99,18 @@ nix develop --extra-experimental-features "nix-command flakes"
 mkdir build
 cd build
 cmake ..
-make
+```
+
+**To build Simple OTA Orchestrator Demo**
+
+```bash
+make coreOTA_Demo
+```
+
+**To build OTA Agent Orchestrator Demo**
+
+```bash
+make coreOTA_Agent_Demo
 ```
 
 ## 3. Run the OTA Demo
@@ -114,8 +133,14 @@ Apply the following options:
 After you've created your OTA update, start the simulator by using the following
 command in your `build/` directory:
 
+**To run Simple OTA Orchestrator Demo**
 ```
 ./coreOTA_Demo {certificateFilePath} {privateKeyFilePath} {rootCAFilePath} {endpoint} {thingName}
+```
+
+**To run OTA Agent Orchestrator Demo**
+```
+./coreOTA_Agent_Demo {certificateFilePath} {privateKeyFilePath} {rootCAFilePath} {endpoint} {thingName}
 ```
 
 ### 3.3 Verify successful OTA in the AWS IoT Core Console
