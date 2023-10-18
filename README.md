@@ -15,9 +15,10 @@ orchestrators use FreeRTOS, coreMQTT and IoT Jobs library.
 1. **Simple OTA Orchestrator**: It is a simple orchestrator which checks IoT Core
 for an existing OTA Job, download its associated file, output the file over the
 command line, and report success back to IoT Core.
-2. **OTA Agent Orchestrator**: The OTA agent orchestrator operates by managing
-a state machine that tracks the current status of the download process. The
-state machine is influenced by receiving events that are sourced by either
+2. **OTA Agent Orchestrator**: This orchestrator is designed to mimic the
+OTA agent found in the old OTA repository. The OTA agent orchestrator operates by
+managing a state machine that tracks the current status of the download process.
+The state machine is influenced by receiving events that are sourced by either
 internal calls or the main application. The OTA agent requires a loop to be
 running to receive and process these incoming events before it can start.
 
