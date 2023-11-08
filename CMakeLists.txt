@@ -43,6 +43,11 @@ FetchContent_Declare(
   iot-core-mqtt-file-downloader
   GIT_REPOSITORY https://github.com/aws/aws-iot-core-mqtt-file-streams-embedded-c/
   GIT_TAG 903fcd8dc0e7e90375dd305ce9cd417f40a690f4)
+FetchContent_Declare(
+  jobs
+  GIT_REPOSITORY https://github.com/aws/Jobs-for-AWS-IoT-embedded-sdk.git
+  GIT_TAG main)
+
 
 # FreeRTOS-Kernel build options
 add_library(freertos_config INTERFACE)
@@ -58,7 +63,7 @@ set(FREERTOS_PORT
     CACHE STRING "" FORCE)
 
 FetchContent_MakeAvailable(FreeRTOS_Kernel coreMQTT backoffAlgorithm coreJSON
-                           iot-core-mqtt-file-downloader tinycbor)
+                           iot-core-mqtt-file-downloader tinycbor jobs)
 
 # coreMQTT
 include("${coremqtt_SOURCE_DIR}/mqttFilePaths.cmake")
@@ -98,21 +103,18 @@ target_include_directories(mqtt_wrapper
                            PUBLIC "${CMAKE_CURRENT_LIST_DIR}/lib/mqtt_wrapper")
 
 # iot-core-jobs
-include("${CMAKE_CURRENT_LIST_DIR}/lib/iot-core-jobs/coreJobsFilePaths.cmake")
-add_library(iot-core-jobs ${CORE_JOBS_SOURCES})
-target_compile_options(iot-core-jobs PRIVATE -std=c89 -pedantic)
+include("${jobs_SOURCE_DIR}/jobsFilePaths.cmake")
+add_library(iot-core-jobs ${JOBS_SOURCES})
+target_compile_options(iot-core-jobs PRIVATE -std=c99 -pedantic)
 target_link_libraries(iot-core-jobs PUBLIC coreJSON mqtt_wrapper)
-target_include_directories(iot-core-jobs PUBLIC ${CORE_JOBS_INCLUDES})
+target_include_directories(iot-core-jobs PUBLIC ${JOBS_INCLUDE_PUBLIC_DIRS})
 
 # iot-core-jobs-ota-parser
-include(
-  "${CMAKE_CURRENT_LIST_DIR}/lib/iot-core-jobs-ota-parser/otaJobsFilePaths.cmake"
-)
-add_library(iot-core-jobs-ota-parser ${JOBS_HANDLER_SOURCES})
-target_compile_options(iot-core-jobs-ota-parser PRIVATE -std=c89 -pedantic)
+add_library(iot-core-jobs-ota-parser ${OTA_HANDLER_SOURCES})
+target_compile_options(iot-core-jobs-ota-parser PRIVATE -std=c99 -pedantic)
 target_link_libraries(iot-core-jobs-ota-parser PUBLIC coreJSON)
 target_include_directories(iot-core-jobs-ota-parser
-                           PUBLIC ${JOBS_HANDLER_INCLUDES})
+                           PUBLIC ${OTA_HANDLER_INCLUDES})
 
 # iot-core-mqtt-file-downloader
 include(
