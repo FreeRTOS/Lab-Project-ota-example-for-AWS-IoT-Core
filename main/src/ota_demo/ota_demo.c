@@ -12,7 +12,7 @@
 #include <string.h>
 
 #include "MQTTFileDownloader.h"
-#include "core_jobs.h"
+#include "jobs.h"
 #include "mqtt_wrapper.h"
 #include "ota_demo.h"
 #include "ota_job_processor.h"
@@ -30,6 +30,8 @@
 #define MAX_THING_NAME_SIZE     128U
 #define MAX_JOB_ID_LENGTH       64U
 #define MAX_NUM_OF_OTA_DATA_BUFFERS 5U
+#define START_JOB_MSG_LENGTH 147U
+#define UPDATE_JOB_MSG_LENGTH 48U
 
 MqttFileDownloaderContext_t mqttFileDownloaderContext = { 0 };
 static uint32_t numOfBlocksRemaining = 0;
@@ -155,13 +157,23 @@ static void requestJobDocumentHandler()
 {
     char thingName[ MAX_THING_NAME_SIZE + 1 ] = { 0 };
     size_t thingNameLength = 0U;
-    bool ret = false;
+    char topicBuffer[ TOPIC_BUFFER_SIZE + 1 ] = { 0 };
+    char messageBuffer[ START_JOB_MSG_LENGTH ] = { 0 };
+    size_t topicLength = 0U;
+    size_t messageLength = 0U;
+
     mqttWrapper_getThingName( thingName, &thingNameLength );
-    ret = coreJobs_startNextPendingJob( thingName,
-                                  strnlen( thingName, MAX_THING_NAME_SIZE ),
-                                  "test",
-                                   4U );
-    ESP_LOGE( "OTA_DEMO","Start next pending job return %d \n", ret);
+
+    Jobs_StartNext(topicBuffer, TOPIC_BUFFER_SIZE, thingName, thingNameLength, &topicLength);
+
+    messageLength= Jobs_StartNextMsg("test", 4U, messageBuffer, 147U );
+
+    mqttWrapper_publish(topicBuffer,
+                        topicLength,
+                        ( uint8_t * ) messageBuffer,
+                        messageLength);
+
+    ESP_LOGE( "OTA_DEMO","Start next pending job request sent. \n");
 }
 
 static void initMqttDownloader( AfrOtaJobDocumentFields_t *jobFields )
@@ -233,7 +245,7 @@ static bool receivedJobDocumentHandler( OtaJobEventData_t * jobDoc )
     size_t jobIdLength = 0U;
     AfrOtaJobDocumentFields_t jobFields = { 0 };
 
-    jobIdLength = coreJobs_getJobId( (char *)jobDoc->jobData, jobDoc->jobDataLength, &jobId );
+    jobIdLength = Jobs_GetJobId( (char *)jobDoc->jobData, jobDoc->jobDataLength, &jobId );
 
     /* TODO: Change length to the length of global job id */
     if ( jobIdLength )
@@ -377,7 +389,11 @@ bool otaDemo_handleIncomingMQTTMessage( char * topic,
 {
     ESP_LOGE( "OTA_DEMO","Handling Incoming MQTT message \n");
     OtaEventMsg_t nextEvent = { 0 };
-    bool handled = coreJobs_isStartNextAccepted( topic, topicLength );
+    char thingName[ MAX_THING_NAME_SIZE + 1 ] = { 0 };
+    size_t thingNameLength = 0U;
+
+    mqttWrapper_getThingName( thingName, &thingNameLength );
+    bool handled = Jobs_IsStartNextAccepted( topic, topicLength, thingName, thingNameLength );
 
     if( handled )
     {
@@ -420,7 +436,7 @@ static bool jobDocumentParser( char * message, size_t messageLength, AfrOtaJobDo
     size_t jobDocLength = 0U;
     int8_t fileIndex = -1;
 
-    jobDocLength = coreJobs_getJobDocument( message, messageLength, &jobDoc );
+    jobDocLength = Jobs_GetJobDocument( message, messageLength, &jobDoc );
 
     if( jobDocLength != 0U )
     {
@@ -486,24 +502,26 @@ bool activateNewImage( void )
 
 static void finishDownload()
 {
-    /* TODO: Do something with the completed download */
-    /* Start the bootloader */
+
     char thingName[ MAX_THING_NAME_SIZE + 1 ] = { 0 };
     size_t thingNameLength = 0U;
+    char topicBuffer[ TOPIC_BUFFER_SIZE + 1 ] = { 0 };
+    size_t topicBufferLength = 0U;
+    char messageBuffer[ UPDATE_JOB_MSG_LENGTH  ] = { 0 };
 
     bool status = activateNewImage();
 
     if ( status )
     {
         mqttWrapper_getThingName( thingName, &thingNameLength );
-        coreJobs_updateJobStatus( thingName,
-                              strnlen( thingName, MAX_THING_NAME_SIZE ),
-                              globalJobId,
-                              strnlen( globalJobId, 64U ), /* TODO: True
-                                                                strnlen */
-                              Succeeded,
-                              "2",
-                              1U );
+        Jobs_Update(topicBuffer, TOPIC_BUFFER_SIZE, thingName, thingNameLength, globalJobId, strnlen( globalJobId, 64U ), &topicBufferLength);
+
+        size_t messageBufferLength = Jobs_UpdateMsg(Succeeded, "2", 1U, messageBuffer, 48U);
+
+        mqttWrapper_publish(topicBuffer,
+                            topicBufferLength,
+                        ( uint8_t * ) messageBuffer,
+                        messageBufferLength);
         ESP_LOGE( "OTA_DEMO", "\033[1;32mOTA Completed successfully!\033[0m\n" );
     }
     else

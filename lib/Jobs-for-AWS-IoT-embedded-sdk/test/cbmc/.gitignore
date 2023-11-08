@@ -1,0 +1,3 @@
+# Emitted when running CBMC proofs
+coreJSON
+run.json

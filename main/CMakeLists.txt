@@ -25,8 +25,7 @@ idf_component_register(
     tinycbor
     backoffalgorithm
     mqtt_wrapper
-    iot-core-jobs
-    iot-core-jobs-ota-parser
+    Jobs-for-AWS-IoT-embedded-sdk
     iot-core-mqtt-file-downloader
   PRIV_INCLUDE_DIRS src)
 
