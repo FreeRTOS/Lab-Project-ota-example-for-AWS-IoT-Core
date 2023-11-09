@@ -14,6 +14,7 @@
 #include <string.h>
 
 #include "FreeRTOS.h"
+#include "os/ota_os_freertos.h"
 #include "semphr.h"
 #include "task.h"
 

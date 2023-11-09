@@ -97,7 +97,7 @@ target_include_directories(tinycbor PUBLIC "${tinycbor_SOURCE_DIR}/src")
 # mqtt-wrapper
 add_library(mqtt_wrapper
             "${CMAKE_CURRENT_LIST_DIR}/lib/mqtt_wrapper/mqtt_wrapper.c")
-target_compile_options(mqtt_wrapper PRIVATE -std=c89 -pedantic)
+target_compile_options(mqtt_wrapper PRIVATE -std=c99 -pedantic)
 target_link_libraries(mqtt_wrapper PUBLIC coreMQTT)
 target_include_directories(mqtt_wrapper
                            PUBLIC "${CMAKE_CURRENT_LIST_DIR}/lib/mqtt_wrapper")
@@ -121,7 +121,7 @@ include(
   "${iot-core-mqtt-file-downloader_SOURCE_DIR}/mqttFileDownloaderFilePaths.cmake"
 )
 add_library(iot-core-mqtt-file-downloader ${MQTT_FILE_DOWNLOADER_SOURCES})
-target_compile_options(iot-core-mqtt-file-downloader PRIVATE -std=c89 -pedantic)
+target_compile_options(iot-core-mqtt-file-downloader PRIVATE -std=c99 -pedantic)
 target_link_libraries(iot-core-mqtt-file-downloader
                       PUBLIC coreJSON coreMQTT mqtt_wrapper tinycbor)
 target_include_directories(iot-core-mqtt-file-downloader
