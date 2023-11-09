@@ -116,7 +116,7 @@ static void suspendResumeLoopTask( void * parameters )
             testEvent.eventId = OtaAgentEventResume;
             OtaSendEvent_FreeRTOS( &testEvent );
         }
-        vTaskDelay( 30 );
+        vTaskDelay( 100 );
 
     }
 }
