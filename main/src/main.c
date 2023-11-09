@@ -122,7 +122,8 @@ void PubSubTask( void * pvParameters )
     {
         mqttWrapper_subscribe(topic, topicLength);
         mqttWrapper_publish(topic, topicLength, ( uint8_t * ) "hello world", 12);
-        vTaskDelay( pdMS_TO_TICKS( 1000 ) );
+        vTaskDelay( pdMS_TO_TICKS( 500 ) );
+        mqttWrapper_unsubscribe(topic, topicLength);
     }
 }
 
