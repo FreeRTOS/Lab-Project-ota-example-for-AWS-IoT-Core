@@ -18,6 +18,7 @@
 #include "mqtt_wrapper.h"
 #include "ota_demo/ota_demo.h"
 #include "transport/transport.h"
+#include "MQTTFileDownloader.h"
 
 static StaticSemaphore_t MQTTAgentLockBuffer;
 static StaticSemaphore_t MQTTStateUpdateLockBuffer;
@@ -93,7 +94,7 @@ void mainTask( void * pvParamters )
     bool result = pfTransport_tlsConnect( endpoint, endpointLength );
     assert( result );
 
-    char thingName[ 128U + 1 ] = { 0 };
+    char thingName[ MAX_THINGNAME_LEN + 1U ] = { 0 };
     size_t thingNameSize = 0U;
     mqttWrapper_getThingName( thingName, &thingNameSize );
     result = mqttWrapper_connect(thingName, thingNameSize);

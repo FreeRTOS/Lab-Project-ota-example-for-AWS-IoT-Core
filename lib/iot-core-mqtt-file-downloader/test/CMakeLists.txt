@@ -32,6 +32,18 @@ set(MODULE_ROOT_DIR
 
 include(FetchContent)
 
+# ====================================  Coverity Configuration 
+# ========================================
+# Include filepaths for source and include.
+include( ${MODULE_ROOT_DIR}/mqttFileDownloaderFilePaths.cmake )
+# Target for Coverity analysis that builds the library.
+add_library( coverity_analysis ${MQTT_FILE_DOWNLOADER_SOURCES} )
+# JOBS public include path.
+target_include_directories( coverity_analysis PUBLIC ${MQTT_FILE_DOWNLOADER_INCLUDES} )
+
+# Build HTTP library target without logging
+target_compile_options(coverity_analysis PUBLIC -DNDEBUG )
+
 FetchContent_Declare(
   CMock
   GIT_REPOSITORY https://github.com/ThrowTheSwitch/CMock.git
@@ -49,13 +61,7 @@ FetchContent_Declare(
   GIT_REPOSITORY https://github.com/FreeRTOS/coreJSON.git
   GIT_TAG a0cd6122745a879225bf459dd257e79bdd63d37a)
 
-FetchContent_Declare(
-  CoreMQTT
-  # hash: sha256-iT+mjlduomUTWYEdpoRwoLxJzI0daPjypxlXlXie7nc=
-  GIT_REPOSITORY https://github.com/FreeRTOS/coreMQTT.git
-  GIT_TAG d41f4572ff4e91d1d3116093331aa23936038f35)
-
-FetchContent_MakeAvailable(CMock tinycbor CoreJSON CoreMQTT)
+FetchContent_MakeAvailable(CMock tinycbor CoreJSON )
 
 # tinycbor
 add_library(
@@ -64,22 +70,13 @@ add_library(
   "${tinycbor_SOURCE_DIR}/src/cborencoder.c"
   "${tinycbor_SOURCE_DIR}/src/cborencoder_close_container_checked.c")
 target_include_directories(tinycbor PUBLIC "${tinycbor_SOURCE_DIR}/src")
+target_link_libraries(coverity_analysis PUBLIC tinycbor)
 
 # coreJSON
 include("${corejson_SOURCE_DIR}/jsonFilePaths.cmake")
 add_library(coreJSON ${JSON_SOURCES})
 target_include_directories(coreJSON PUBLIC ${JSON_INCLUDE_PUBLIC_DIRS})
-
-# coreMQTT
-include("${coremqtt_SOURCE_DIR}/mqttFilePaths.cmake")
-add_library(coreMQTT ${MQTT_SOURCES} ${MQTT_SERIALIZER_SOURCES})
-target_include_directories(
-  coreMQTT
-  PUBLIC ${MQTT_INCLUDE_PUBLIC_DIRS}
-  PRIVATE "${CMAKE_CURRENT_LIST_DIR}/unit-test/dependencies/coreMQTT"
-  INTERFACE "${CMAKE_CURRENT_LIST_DIR}/unit-test/dependencies/coreMQTT/api_cfg")
-target_link_libraries(coreMQTT)
-
+target_link_libraries(coverity_analysis PUBLIC coreJSON)
 # cmock
 add_library(
   unity STATIC
@@ -135,5 +132,5 @@ add_custom_target(
   coverage
   COMMAND ${CMAKE_COMMAND} -DCMOCK_DIR=${cmock_SOURCE_DIR} -P
           ${MODULE_ROOT_DIR}/tools/cmock/coverage.cmake
-  DEPENDS cmock unity tinycbor mqtt_file_downloader_utest
+  DEPENDS cmock unity tinycbor mqtt_file_downloader_utest mqtt_file_downloader_base64_utest mqtt_file_downloader_cbor_utest
   WORKING_DIRECTORY ${CMAKE_BINARY_DIR})

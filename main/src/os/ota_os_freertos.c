@@ -1,25 +1,10 @@
 /*
- * AWS IoT Over-the-air Update v3.4.0
- * Copyright (C) 2020 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
- *
+ * Copyright Amazon.com, Inc. and its affiliates. All Rights Reserved.
  * SPDX-License-Identifier: MIT
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy of
- * this software and associated documentation files (the "Software"), to deal in
- * the Software without restriction, including without limitation the rights to
- * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- * the Software, and to permit persons to whom the Software is furnished to do so,
- * subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ * Licensed under the MIT License. See the LICENSE accompanying this file
+ * for the specific language governing permissions and limitations under
+ * the License.
  */
 
 /**
@@ -78,13 +63,13 @@ OtaOsStatus_t OtaInitEvent_FreeRTOS()
     return otaOsStatus;
 }
 
-OtaOsStatus_t OtaSendEvent_FreeRTOS( const void * pEventMsg )
+OtaOsStatus_t OtaSendEvent_FreeRTOS( const void * eventMsg )
 {
     OtaOsStatus_t otaOsStatus = OtaOsSuccess;
     BaseType_t retVal = pdFALSE;
 
     /* Send the event to OTA event queue.*/
-    retVal = xQueueSendToBack( otaEventQueue, pEventMsg, ( TickType_t ) 0 );
+    retVal = xQueueSendToBack( otaEventQueue, eventMsg, ( TickType_t ) 0 );
 
     if( retVal == pdTRUE )
     {
@@ -103,7 +88,7 @@ OtaOsStatus_t OtaSendEvent_FreeRTOS( const void * pEventMsg )
     return otaOsStatus;
 }
 
-OtaOsStatus_t OtaReceiveEvent_FreeRTOS( void * pEventMsg )
+OtaOsStatus_t OtaReceiveEvent_FreeRTOS( void * eventMsg )
 {
     OtaOsStatus_t otaOsStatus = OtaOsSuccess;
     BaseType_t retVal = pdFALSE;
@@ -116,7 +101,7 @@ OtaOsStatus_t OtaReceiveEvent_FreeRTOS( void * pEventMsg )
     if( retVal == pdTRUE )
     {
         /* copy the data from local buffer.*/
-        memcpy( pEventMsg, buff, MAX_MSG_SIZE );
+        memcpy( eventMsg, buff, MAX_MSG_SIZE );
         printf( "OTA Event received \n" );
     }
     else
@@ -146,5 +131,3 @@ OtaOsStatus_t OtaDeinitEvent_FreeRTOS()
 
     return otaOsStatus;
 }
-
-

@@ -103,54 +103,6 @@
 #define BASE64_INDEX_VALUE_UPPER_BOUND        63U
 
 /**
- * @brief This table takes is indexed by an Ascii character and returns the
- * respective Base64 index. The Ascii character used to index into this table is
- * assumed to represent a symbol in a string of Base64 encoded data. There are
- * three kinds of possible ascii characters: 1) Base64 Symbols. These are the
- * digits of a Base 64 number system. 2) Formatting characters. These are
- * newline, whitespace, and padding. 3) Symbols that are impossible to have
- * inside of correctly Base64 encoded data.
- *
- *        This table assumes that the padding symbol is the Ascii character '='
- *
- *        Valid Base64 symbols will have an index ranging from 0-63. The Base64
- * digits being used are
- * "ABCDEFGHIJKLMNOPQRSTUVWXYabcdefghijklmnopqrstuvwxyz0123456789+/" where 'A'
- * is the 0th index of the Base64 symbols and '/' is the 63rd index.
- *
- *        Outside of the numbers 0-63, there are magic numbers in this table:
- *        - The 11th entry in this table has the number 64. This is to identify
- * the ascii character
- *          '\n' as a newline character.
- *        - The 14th entry in this table has the number 64. This is to identify
- * the ascii character
- *          '\\r' as a newline character.
- *        - The 33rd entry in this table has the number 65. This is to identify
- * the ascii character ' ' as a whitespace character.
- *        - The 62nd entry in this table has the number 66. This is to identify
- * the ascii character
- *          '=' as the padding character.
- *        - All positions in the ascii table that are invalid symbols are
- * identified with the number 67 (other than '\n','\\r',' ','=').
- */
-static const uint8_t base64SymbolToIndexMap[] = {
-    67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 64, 67, 67, 64, 67, 67, 67, 67, 67,
-    67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 65, 67, 67, 67, 67, 67,
-    67, 67, 67, 67, 67, 62, 67, 67, 67, 63, 52, 53, 54, 55, 56, 57, 58, 59, 60,
-    61, 67, 67, 67, 66, 67, 67, 67, 0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10,
-    11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 67, 67, 67, 67,
-    67, 67, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42,
-    43, 44, 45, 46, 47, 48, 49, 50, 51, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67,
-    67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67,
-    67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67,
-    67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67,
-    67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67,
-    67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67,
-    67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67,
-    67, 67, 67, 67, 67, 67, 67, 67, 67
-};
-
-/**
  * @brief         Validates the input Base64 index based on the context of what
  *                has been decoded so far and the value of the index. Updates
  *                the input counters that are used to keep track of the number
@@ -408,6 +360,53 @@ Base64Status_t base64_Decode( uint8_t * dest,
                               const uint8_t * encodedData,
                               const size_t encodedLen )
 {
+    /**
+    * @brief This table takes is indexed by an Ascii character and returns the
+    * respective Base64 index. The Ascii character used to index into this table is
+    * assumed to represent a symbol in a string of Base64 encoded data. There are
+    * three kinds of possible ascii characters: 1) Base64 Symbols. These are the
+    * digits of a Base 64 number system. 2) Formatting characters. These are
+    * newline, whitespace, and padding. 3) Symbols that are impossible to have
+    * inside of correctly Base64 encoded data.
+    *
+    *        This table assumes that the padding symbol is the Ascii character '='
+    *
+    *        Valid Base64 symbols will have an index ranging from 0-63. The Base64
+    * digits being used are
+    * "ABCDEFGHIJKLMNOPQRSTUVWXYabcdefghijklmnopqrstuvwxyz0123456789+/" where 'A'
+    * is the 0th index of the Base64 symbols and '/' is the 63rd index.
+    *
+    *        Outside of the numbers 0-63, there are magic numbers in this table:
+    *        - The 11th entry in this table has the number 64. This is to identify
+    * the ascii character
+    *          '\n' as a newline character.
+    *        - The 14th entry in this table has the number 64. This is to identify
+    * the ascii character
+    *          '\\r' as a newline character.
+    *        - The 33rd entry in this table has the number 65. This is to identify
+    * the ascii character ' ' as a whitespace character.
+    *        - The 62nd entry in this table has the number 66. This is to identify
+    * the ascii character
+    *          '=' as the padding character.
+    *        - All positions in the ascii table that are invalid symbols are
+    * identified with the number 67 (other than '\n','\\r',' ','=').
+    */
+    const uint8_t base64SymbolToIndexMap[] = {
+        67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 64, 67, 67, 64, 67, 67, 67, 67, 67,
+        67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 65, 67, 67, 67, 67, 67,
+        67, 67, 67, 67, 67, 62, 67, 67, 67, 63, 52, 53, 54, 55, 56, 57, 58, 59, 60,
+        61, 67, 67, 67, 66, 67, 67, 67, 0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10,
+        11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 67, 67, 67, 67,
+        67, 67, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42,
+        43, 44, 45, 46, 47, 48, 49, 50, 51, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67,
+        67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67,
+        67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67,
+        67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67,
+        67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67,
+        67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67,
+        67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67,
+        67, 67, 67, 67, 67, 67, 67, 67, 67
+    };
     uint32_t base64IndexBuffer = 0;
     uint32_t numDataInBuffer = 0;
     const uint8_t * pCurrBase64Symbol = encodedData;

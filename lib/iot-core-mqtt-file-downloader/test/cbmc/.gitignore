@@ -1,0 +1,3 @@
+#Emitted when running cbmc 
+coreJSON
+cbmcOutput.txt

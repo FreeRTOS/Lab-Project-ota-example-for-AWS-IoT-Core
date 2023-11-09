@@ -6,4 +6,4 @@ include("${CMAKE_CURRENT_LIST_DIR}/../../lib/iot-core-mqtt-file-downloader/mqttF
 idf_component_register(
   SRCS ${MQTT_FILE_DOWNLOADER_SOURCES}
   INCLUDE_DIRS ${MQTT_FILE_DOWNLOADER_INCLUDES}
-  PRIV_REQUIRES corejson mqtt_wrapper tinycbor)
+  PRIV_REQUIRES corejson tinycbor)

@@ -63,12 +63,12 @@ bool CBOR_Encode_GetStreamRequestMessage( uint8_t * messageBuffer,
                                           size_t messageBufferSize,
                                           size_t * encodedMessageSize,
                                           const char * clientToken,
-                                          int32_t fileId,
-                                          int32_t blockSize,
-                                          int32_t blockOffset,
+                                          uint32_t fileId,
+                                          uint32_t blockSize,
+                                          uint32_t blockOffset,
                                           const uint8_t * blockBitmap,
                                           size_t blockBitmapSize,
-                                          int32_t numOfBlocksRequested );
+                                          uint32_t numOfBlocksRequested );
 
 /* *INDENT-OFF* */
 #ifdef __cplusplus

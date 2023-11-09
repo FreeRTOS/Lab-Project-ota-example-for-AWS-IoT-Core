@@ -11,7 +11,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "MQTTFileDownloader.h"
+
 #include "jobs.h"
 #include "mqtt_wrapper.h"
 #include "ota_demo.h"
@@ -25,6 +25,7 @@
 #include "esp_partition.h"
 #include "esp_ota_ops.h"
 
+/* Maximum size of the file which can be downloaded */
 #define CONFIG_MAX_FILE_SIZE    1310720U
 #define NUM_OF_BLOCKS_REQUESTED 1U
 #define MAX_THING_NAME_SIZE     128U
@@ -72,6 +73,8 @@ static OtaDataEvent_t * getOtaDataEventBuffer( void );
 static void freeOtaDataEventBuffer( OtaDataEvent_t * const buffer );
 
 static void handleMqttStreamsBlockArrived( uint8_t *data, size_t dataLength );
+
+static void requestDataBlock( void );
 
 
 static void freeOtaDataEventBuffer( OtaDataEvent_t * const pxBuffer )
@@ -198,6 +201,9 @@ static void initMqttDownloader( AfrOtaJobDocumentFields_t *jobFields )
                         thingName,
                         thingNameLength,
                         DATA_TYPE_CBOR );
+
+    mqttWrapper_subscribe( mqttFileDownloaderContext.topicStreamData,
+                            mqttFileDownloaderContext.topicStreamDataLength );
 }
 
 bool createFileForRx( void )
@@ -274,6 +280,25 @@ static bool receivedJobDocumentHandler( OtaJobEventData_t * jobDoc )
     return handled;
 }
 
+static void requestDataBlock( void )
+{
+    char getStreamRequest[ GET_STREAM_REQUEST_BUFFER_SIZE ];
+    size_t getStreamRequestLength = 0U;
+
+    getStreamRequestLength = mqttDownloader_createGetDataBlockRequest( mqttFileDownloaderContext.dataType,
+                                        currentFileId,
+                                        mqttFileDownloader_CONFIG_BLOCK_SIZE,
+                                        currentBlockOffset,
+                                        NUM_OF_BLOCKS_REQUESTED,
+                                        getStreamRequest,
+                                        &getStreamRequestLength );
+
+    mqttWrapper_publish( mqttFileDownloaderContext.topicGetStream,
+                         mqttFileDownloaderContext.topicGetStreamLength,
+                         ( uint8_t * ) getStreamRequest,
+                         getStreamRequestLength );
+}
+
 static void processOTAEvents() {
     OtaEventMsg_t recvEvent = { 0 };
     OtaEvent_t recvEventId = 0;
@@ -319,11 +344,7 @@ static void processOTAEvents() {
         otaAgentState = OtaAgentStateRequestingFileBlock;
         ESP_LOGE( "OTA_DEMO","Request File Block event Received \n");
         ESP_LOGE( "OTA_DEMO","-----------------------------------\n");
-        mqttDownloader_requestDataBlock( &mqttFileDownloaderContext,
-                                        currentFileId,
-                                        mqttFileDownloader_CONFIG_BLOCK_SIZE,
-                                        currentBlockOffset,
-                                        NUM_OF_BLOCKS_REQUESTED );
+        requestDataBlock();
         break;
     case OtaAgentEventReceivedFileBlock:
         ESP_LOGE( "OTA_DEMO","Received File Block event Received \n");

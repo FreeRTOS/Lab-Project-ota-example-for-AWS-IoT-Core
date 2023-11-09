@@ -12,8 +12,11 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "MQTTFileDownloader.h"
 
-#define OTA_DATA_BLOCK_SIZE 4096U
+//#define OTA_DATA_BLOCK_SIZE 4096U
+
+/* Maximum size of the Job Document */
 #define JOB_DOC_SIZE 2048U
 
 typedef enum OtaEvent
@@ -60,7 +63,7 @@ typedef enum OtaState
 
 typedef struct OtaDataEvent
 {
-    uint8_t data[ OTA_DATA_BLOCK_SIZE * 2 ]; /*!< Buffer for storing event information. */
+    uint8_t data[ mqttFileDownloader_CONFIG_BLOCK_SIZE * 2 ]; /*!< Buffer for storing event information. */
     size_t dataLength;                 /*!< Total space required for the event. */
     bool bufferUsed;                     /*!< Flag set when buffer is used otherwise cleared. */
 } OtaDataEvent_t;
