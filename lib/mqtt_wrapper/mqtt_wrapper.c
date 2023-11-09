@@ -129,3 +129,31 @@ bool mqttWrapper_subscribe( char * topic, size_t topicLength )
     }
     return success;
 }
+
+bool mqttWrapper_unsubscribe( char * topic, size_t topicLength )
+{
+    bool success = false;
+
+    success = mqttWrapper_isConnected();
+    
+    if ( success )
+    {
+        MQTTStatus_t mqttStatus = MQTTSuccess;
+        MQTTSubscribeInfo_t unsubscribeList = { 0 };
+        uint16_t packetId;
+        MQTTContext_t * context;
+        unsubscribeList.qos = 0;
+        unsubscribeList.pTopicFilter = topic;
+        unsubscribeList.topicFilterLength = topicLength;
+
+        context = mqttWrapper_getCoreMqttContext();
+        packetId = MQTT_GetPacketId(context);
+
+        mqttStatus = MQTT_Unsubscribe(context,
+                                      &unsubscribeList,
+                                      1,
+                                      packetId);
+        success = mqttStatus == MQTTSuccess;
+    }
+    return success;
+}

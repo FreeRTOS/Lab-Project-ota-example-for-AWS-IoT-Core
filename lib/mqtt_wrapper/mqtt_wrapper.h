@@ -32,4 +32,6 @@ bool mqttWrapper_publish( char * topic,
 
 bool mqttWrapper_subscribe( char * topic, size_t topicLength );
 
+bool mqttWrapper_unsubscribe( char * topic, size_t topicLength );
+
 #endif
