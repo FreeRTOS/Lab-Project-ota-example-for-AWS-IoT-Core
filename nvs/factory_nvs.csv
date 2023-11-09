@@ -2,10 +2,10 @@ key,type,encoding,value
 config,namespace,,
 
 # Configure these:
-SSID,data,binary,REPLACE_WITH_WIFI_NAME
-Passphrase,data,binary,REPLACE_WITH_WIFI_PASSWORD
-Endpoint,data,binary,REPLACE_WITH_IOT_CORE_ENDPOINT
-ThingName,data,binary,REPLACE_WITH_THING_NAME
-PrivateKey,file,binary,./PrivateKey.pem
-Certificate,file,binary,./Certificate.pem
-RootCA,file,binary,./AmazonRootCA1.pem
+SSID,data,binary,Guest
+Passphrase,data,binary,
+Endpoint,data,binary,a3aiquz5x66pqj-ats.iot.us-west-2.amazonaws.com
+ThingName,data,binary,ExampleThing
+PrivateKey,file,binary,../PrivateKey.pem
+Certificate,file,binary,../Certificate.pem
+RootCA,file,binary,../AmazonRootCA1.pem

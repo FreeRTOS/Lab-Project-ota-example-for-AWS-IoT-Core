@@ -7,6 +7,8 @@
  * the License.
  */
 
+#include <string.h>
+
 #include "FreeRTOS.h"
 #include "credentials/credentials_INSECURE.h"
 #include "esp_log.h"
@@ -29,6 +31,8 @@ static uint8_t networkBuffer[ 5000U ] = { 0 };
 static TransportInterface_t transport = { 0 };
 
 void mainTask( void * pvParamters );
+
+void PubSubTask( void * pvParameters );
 
 static uint32_t getTimeMs( void );
 
@@ -73,7 +77,8 @@ int app_main( void )
 
     pfWifi_startNetwork();
 
-    xTaskCreate( mainTask, "MAIN", 6000, NULL, 5, NULL );
+    xTaskCreate( mainTask, "MAIN", 6000, NULL, 6, NULL );
+    xTaskCreate( PubSubTask, "PUBSUB", 6000, NULL, 5, NULL );
 
     return 0;
 }
@@ -102,6 +107,22 @@ void mainTask( void * pvParamters )
         // Yield so the idle will get a few cycles and the WDT will be avoided
         MQTT_ProcessLoop( mqttWrapper_getCoreMqttContext() );
         vTaskDelay( pdMS_TO_TICKS( 10 ) );
+    }
+}
+
+void PubSubTask( void * pvParameters )
+{
+    ESP_LOGE( "PUBSUB", "PubSub task started" );
+
+    ( void ) pvParameters;
+    char * topic = "Hello";
+    size_t topicLength = 6;
+
+    while( true )
+    {
+        mqttWrapper_subscribe(topic, topicLength);
+        mqttWrapper_publish(topic, topicLength, ( uint8_t * ) "hello world", 12);
+        vTaskDelay( pdMS_TO_TICKS( 1000 ) );
     }
 }
 
@@ -157,10 +178,22 @@ static void handleIncomingMQTTMessage( char * topic,
                                        size_t messageLength )
 
 {
-    bool messageHandled = otaDemo_handleIncomingMQTTMessage( topic,
+    
+    bool messageHandled = false;
+    
+    if( strcmp("Hello",topic) == 0 )
+    {
+        printf( "Message received on topic Hello. \n    Message: %s\r\n",
+                message);
+        messageHandled = true;
+    }
+    else
+    {
+        messageHandled = otaDemo_handleIncomingMQTTMessage( topic,
                                                              topicLength,
                                                              message,
                                                              messageLength );
+    }
     if( !messageHandled )
     {
         printf( "Unhandled incoming PUBLISH received on topic, message: "
