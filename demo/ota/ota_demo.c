@@ -21,6 +21,8 @@
 #define NUM_OF_BLOCKS_REQUESTED 1U
 #define MAX_THING_NAME_SIZE     128U
 #define MAX_JOB_ID_LENGTH       64U
+#define START_JOB_MSG_LENGTH  147U
+#define UPDATE_JOB_MSG_LENGTH 48U
 
 MqttFileDownloaderContext_t mqttFileDownloaderContext = { 0 };
 static uint32_t numOfBlocksRemaining = 0;
@@ -43,13 +45,20 @@ void otaDemo_start( void )
         char thingName[ MAX_THING_NAME_SIZE + 1 ] = { 0 };
         size_t thingNameLength = 0U;
         char topicBuffer[ TOPIC_BUFFER_SIZE + 1 ] = { 0 };
-        char messageBuffer[ 147U ] = { 0 };
+        char messageBuffer[ START_JOB_MSG_LENGTH ] = { 0 };
         size_t topicLength = 0U;
         mqttWrapper_getThingName( thingName, &thingNameLength );
 
-        Jobs_StartNext(topicBuffer, TOPIC_BUFFER_SIZE, thingName, thingNameLength, &topicLength);
+        Jobs_StartNext(topicBuffer, 
+                       TOPIC_BUFFER_SIZE, 
+                       thingName, 
+                       thingNameLength, 
+                       &topicLength);
 
-        size_t messageLength = Jobs_StartNextMsg("test", 4U, messageBuffer, 147U );
+        size_t messageLength = Jobs_StartNextMsg("test", 
+                                                 4U, 
+                                                 messageBuffer, 
+                                                 START_JOB_MSG_LENGTH );
 
         mqttWrapper_publish(topicBuffer,
                             topicLength,
@@ -283,13 +292,23 @@ static void finishDownload()
     size_t thingNameLength = 0U;
     char topicBuffer[ TOPIC_BUFFER_SIZE + 1 ] = { 0 };
     size_t topicBufferLength = 0U;
-    char messageBuffer[ 48U ] = { 0 };
+    char messageBuffer[ UPDATE_JOB_MSG_LENGTH ] = { 0 };
 
     mqttWrapper_getThingName( thingName, &thingNameLength );
     
-    Jobs_Update(topicBuffer, TOPIC_BUFFER_SIZE, thingName, thingNameLength, globalJobId, strnlen( globalJobId, 1000U ), &topicBufferLength);
+    Jobs_Update(topicBuffer,
+                TOPIC_BUFFER_SIZE,
+                thingName,
+                thingNameLength,
+                globalJobId,
+                strnlen( globalJobId, 1000U ),
+                &topicBufferLength);
 
-    size_t messageBufferLength = Jobs_UpdateMsg(Succeeded, "2", 1U, messageBuffer, 48U);
+    size_t messageBufferLength = Jobs_UpdateMsg(Succeeded, 
+                                                "2",
+                                                1U,
+                                                messageBuffer,
+                                                UPDATE_JOB_MSG_LENGTH );
 
     mqttWrapper_publish(topicBuffer,
                         topicBufferLength,
