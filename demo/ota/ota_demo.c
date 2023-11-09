@@ -12,7 +12,7 @@
 #include <string.h>
 
 #include "MQTTFileDownloader.h"
-#include "core_jobs.h"
+#include "jobs.h"
 #include "mqtt_wrapper.h"
 #include "ota_demo.h"
 #include "ota_job_processor.h"
@@ -21,6 +21,8 @@
 #define NUM_OF_BLOCKS_REQUESTED 1U
 #define MAX_THING_NAME_SIZE     128U
 #define MAX_JOB_ID_LENGTH       64U
+#define START_JOB_MSG_LENGTH  147U
+#define UPDATE_JOB_MSG_LENGTH 48U
 
 MqttFileDownloaderContext_t mqttFileDownloaderContext = { 0 };
 static uint32_t numOfBlocksRemaining = 0;
@@ -42,12 +44,29 @@ void otaDemo_start( void )
     {
         char thingName[ MAX_THING_NAME_SIZE + 1 ] = { 0 };
         size_t thingNameLength = 0U;
-
+        char topicBuffer[ TOPIC_BUFFER_SIZE + 1 ] = { 0 };
+        char messageBuffer[ START_JOB_MSG_LENGTH ] = { 0 };
+        size_t topicLength = 0U;
         mqttWrapper_getThingName( thingName, &thingNameLength );
-        coreJobs_startNextPendingJob( thingName,
-                                      strnlen( thingName, MAX_THING_NAME_SIZE ),
-                                      "test",
-                                      4U );
+
+        Jobs_StartNext(topicBuffer, 
+                       TOPIC_BUFFER_SIZE, 
+                       thingName, 
+                       thingNameLength, 
+                       &topicLength);
+
+        size_t messageLength = Jobs_StartNextMsg("test", 
+                                                 4U, 
+                                                 messageBuffer, 
+                                                 START_JOB_MSG_LENGTH );
+
+        mqttWrapper_publish(topicBuffer,
+                            topicLength,
+                            ( uint8_t * ) messageBuffer,
+                            messageLength);
+
+        
+
     }
 }
 
@@ -63,7 +82,11 @@ bool otaDemo_handleIncomingMQTTMessage( char * topic,
 
     if( !handled )
     {
-        handled = coreJobs_isStartNextAccepted( topic, topicLength );
+        char thingName[ MAX_THING_NAME_SIZE + 1 ] = { 0 };
+        size_t thingNameLength = 0U;
+
+        mqttWrapper_getThingName( thingName, &thingNameLength );
+        handled = Jobs_IsStartNextAccepted( topic, topicLength, thingName, thingNameLength );
 
         if( handled )
         {
@@ -109,11 +132,17 @@ static bool jobMetadataHandlerChain( char * topic, size_t topicLength )
 
     if( globalJobId[ 0 ] != 0 )
     {
-        handled = coreJobs_isJobUpdateStatus( topic,
+        char thingName[ MAX_THING_NAME_SIZE + 1 ] = { 0 };
+        size_t thingNameLength = 0U;
+
+        mqttWrapper_getThingName( thingName, &thingNameLength );
+        handled = Jobs_IsJobUpdateStatus( topic,
                                               topicLength,
                                               ( const char * ) &globalJobId,
                                               strnlen( globalJobId,
                                                        MAX_JOB_ID_LENGTH ),
+                                              thingName,
+                                              thingNameLength,
                                               JobUpdateStatus_Accepted );
 
         if( handled )
@@ -123,11 +152,13 @@ static bool jobMetadataHandlerChain( char * topic, size_t topicLength )
         }
         else
         {
-            handled = coreJobs_isJobUpdateStatus( topic,
+            handled = Jobs_IsJobUpdateStatus( topic,
                                                   topicLength,
                                                   ( const char * ) &globalJobId,
                                                   strnlen( globalJobId,
                                                            MAX_JOB_ID_LENGTH ),
+                                                  thingName,
+                                                  thingNameLength,
                                                   JobUpdateStatus_Rejected );
         }
 
@@ -149,8 +180,8 @@ static bool jobHandlerChain( char * message, size_t messageLength )
     size_t jobIdLength = 0U;
     int8_t fileIndex = 0;
 
-    jobDocLength = coreJobs_getJobDocument( message, messageLength, &jobDoc );
-    jobIdLength = coreJobs_getJobId( message, messageLength, &jobId );
+    jobDocLength = Jobs_GetJobDocument( message, messageLength, &jobDoc );
+    jobIdLength = Jobs_GetJobId( message, messageLength, &jobId );
 
     if( globalJobId[ 0 ] == 0 )
     {
@@ -259,15 +290,31 @@ static void finishDownload()
     /* Start the bootloader */
     char thingName[ MAX_THING_NAME_SIZE + 1 ] = { 0 };
     size_t thingNameLength = 0U;
+    char topicBuffer[ TOPIC_BUFFER_SIZE + 1 ] = { 0 };
+    size_t topicBufferLength = 0U;
+    char messageBuffer[ UPDATE_JOB_MSG_LENGTH ] = { 0 };
 
     mqttWrapper_getThingName( thingName, &thingNameLength );
-    coreJobs_updateJobStatus( thingName,
-                              strnlen( thingName, MAX_THING_NAME_SIZE ),
-                              globalJobId,
-                              strnlen( globalJobId, 1000U ), /* TODO: True
-                                                                strnlen */
-                              Succeeded,
-                              "2",
-                              1U );
+    
+    Jobs_Update(topicBuffer,
+                TOPIC_BUFFER_SIZE,
+                thingName,
+                thingNameLength,
+                globalJobId,
+                strnlen( globalJobId, 1000U ),
+                &topicBufferLength);
+
+    size_t messageBufferLength = Jobs_UpdateMsg(Succeeded, 
+                                                "2",
+                                                1U,
+                                                messageBuffer,
+                                                UPDATE_JOB_MSG_LENGTH );
+
+    mqttWrapper_publish(topicBuffer,
+                        topicBufferLength,
+                        ( uint8_t * ) messageBuffer,
+                        messageBufferLength);
+
+    
     printf( "\033[1;32mOTA Completed successfully!\033[0m\n" );
 }
