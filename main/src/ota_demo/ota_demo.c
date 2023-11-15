@@ -204,9 +204,10 @@ static void initMqttDownloader( AfrOtaJobDocumentFields_t *jobFields )
 
     mqttWrapper_getThingName( thingName, &thingNameLength );
 
-    /* MQTT streams Library:
+    /*
+     * MQTT streams Library:
      * Initializing the MQTT streams downloader. Passing the
-     * paramters extracted from the AWS IoT OTA jobs document
+     * parameters extracted from the AWS IoT OTA jobs document
      * using OTA jobs parser.
      */
     mqttDownloader_init( &mqttFileDownloaderContext,
@@ -472,7 +473,7 @@ bool otaDemo_handleIncomingMQTTMessage( char * topic,
     {
         /*
          * MQTT streams Library:
-         * Checks if the incoming message contains the requested data block. It is perfromed by
+         * Checks if the incoming message contains the requested data block. It is performed by
          * comparing the incoming MQTT message topic with MQTT streams topics.
          */
         handled = mqttDownloader_isDataBlockReceived(&mqttFileDownloaderContext, topic, topicLength);
@@ -593,6 +594,7 @@ static void finishDownload()
     if ( status )
     {
         mqttWrapper_getThingName( thingName, &thingNameLength );
+
         /*
          * AWS IoT Jobs library:
          * Creating the MQTT topic to update the status of OTA job.
