@@ -49,15 +49,25 @@ void otaDemo_start( void )
         size_t topicLength = 0U;
         mqttWrapper_getThingName( thingName, &thingNameLength );
 
-        Jobs_StartNext(topicBuffer, 
-                       TOPIC_BUFFER_SIZE, 
-                       thingName, 
-                       thingNameLength, 
+        /*
+         * AWS IoT Jobs library:
+         * Creates the topic string for a StartNextPendingJobExecution request.
+         * It used to check if any pending jobs are available.
+         */
+        Jobs_StartNext(topicBuffer,
+                       TOPIC_BUFFER_SIZE,
+                       thingName,
+                       thingNameLength,
                        &topicLength);
 
-        size_t messageLength = Jobs_StartNextMsg("test", 
-                                                 4U, 
-                                                 messageBuffer, 
+        /*
+         * AWS IoT Jobs library:
+         * Creates the message string for a StartNextPendingJobExecution request.
+         * It will be sent on the topic created in the previous step.
+         */
+        size_t messageLength = Jobs_StartNextMsg("test",
+                                                 4U,
+                                                 messageBuffer,
                                                  START_JOB_MSG_LENGTH );
 
         mqttWrapper_publish(topicBuffer,
@@ -65,7 +75,7 @@ void otaDemo_start( void )
                             ( uint8_t * ) messageBuffer,
                             messageLength);
 
-        
+
 
     }
 }
@@ -86,6 +96,11 @@ bool otaDemo_handleIncomingMQTTMessage( char * topic,
         size_t thingNameLength = 0U;
 
         mqttWrapper_getThingName( thingName, &thingNameLength );
+
+        /*
+         * AWS IoT Jobs library:
+         * Checks if a message comes from the start-next/accepted reserved topic.
+         */
         handled = Jobs_IsStartNextAccepted( topic, topicLength, thingName, thingNameLength );
 
         if( handled )
@@ -96,6 +111,11 @@ bool otaDemo_handleIncomingMQTTMessage( char * topic,
         }
         else
         {
+            /*
+             * MQTT streams Library:
+             * Checks if the incoming message contains the requested data block. It is performed by
+             * comparing the incoming MQTT message topic with MQTT streams topics.
+             */
             handled = mqttDownloader_isDataBlockReceived( &mqttFileDownloaderContext,
                                                       topic,
                                                       topicLength );
@@ -103,6 +123,11 @@ bool otaDemo_handleIncomingMQTTMessage( char * topic,
             {
                 uint8_t decodedData[ mqttFileDownloader_CONFIG_BLOCK_SIZE ];
                 size_t decodedDataLength = 0;
+
+                /*
+                 * MQTT streams Library:
+                 * Extracting and decoding the received data block from the incoming MQTT message.
+                 */
                 handled = mqttDownloader_processReceivedDataBlock(
                     &mqttFileDownloaderContext,
                     message,
@@ -180,7 +205,16 @@ static bool jobHandlerChain( char * message, size_t messageLength )
     size_t jobIdLength = 0U;
     int8_t fileIndex = 0;
 
+    /*
+     * AWS IoT Jobs library:
+     * Extracting the OTA job document from the jobs message recevied from AWS IoT core.
+     */
     jobDocLength = Jobs_GetJobDocument( message, messageLength, &jobDoc );
+
+    /*
+     * AWS IoT Jobs library:
+     * Extracting the job ID from the received OTA job document.
+     */
     jobIdLength = Jobs_GetJobId( message, messageLength, &jobId );
 
     if( globalJobId[ 0 ] == 0 )
@@ -194,6 +228,11 @@ static bool jobHandlerChain( char * message, size_t messageLength )
 
         do
         {
+            /*
+             * AWS IoT Jobs library:
+             * Parsing the OTA job document to extract all of the parameters needed to download
+             * the new firmware.
+             */
             fileIndex = otaParser_parseJobDocFile( jobDoc,
                                                    jobDocLength,
                                                    fileIndex,
@@ -216,6 +255,12 @@ static void requestDataBlock( void )
     char getStreamRequest[ GET_STREAM_REQUEST_BUFFER_SIZE ];
     size_t getStreamRequestLength = 0U;
 
+    /*
+     * MQTT streams Library:
+     * Creating the Get data block request. MQTT streams library only
+     * creates the get block request. To publish the request, MQTT libraries
+     * like coreMQTT are required.
+     */
     getStreamRequestLength = mqttDownloader_createGetDataBlockRequest( mqttFileDownloaderContext.dataType,
                                         currentFileId,
                                         mqttFileDownloader_CONFIG_BLOCK_SIZE,
@@ -247,7 +292,12 @@ static void processJobFile( AfrOtaJobDocumentFields_t * params )
     currentFileId = params->fileId;
     currentBlockOffset = 0;
     totalBytesReceived = 0;
-    /* Initialize the File downloader */
+    /*
+     * MQTT streams Library:
+     * Initializing the MQTT streams downloader. Passing the
+     * parameters extracted from the AWS IoT OTA jobs document
+     * using OTA jobs parser.
+     */
     mqttDownloader_init( &mqttFileDownloaderContext,
                          params->imageRef,
                          params->imageRefLen,
@@ -295,7 +345,11 @@ static void finishDownload()
     char messageBuffer[ UPDATE_JOB_MSG_LENGTH ] = { 0 };
 
     mqttWrapper_getThingName( thingName, &thingNameLength );
-    
+
+    /*
+     * AWS IoT Jobs library:
+     * Creating the MQTT topic to update the status of OTA job.
+     */
     Jobs_Update(topicBuffer,
                 TOPIC_BUFFER_SIZE,
                 thingName,
@@ -304,7 +358,12 @@ static void finishDownload()
                 strnlen( globalJobId, 1000U ),
                 &topicBufferLength);
 
-    size_t messageBufferLength = Jobs_UpdateMsg(Succeeded, 
+    /*
+     * AWS IoT Jobs library:
+     * Creating the message which contains the status of OTA job.
+     * It will be published on the topic created in the previous step.
+     */
+    size_t messageBufferLength = Jobs_UpdateMsg(Succeeded,
                                                 "2",
                                                 1U,
                                                 messageBuffer,
@@ -315,6 +374,6 @@ static void finishDownload()
                         ( uint8_t * ) messageBuffer,
                         messageBufferLength);
 
-    
+
     printf( "\033[1;32mOTA Completed successfully!\033[0m\n" );
 }
