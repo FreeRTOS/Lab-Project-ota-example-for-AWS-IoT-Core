@@ -34,7 +34,7 @@ static StaticSemaphore_t MQTTStateUpdateLockBuffer;
 SemaphoreHandle_t MQTTAgentLock = NULL;
 SemaphoreHandle_t MQTTStateUpdateLock = NULL;
 
-static void otaAgentTask( void * parameters );
+static void otaTask( void * parameters );
 
 static void mqttProcessLoopTask( void * parameters );
 
@@ -76,7 +76,7 @@ int main( int argc, char * argv[] )
                             &fixedBuffer );
     assert( mqttResult == MQTTSuccess );
 
-    xTaskCreate( otaAgentTask, "T_OTA", 6000, ( void * ) argv, 1, NULL );
+    xTaskCreate( otaTask, "T_OTA", 6000, ( void * ) argv, 1, NULL );
     xTaskCreate( mqttProcessLoopTask, "T_MQTT", 6000, NULL, 2, NULL );
 
     mqttWrapper_setCoreMqttContext( &mqttContext );
@@ -175,7 +175,7 @@ static void handleIncomingMQTTMessage( char * topic,
     }
 }
 
-static void otaAgentTask( void * parameters )
+static void otaTask( void * parameters )
 {
     char ** commandLineArgs = ( char ** ) parameters;
     char * certificateFilePath = commandLineArgs[ 1 ];

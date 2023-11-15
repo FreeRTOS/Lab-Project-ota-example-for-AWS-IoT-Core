@@ -129,8 +129,8 @@ target_include_directories(iot-core-mqtt-file-downloader
 
 add_executable(
   coreOTA_Demo
-  ./demo/ota/main.c
-  ./demo/ota/ota_demo.c
+  ./demo/simple-Ota-Orchestrator/main.c
+  ./demo/simple-Ota-Orchestrator/ota_demo.c
   ./demo/transport/openssl_posix.c
   ./demo/transport/sockets_posix.c
   ./demo/transport/transport_wrapper.c
@@ -162,8 +162,8 @@ endif()
 
 add_executable(
   coreOTA_Agent_Demo
-  ./demo/ota-agent/main.c
-  ./demo/ota-agent/ota_demo.c
+  ./demo/ota-Agent-Orchestrator/main.c
+  ./demo/ota-Agent-Orchestrator/ota_demo.c
   ./demo/os/ota_os_freertos.c
   ./demo/transport/openssl_posix.c
   ./demo/transport/sockets_posix.c
