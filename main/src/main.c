@@ -20,6 +20,7 @@
 #include "ota_demo/ota_demo.h"
 #include "transport/transport.h"
 #include "MQTTFileDownloader.h"
+#include "os/ota_os_freertos.h"
 
 static StaticSemaphore_t MQTTAgentLockBuffer;
 static StaticSemaphore_t MQTTStateUpdateLockBuffer;
@@ -44,7 +45,10 @@ static void handleIncomingMQTTMessage( char * topic,
                                        size_t topicLength,
                                        uint8_t * message,
                                        size_t messageLength );
+
 static void mqttProcessLoopTask( void * parameters );
+
+static void suspendResumeLoopTask( void * parameters );
 
 int app_main( void )
 {
@@ -81,6 +85,7 @@ int app_main( void )
     xTaskCreate( mainTask, "MAIN", 12000, NULL, 1, NULL );
     xTaskCreate( mqttProcessLoopTask, "MQTT", 6000, NULL, 1, NULL );
     xTaskCreate( PubSubTask, "PUBSUB", 6000, NULL, 1, NULL);
+    xTaskCreate( suspendResumeLoopTask, "T_SUSPEND", 6000, NULL, 1, NULL );
 
     return 0;
 }
@@ -127,6 +132,36 @@ void PubSubTask( void * pvParameters )
         mqttWrapper_publish(topic, topicLength, ( uint8_t * ) "hello world", 12);
         vTaskDelay( pdMS_TO_TICKS( 500 ) );
         mqttWrapper_unsubscribe(topic, topicLength);
+    }
+}
+
+static void suspendResumeLoopTask( void * parameters )
+{
+    ( void ) parameters;
+    OtaEventMsg_t testEvent = { 0 };
+    OtaState_t curState;
+    printf("Suspend resume Task \n");
+    ESP_LOGE( "Suspend/Resume", "Suspend Resume task started" );
+    while( true )
+    {
+        curState = getOtaAgentState();
+
+        if  ( curState >= OtaAgentStateRequestingJob && curState < OtaAgentStateSuspended )
+        {
+            testEvent.eventId = OtaAgentEventSuspend;
+            OtaSendEvent_FreeRTOS( &testEvent );
+        }
+
+        vTaskDelay( 100 );
+
+        curState = getOtaAgentState();
+        if (curState == OtaAgentStateSuspended)
+        {
+            testEvent.eventId = OtaAgentEventResume;
+            OtaSendEvent_FreeRTOS( &testEvent );
+        }
+        vTaskDelay( 500 );
+
     }
 }
 
@@ -203,7 +238,7 @@ static void handleIncomingMQTTMessage( char * topic,
 
 {
     bool messageHandled = false;
-    
+
     if (strcmp(topic, "Hello") == 0 )
     {
         printf("Message Received on topic: Hello\n    Message: %s\r\n",
