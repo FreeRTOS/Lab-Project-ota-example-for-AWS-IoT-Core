@@ -189,7 +189,7 @@ static void initMqttDownloader( AfrOtaJobDocumentFields_t *jobFields )
     /*
      * MQTT streams Library:
      * Initializing the MQTT streams downloader. Passing the
-     * paramters extracted from the AWS IoT OTA jobs document
+     * parameters extracted from the AWS IoT OTA jobs document
      * using OTA jobs parser.
      */
     mqttDownloader_init( &mqttFileDownloaderContext,

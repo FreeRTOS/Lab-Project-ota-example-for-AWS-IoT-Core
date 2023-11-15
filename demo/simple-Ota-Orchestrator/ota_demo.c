@@ -113,7 +113,7 @@ bool otaDemo_handleIncomingMQTTMessage( char * topic,
         {
             /*
              * MQTT streams Library:
-             * Checks if the incoming message contains the requested data block. It is perfromed by
+             * Checks if the incoming message contains the requested data block. It is performed by
              * comparing the incoming MQTT message topic with MQTT streams topics.
              */
             handled = mqttDownloader_isDataBlockReceived( &mqttFileDownloaderContext,
@@ -295,7 +295,7 @@ static void processJobFile( AfrOtaJobDocumentFields_t * params )
     /*
      * MQTT streams Library:
      * Initializing the MQTT streams downloader. Passing the
-     * paramters extracted from the AWS IoT OTA jobs document
+     * parameters extracted from the AWS IoT OTA jobs document
      * using OTA jobs parser.
      */
     mqttDownloader_init( &mqttFileDownloaderContext,
