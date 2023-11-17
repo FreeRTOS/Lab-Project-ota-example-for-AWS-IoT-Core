@@ -107,7 +107,7 @@ bool otaDemo_handleIncomingMQTTMessage( char * topic,
         {
             handled = jobHandlerChain( ( char * ) message, messageLength );
 
-            printf( "Handled? %d", handled );
+            printf( "Handled? %d \n", handled );
         }
         else
         {
@@ -240,6 +240,7 @@ static bool jobHandlerChain( char * message, size_t messageLength )
 
             if( fileIndex >= 0 )
             {
+                printf("Received OTA Job \n");
                 processJobFile( &jobFields );
             }
         } while( fileIndex > 0 );
@@ -308,6 +309,7 @@ static void processJobFile( AfrOtaJobDocumentFields_t * params )
     mqttWrapper_subscribe( mqttFileDownloaderContext.topicStreamData,
                             mqttFileDownloaderContext.topicStreamDataLength );
 
+    printf("Starting The Download. \n");
     /* Request the first block */
     requestDataBlock();
 }
@@ -321,6 +323,8 @@ static void handleMqttStreamsBlockArrived( uint8_t * data, size_t dataLength )
 
     totalBytesReceived += dataLength;
     numOfBlocksRemaining--;
+
+    printf( "Downloaded block %u of %u. \n", currentBlockOffset, (currentBlockOffset + numOfBlocksRemaining) );
 
     if( numOfBlocksRemaining == 0 )
     {
