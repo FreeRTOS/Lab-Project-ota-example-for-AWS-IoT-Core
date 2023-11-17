@@ -106,8 +106,6 @@ bool otaDemo_handleIncomingMQTTMessage( char * topic,
         if( handled )
         {
             handled = jobHandlerChain( ( char * ) message, messageLength );
-
-            printf( "Handled? %d \n", handled );
         }
         else
         {
