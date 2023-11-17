@@ -293,6 +293,7 @@ static void processOTAEvents() {
 
         if ( receivedJobDocumentHandler(recvEvent.jobEvent) )
         {
+            printf( "Received OTA Job. \n" );
             nextEvent.eventId = OtaAgentEventRequestFileBlock;
             OtaSendEvent_FreeRTOS( &nextEvent );
         }
@@ -306,6 +307,10 @@ static void processOTAEvents() {
         otaAgentState = OtaAgentStateRequestingFileBlock;
         printf("Request File Block event Received \n");
         printf("-----------------------------------\n");
+        if (currentBlockOffset == 0)
+        {
+            printf( "Starting The Download. \n" );
+        }
         requestDataBlock();
         break;
     case OtaAgentEventReceivedFileBlock:
@@ -467,6 +472,8 @@ static void handleMqttStreamsBlockArrived(
 {
     assert( ( totalBytesReceived + dataLength ) <
             CONFIG_MAX_FILE_SIZE );
+
+    printf( "Downloaded block %u of %u. \n", currentBlockOffset, (currentBlockOffset + numOfBlocksRemaining) );
 
     memcpy( downloadedData + totalBytesReceived,
             data,
