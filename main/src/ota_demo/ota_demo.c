@@ -546,7 +546,7 @@ static void handleMqttStreamsBlockArrived(
     assert( ( totalBytesReceived + dataLength ) <
             CONFIG_MAX_FILE_SIZE );
 
-    ESP_LOGE( "OTA_DEMO", "Downloaded block %u of %u \n", currentBlockOffset, ( currentBlockOffset + numOfBlocksRemaining) );
+    ESP_LOGE( "OTA_DEMO", "Downloaded block %lu of %lu \n", currentBlockOffset, ( currentBlockOffset + numOfBlocksRemaining) );
 
     esp_err_t ret = esp_ota_write_with_offset( ota_ctx.update_handle, data, dataLength, totalBytesReceived );
 
