@@ -290,6 +290,7 @@ static bool receivedJobDocumentHandler( OtaJobEventData_t * jobDoc )
         handled = jobDocumentParser( (char * )jobDoc->jobData, jobDoc->jobDataLength, &jobFields );
         if (handled)
         {
+            ESP_LOGE( "OTA_DEMO","Received OTA Job. \n" );
             initMqttDownloader( &jobFields );
             createFileForRx();
         }
@@ -377,6 +378,10 @@ static void processOTAEvents() {
         {
             ESP_LOGE( "OTA_DEMO","OTA-Agent is in Suspend State. Hence dropping Request file block event. \n");
             break;
+        }
+        else if (currentBlockOffset == 0)
+        {
+            ESP_LOGE( "OTA_DEMO","Starting The Download. \n" );
         }
         otaAgentState = OtaAgentStateRequestingFileBlock;
         requestDataBlock();
@@ -540,6 +545,8 @@ static void handleMqttStreamsBlockArrived(
 {
     assert( ( totalBytesReceived + dataLength ) <
             CONFIG_MAX_FILE_SIZE );
+
+    ESP_LOGE( "OTA_DEMO", "Downloaded block %lu of %lu \n", currentBlockOffset, ( currentBlockOffset + numOfBlocksRemaining) );
 
     esp_err_t ret = esp_ota_write_with_offset( ota_ctx.update_handle, data, dataLength, totalBytesReceived );
 
