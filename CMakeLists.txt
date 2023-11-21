@@ -42,11 +42,11 @@ FetchContent_Declare(
 FetchContent_Declare(
   iot-core-mqtt-file-downloader
   GIT_REPOSITORY https://github.com/aws/aws-iot-core-mqtt-file-streams-embedded-c/
-  GIT_TAG 903fcd8dc0e7e90375dd305ce9cd417f40a690f4)
+  GIT_TAG 7264c7115de5b02aacf5430554cc2c7428b43d24)
 FetchContent_Declare(
   jobs
   GIT_REPOSITORY https://github.com/aws/Jobs-for-AWS-IoT-embedded-sdk.git
-  GIT_TAG main)
+  GIT_TAG f00ec58991147520166106b732c883d2558db477)
 
 
 # FreeRTOS-Kernel build options
