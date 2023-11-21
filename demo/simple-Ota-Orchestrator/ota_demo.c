@@ -265,7 +265,8 @@ static void requestDataBlock( void )
                                         mqttFileDownloader_CONFIG_BLOCK_SIZE,
                                         currentBlockOffset,
                                         NUM_OF_BLOCKS_REQUESTED,
-                                        getStreamRequest );
+                                        getStreamRequest,
+                                        GET_STREAM_REQUEST_BUFFER_SIZE );
 
     mqttWrapper_publish( mqttFileDownloaderContext.topicGetStream,
                          mqttFileDownloaderContext.topicGetStreamLength,
