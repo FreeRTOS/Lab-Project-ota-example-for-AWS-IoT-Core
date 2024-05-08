@@ -18,7 +18,6 @@
 #include "ota_job_processor.h"
 
 #define CONFIG_MAX_FILE_SIZE    65536U
-#define NUM_OF_BLOCKS_REQUESTED 1U
 #define MAX_THING_NAME_SIZE     128U
 #define MAX_JOB_ID_LENGTH       64U
 #define START_JOB_MSG_LENGTH  147U
@@ -87,6 +86,9 @@ bool otaDemo_handleIncomingMQTTMessage( char * topic,
                                         size_t messageLength )
 {
     bool handled = false;
+    int32_t fileId = 0;
+    int32_t blockId = 0;
+    int32_t blockSize = 0;
 
     handled = jobMetadataHandlerChain( topic, topicLength );
 
@@ -130,6 +132,9 @@ bool otaDemo_handleIncomingMQTTMessage( char * topic,
                     &mqttFileDownloaderContext,
                     message,
                     messageLength,
+                    &fileId,
+                    &blockId,
+                    &blockSize,
                     decodedData,
                     &decodedDataLength );
                 handleMqttStreamsBlockArrived( decodedData, decodedDataLength );
@@ -207,13 +212,13 @@ static bool jobHandlerChain( char * message, size_t messageLength )
      * AWS IoT Jobs library:
      * Extracting the OTA job document from the jobs message recevied from AWS IoT core.
      */
-    jobDocLength = Jobs_GetJobDocument( message, messageLength, &jobDoc );
+    jobDocLength = Jobs_GetJobDocument( message, messageLength, (const char **) &jobDoc );
 
     /*
      * AWS IoT Jobs library:
      * Extracting the job ID from the received OTA job document.
      */
-    jobIdLength = Jobs_GetJobId( message, messageLength, &jobId );
+    jobIdLength = Jobs_GetJobId( message, messageLength, (const char **) &jobId );
 
     if( globalJobId[ 0 ] == 0 )
     {
@@ -264,7 +269,7 @@ static void requestDataBlock( void )
                                         currentFileId,
                                         mqttFileDownloader_CONFIG_BLOCK_SIZE,
                                         currentBlockOffset,
-                                        NUM_OF_BLOCKS_REQUESTED,
+                                        1, // Only ever request a single block for this simple example
                                         getStreamRequest,
                                         GET_STREAM_REQUEST_BUFFER_SIZE );
 

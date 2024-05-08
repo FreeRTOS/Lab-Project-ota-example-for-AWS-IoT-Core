@@ -42,7 +42,7 @@ FetchContent_Declare(
 FetchContent_Declare(
   iot-core-mqtt-file-downloader
   GIT_REPOSITORY https://github.com/aws/aws-iot-core-mqtt-file-streams-embedded-c/
-  GIT_TAG 7264c7115de5b02aacf5430554cc2c7428b43d24)
+  GIT_TAG 9fe11c2aa16e9bf390a81c8cfe580a8cf00343a5)
 FetchContent_Declare(
   jobs
   GIT_REPOSITORY https://github.com/aws/Jobs-for-AWS-IoT-embedded-sdk.git

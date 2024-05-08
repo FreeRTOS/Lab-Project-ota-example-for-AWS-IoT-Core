@@ -30,9 +30,10 @@
 
 MqttFileDownloaderContext_t mqttFileDownloaderContext = { 0 };
 static uint32_t numOfBlocksRemaining = 0;
-static uint32_t currentBlockOffset = 0;
 static uint8_t currentFileId = 0;
 static uint32_t totalBytesReceived = 0;
+static uint8_t * blockBitmap;
+static uint32_t totalBlocks = 0;
 static uint8_t downloadedData[ CONFIG_MAX_FILE_SIZE ] = { 0 };
 char globalJobId[ MAX_JOB_ID_LENGTH ] = { 0 };
 
@@ -43,24 +44,19 @@ static SemaphoreHandle_t bufferSemaphore;
 static OtaState_t otaAgentState = OtaAgentStateInit;
 
 static void finishDownload( void );
-
 static void processOTAEvents( void );
-
 static void requestJobDocumentHandler( void );
-
 static bool receivedJobDocumentHandler( OtaJobEventData_t * jobDoc );
-
 static bool jobDocumentParser( char * message, size_t messageLength, AfrOtaJobDocumentFields_t *jobFields );
-
 static void initMqttDownloader( AfrOtaJobDocumentFields_t *jobFields );
-
 static OtaDataEvent_t * getOtaDataEventBuffer( void );
-
 static void freeOtaDataEventBuffer( OtaDataEvent_t * const buffer );
-
-static void handleMqttStreamsBlockArrived( uint8_t *data, size_t dataLength );
-
-static void requestDataBlock( void );
+static void handleMqttStreamsBlockArrived( int32_t blockId, uint8_t *data, size_t dataLength );
+static void requestDataBlock( uint32_t startingBlock, uint32_t numberOfBlocks );
+static bool isBlockNeeded(uint32_t blockId);
+static void markBlockDownloaded(uint32_t blockId);
+static uint32_t findNextBlockToRequest();
+static uint32_t findSuccessiveBlocksToRequest(uint32_t startingBlock);
 
 
 static void freeOtaDataEventBuffer( OtaDataEvent_t * const pxBuffer )
@@ -181,8 +177,11 @@ static void initMqttDownloader( AfrOtaJobDocumentFields_t *jobFields )
     numOfBlocksRemaining += ( jobFields->fileSize %
                             mqttFileDownloader_CONFIG_BLOCK_SIZE > 0 ) ? 1 : 0;
     currentFileId = jobFields->fileId;
-    currentBlockOffset = 0;
     totalBytesReceived = 0;
+    int bitmapSize = numOfBlocksRemaining/8;
+    bitmapSize += ( numOfBlocksRemaining % 8 > 0 ) ? 1 : 0;
+    blockBitmap = ( uint8_t * ) malloc( bitmapSize );
+    totalBlocks = numOfBlocksRemaining;
 
     mqttWrapper_getThingName( thingName, &thingNameLength );
 
@@ -212,7 +211,7 @@ static bool receivedJobDocumentHandler( OtaJobEventData_t * jobDoc )
      * AWS IoT Jobs library:
      * Extracting the job ID from the received OTA job document.
      */
-    jobIdLength = Jobs_GetJobId( (char *)jobDoc->jobData, jobDoc->jobDataLength, &jobId );
+    jobIdLength = Jobs_GetJobId( (char *)jobDoc->jobData, jobDoc->jobDataLength, (const char **) &jobId );
 
     if ( jobIdLength )
     {
@@ -239,11 +238,12 @@ static bool receivedJobDocumentHandler( OtaJobEventData_t * jobDoc )
     return handled;
 }
 
-static void requestDataBlock( void )
+static void requestDataBlock( uint32_t startingBlock, uint32_t numberOfBlocks )
 {
     char getStreamRequest[ GET_STREAM_REQUEST_BUFFER_SIZE ];
     size_t getStreamRequestLength = 0U;
 
+    printf("Requesting blocks %u-%u\n", startingBlock, startingBlock+numberOfBlocks);
     /*
      * MQTT streams Library:
      * Creating the Get data block request. MQTT streams library only
@@ -253,8 +253,8 @@ static void requestDataBlock( void )
     getStreamRequestLength = mqttDownloader_createGetDataBlockRequest( mqttFileDownloaderContext.dataType,
                                         currentFileId,
                                         mqttFileDownloader_CONFIG_BLOCK_SIZE,
-                                        currentBlockOffset,
-                                        NUM_OF_BLOCKS_REQUESTED,
+                                        startingBlock,
+                                        numberOfBlocks,
                                         getStreamRequest,
                                         GET_STREAM_REQUEST_BUFFER_SIZE );
 
@@ -269,6 +269,11 @@ static void processOTAEvents() {
     OtaEventMsg_t recvEvent = { 0 };
     OtaEvent_t recvEventId = 0;
     OtaEventMsg_t nextEvent = { 0 };
+    uint32_t startingBlock = 0;
+    uint32_t numberOfBlocksToRequest = 0;
+    int32_t fileId = 0;
+    int32_t blockId = 0;
+    int32_t blockSize = 0;
 
     OtaReceiveEvent_FreeRTOS(&recvEvent);
     recvEventId = recvEvent.eventId;
@@ -308,11 +313,15 @@ static void processOTAEvents() {
         otaAgentState = OtaAgentStateRequestingFileBlock;
         printf("Request File Block event Received \n");
         printf("-----------------------------------\n");
-        if (currentBlockOffset == 0)
+        // Find the block to request in the bitmap
+        startingBlock = findNextBlockToRequest();
+        // Find any other blocks after that starting block which can be requested (up to the configured number of blocks).
+        numberOfBlocksToRequest = findSuccessiveBlocksToRequest(startingBlock);
+        if (startingBlock == 0)
         {
             printf( "Starting The Download. \n" );
         }
-        requestDataBlock();
+        requestDataBlock(startingBlock, numberOfBlocksToRequest);
         break;
     case OtaAgentEventReceivedFileBlock:
         printf("Received File Block event Received \n");
@@ -333,12 +342,13 @@ static void processOTAEvents() {
             &mqttFileDownloaderContext,
             recvEvent.dataEvent->data,
             recvEvent.dataEvent->dataLength,
+            &fileId,
+            &blockId,
+            &blockSize,
             decodedData,
             &decodedDataLength );
-        handleMqttStreamsBlockArrived(decodedData, decodedDataLength);
+        handleMqttStreamsBlockArrived(blockId, decodedData, decodedDataLength);
         freeOtaDataEventBuffer(recvEvent.dataEvent);
-        numOfBlocksRemaining--;
-        currentBlockOffset++;
 
         if( numOfBlocksRemaining == 0 )
         {
@@ -444,7 +454,7 @@ static bool jobDocumentParser( char * message, size_t messageLength, AfrOtaJobDo
      * AWS IoT Jobs library:
      * Extracting the OTA job document from the jobs message recevied from AWS IoT core.
      */
-    jobDocLength = Jobs_GetJobDocument( message, messageLength, &jobDoc );
+    jobDocLength = Jobs_GetJobDocument( message, messageLength, (const char **) &jobDoc );
 
     if( jobDocLength != 0U )
     {
@@ -469,19 +479,26 @@ static bool jobDocumentParser( char * message, size_t messageLength, AfrOtaJobDo
 
 /* Stores the received data blocks in the flash partition reserved for OTA */
 static void handleMqttStreamsBlockArrived(
-    uint8_t *data, size_t dataLength )
+    int32_t blockId, uint8_t *data, size_t dataLength )
 {
     assert( ( totalBytesReceived + dataLength ) <
             CONFIG_MAX_FILE_SIZE );
 
-    printf( "Downloaded block %u of %u. \n", currentBlockOffset, (currentBlockOffset + numOfBlocksRemaining) );
+    // Check the bitmap and copy it into the correct position in the file if it is not already there
+    if ( isBlockNeeded(blockId) )
+    {
+        printf( "Downloaded block %u. Remaining blocks to download: %u. \n", blockId, numOfBlocksRemaining );
 
-    memcpy( downloadedData + totalBytesReceived,
-            data,
-            dataLength );
+        memcpy( downloadedData + ( blockId * mqttFileDownloader_CONFIG_BLOCK_SIZE ) , data, dataLength );
 
-    totalBytesReceived += dataLength;
-
+        totalBytesReceived += dataLength;
+        markBlockDownloaded(blockId);
+        numOfBlocksRemaining--;
+    }
+    else
+    {
+        printf("Received already downloaded block: %u\n", blockId);
+    }
 }
 
 static void finishDownload()
@@ -525,4 +542,39 @@ static void finishDownload()
                         messageBufferLength);
     printf( "\033[1;32mOTA Completed successfully!\033[0m\n" );
     globalJobId[ 0 ] = 0U;
+}
+
+static bool isBlockNeeded(uint32_t blockId)
+{
+    uint32_t byteIndex = blockId / 8;
+    uint32_t bitIndex = blockId % 8;
+    return (blockBitmap[byteIndex] & (1 << bitIndex)) == 0;
+}
+static void markBlockDownloaded(uint32_t blockId)
+{
+    uint32_t byteIndex = blockId / 8;
+    uint32_t bitIndex = blockId % 8;
+    blockBitmap[byteIndex] |= (1 << bitIndex);
+}
+
+static uint32_t findNextBlockToRequest()
+{
+    uint32_t blockId = 0;
+    while (blockId <= totalBlocks && !isBlockNeeded(blockId))
+    {
+        blockId++;
+    }
+    return blockId;
+}
+
+static uint32_t findSuccessiveBlocksToRequest(uint32_t startingBlock)
+{
+    uint32_t blockId = startingBlock;
+    uint32_t blocksToRequest = 0;
+    while (blockId <= totalBlocks && blocksToRequest < NUM_OF_BLOCKS_REQUESTED && isBlockNeeded(blockId))
+    {
+        blocksToRequest++;
+        blockId++;
+    }
+    return blocksToRequest;
 }
