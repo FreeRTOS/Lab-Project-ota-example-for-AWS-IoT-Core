@@ -42,7 +42,7 @@ FetchContent_Declare(
 FetchContent_Declare(
   iot-core-mqtt-file-downloader
   GIT_REPOSITORY https://github.com/aws/aws-iot-core-mqtt-file-streams-embedded-c/
-  GIT_TAG 9fe11c2aa16e9bf390a81c8cfe580a8cf00343a5)
+  GIT_TAG 690fb2bd10020da916fe54f3e8c59f1e3f925e44)
 FetchContent_Declare(
   jobs
   GIT_REPOSITORY https://github.com/aws/Jobs-for-AWS-IoT-embedded-sdk.git
@@ -125,7 +125,8 @@ target_compile_options(iot-core-mqtt-file-downloader PRIVATE -std=c99 -pedantic)
 target_link_libraries(iot-core-mqtt-file-downloader
                       PUBLIC coreJSON coreMQTT mqtt_wrapper tinycbor)
 target_include_directories(iot-core-mqtt-file-downloader
-                           PUBLIC ${MQTT_FILE_DOWNLOADER_INCLUDES})
+                           PUBLIC ${MQTT_FILE_DOWNLOADER_INCLUDES}
+                            "${CMAKE_CURRENT_LIST_DIR}/cfg/MqttStreams")
 
 add_executable(
   coreOTA_Demo

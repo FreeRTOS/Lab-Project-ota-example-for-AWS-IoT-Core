@@ -178,9 +178,8 @@ static void initMqttDownloader( AfrOtaJobDocumentFields_t *jobFields )
                             mqttFileDownloader_CONFIG_BLOCK_SIZE > 0 ) ? 1 : 0;
     currentFileId = jobFields->fileId;
     totalBytesReceived = 0;
-    int bitmapSize = numOfBlocksRemaining/8;
-    bitmapSize += ( numOfBlocksRemaining % 8 > 0 ) ? 1 : 0;
-    blockBitmap = ( uint8_t * ) malloc( bitmapSize );
+    int bitmapSize = ( numOfBlocksRemaining + ( 8 - 1 ) ) / 8;
+    blockBitmap = ( uint8_t * ) calloc( bitmapSize, sizeof(uint8_t) );
     totalBlocks = numOfBlocksRemaining;
 
     mqttWrapper_getThingName( thingName, &thingNameLength );
@@ -313,9 +312,9 @@ static void processOTAEvents() {
         otaAgentState = OtaAgentStateRequestingFileBlock;
         printf("Request File Block event Received \n");
         printf("-----------------------------------\n");
-        // Find the block to request in the bitmap
+        /* Find the block to request in the bitmap */
         startingBlock = findNextBlockToRequest();
-        // Find any other blocks after that starting block which can be requested (up to the configured number of blocks).
+        /* Find any other blocks after that starting block which can be requested (up to the configured number of blocks). */
         numberOfBlocksToRequest = findSuccessiveBlocksToRequest(startingBlock);
         if (startingBlock == 0)
         {
@@ -472,8 +471,8 @@ static bool jobDocumentParser( char * message, size_t messageLength, AfrOtaJobDo
         } while( fileIndex > 0 );
     }
 
-    // File index will be -1 if an error occured, and 0 if all files were
-    // processed
+    /* File index will be -1 if an error occured, and 0 if all files were
+    processed */
     return fileIndex == 0;
 }
 
@@ -484,7 +483,7 @@ static void handleMqttStreamsBlockArrived(
     assert( ( totalBytesReceived + dataLength ) <
             CONFIG_MAX_FILE_SIZE );
 
-    // Check the bitmap and copy it into the correct position in the file if it is not already there
+    /* Check the bitmap and copy it into the correct position in the file if it is not already there */
     if ( isBlockNeeded(blockId) )
     {
         printf( "Downloaded block %u. Remaining blocks to download: %u. \n", blockId, numOfBlocksRemaining );
@@ -546,8 +545,8 @@ static void finishDownload()
 
 static bool isBlockNeeded(uint32_t blockId)
 {
-    uint32_t byteIndex = blockId / 8;
-    uint32_t bitIndex = blockId % 8;
+    uint32_t byteIndex = blockId >> 3;
+    uint32_t bitIndex = blockId & 0x7;
     return (blockBitmap[byteIndex] & (1 << bitIndex)) == 0;
 }
 static void markBlockDownloaded(uint32_t blockId)
