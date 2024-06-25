@@ -20,47 +20,48 @@
 #include "FreeRTOS.h"
 #include "semphr.h"
 
-#define CONFIG_MAX_FILE_SIZE    65536U
-#define NUM_OF_BLOCKS_REQUESTED 1U
-#define START_JOB_MSG_LENGTH    147U
-#define MAX_THING_NAME_SIZE     128U
-#define MAX_JOB_ID_LENGTH       64U
-#define UPDATE_JOB_MSG_LENGTH   48U
-#define MAX_NUM_OF_OTA_DATA_BUFFERS 5U
+#define CONFIG_MAX_FILE_SIZE           65536U
+#define NUM_OF_BLOCKS_REQUESTED        1U
+#define START_JOB_MSG_LENGTH           147U
+#define MAX_THING_NAME_SIZE            128U
+#define MAX_JOB_ID_LENGTH              64U
+#define UPDATE_JOB_MSG_LENGTH          48U
+#define MAX_NUM_OF_OTA_DATA_BUFFERS    5U
 
 MqttFileDownloaderContext_t mqttFileDownloaderContext = { 0 };
 static uint32_t numOfBlocksRemaining = 0;
-static uint32_t currentBlockOffset = 0;
 static uint8_t currentFileId = 0;
 static uint32_t totalBytesReceived = 0;
+static uint8_t * blockBitmap;
+static uint32_t totalBlocks = 0;
 static uint8_t downloadedData[ CONFIG_MAX_FILE_SIZE ] = { 0 };
 char globalJobId[ MAX_JOB_ID_LENGTH ] = { 0 };
 
-static OtaDataEvent_t dataBuffers[MAX_NUM_OF_OTA_DATA_BUFFERS] = { 0 };
+static OtaDataEvent_t dataBuffers[ MAX_NUM_OF_OTA_DATA_BUFFERS ] = { 0 };
 static OtaJobEventData_t jobDocBuffer = { 0 };
 static SemaphoreHandle_t bufferSemaphore;
 
 static OtaState_t otaAgentState = OtaAgentStateInit;
 
 static void finishDownload( void );
-
 static void processOTAEvents( void );
-
 static void requestJobDocumentHandler( void );
-
 static bool receivedJobDocumentHandler( OtaJobEventData_t * jobDoc );
-
-static bool jobDocumentParser( char * message, size_t messageLength, AfrOtaJobDocumentFields_t *jobFields );
-
-static void initMqttDownloader( AfrOtaJobDocumentFields_t *jobFields );
-
+static bool jobDocumentParser( char * message,
+                               size_t messageLength,
+                               AfrOtaJobDocumentFields_t * jobFields );
+static void initMqttDownloader( AfrOtaJobDocumentFields_t * jobFields );
 static OtaDataEvent_t * getOtaDataEventBuffer( void );
-
 static void freeOtaDataEventBuffer( OtaDataEvent_t * const buffer );
-
-static void handleMqttStreamsBlockArrived( uint8_t *data, size_t dataLength );
-
-static void requestDataBlock( void );
+static void handleMqttStreamsBlockArrived( int32_t blockId,
+                                           uint8_t * data,
+                                           size_t dataLength );
+static void requestDataBlock( uint32_t startingBlock,
+                              uint32_t numberOfBlocks );
+static bool isBlockNeeded( uint32_t blockId );
+static void markBlockDownloaded( uint32_t blockId );
+static uint32_t findNextBlockToRequest();
+static uint32_t findSuccessiveBlocksToRequest( uint32_t startingBlock );
 
 
 static void freeOtaDataEventBuffer( OtaDataEvent_t * const pxBuffer )
@@ -97,7 +98,7 @@ static OtaDataEvent_t * getOtaDataEventBuffer( void )
     }
     else
     {
-        printf("Failed to get buffer semaphore. \n" );
+        printf( "Failed to get buffer semaphore. \n" );
     }
 
     return freeBuffer;
@@ -124,7 +125,8 @@ void otaDemo_start( void )
     initEvent.eventId = OtaAgentEventRequestJobDocument;
     OtaSendEvent_FreeRTOS( &initEvent );
 
-    while (otaAgentState != OtaAgentStateStopped ) {
+    while( otaAgentState != OtaAgentStateStopped )
+    {
         processOTAEvents();
     }
 }
@@ -141,6 +143,7 @@ static void requestJobDocumentHandler()
     char topicBuffer[ TOPIC_BUFFER_SIZE + 1 ] = { 0 };
     char messageBuffer[ START_JOB_MSG_LENGTH ] = { 0 };
     size_t topicLength = 0U;
+
     mqttWrapper_getThingName( thingName, &thingNameLength );
 
     /*
@@ -148,41 +151,42 @@ static void requestJobDocumentHandler()
      * Creates the topic string for a StartNextPendingJobExecution request.
      * It used to check if any pending jobs are available.
      */
-    Jobs_StartNext(topicBuffer,
-                   TOPIC_BUFFER_SIZE,
-                   thingName,
-                   thingNameLength,
-                   &topicLength);
+    Jobs_StartNext( topicBuffer,
+                    TOPIC_BUFFER_SIZE,
+                    thingName,
+                    thingNameLength,
+                    &topicLength );
 
     /*
      * AWS IoT Jobs library:
      * Creates the message string for a StartNextPendingJobExecution request.
      * It will be sent on the topic created in the previous step.
      */
-    size_t messageLength = Jobs_StartNextMsg("test",
-                                             4U,
-                                             messageBuffer,
-                                             START_JOB_MSG_LENGTH );
+    size_t messageLength = Jobs_StartNextMsg( "test",
+                                              4U,
+                                              messageBuffer,
+                                              START_JOB_MSG_LENGTH );
 
-    mqttWrapper_publish(topicBuffer,
-                        topicLength,
-                        ( uint8_t * ) messageBuffer,
-                        messageLength);
-
+    mqttWrapper_publish( topicBuffer,
+                         topicLength,
+                         ( uint8_t * ) messageBuffer,
+                         messageLength );
 }
 
-static void initMqttDownloader( AfrOtaJobDocumentFields_t *jobFields )
+static void initMqttDownloader( AfrOtaJobDocumentFields_t * jobFields )
 {
     char thingName[ MAX_THING_NAME_SIZE + 1 ] = { 0 };
     size_t thingNameLength = 0U;
 
     numOfBlocksRemaining = jobFields->fileSize /
-                            mqttFileDownloader_CONFIG_BLOCK_SIZE;
+                           mqttFileDownloader_CONFIG_BLOCK_SIZE;
     numOfBlocksRemaining += ( jobFields->fileSize %
-                            mqttFileDownloader_CONFIG_BLOCK_SIZE > 0 ) ? 1 : 0;
+                              mqttFileDownloader_CONFIG_BLOCK_SIZE > 0 ) ? 1 : 0;
     currentFileId = jobFields->fileId;
-    currentBlockOffset = 0;
     totalBytesReceived = 0;
+    int bitmapSize = ( numOfBlocksRemaining + ( 8 - 1 ) ) / 8;
+    blockBitmap = ( uint8_t * ) calloc( bitmapSize, sizeof( uint8_t ) );
+    totalBlocks = numOfBlocksRemaining;
 
     mqttWrapper_getThingName( thingName, &thingNameLength );
 
@@ -193,11 +197,11 @@ static void initMqttDownloader( AfrOtaJobDocumentFields_t *jobFields )
      * using OTA jobs parser.
      */
     mqttDownloader_init( &mqttFileDownloaderContext,
-                        jobFields->imageRef,
-                        jobFields->imageRefLen,
-                        thingName,
-                        thingNameLength,
-                        DATA_TYPE_JSON );
+                         jobFields->imageRef,
+                         jobFields->imageRefLen,
+                         thingName,
+                         thingNameLength,
+                         DATA_TYPE_JSON );
 }
 
 static bool receivedJobDocumentHandler( OtaJobEventData_t * jobDoc )
@@ -212,11 +216,11 @@ static bool receivedJobDocumentHandler( OtaJobEventData_t * jobDoc )
      * AWS IoT Jobs library:
      * Extracting the job ID from the received OTA job document.
      */
-    jobIdLength = Jobs_GetJobId( (char *)jobDoc->jobData, jobDoc->jobDataLength, &jobId );
+    jobIdLength = Jobs_GetJobId( ( char * ) jobDoc->jobData, jobDoc->jobDataLength, ( const char ** ) &jobId );
 
-    if ( jobIdLength )
+    if( jobIdLength )
     {
-        if ( strncmp( globalJobId, jobId, jobIdLength ) )
+        if( strncmp( globalJobId, jobId, jobIdLength ) )
         {
             parseJobDocument = true;
             strncpy( globalJobId, jobId, jobIdLength );
@@ -227,10 +231,11 @@ static bool receivedJobDocumentHandler( OtaJobEventData_t * jobDoc )
         }
     }
 
-    if ( parseJobDocument )
+    if( parseJobDocument )
     {
-        handled = jobDocumentParser( (char * )jobDoc->jobData, jobDoc->jobDataLength, &jobFields );
-        if (handled)
+        handled = jobDocumentParser( ( char * ) jobDoc->jobData, jobDoc->jobDataLength, &jobFields );
+
+        if( handled )
         {
             initMqttDownloader( &jobFields );
         }
@@ -239,10 +244,13 @@ static bool receivedJobDocumentHandler( OtaJobEventData_t * jobDoc )
     return handled;
 }
 
-static void requestDataBlock( void )
+static void requestDataBlock( uint32_t startingBlock,
+                              uint32_t numberOfBlocks )
 {
     char getStreamRequest[ GET_STREAM_REQUEST_BUFFER_SIZE ];
     size_t getStreamRequestLength = 0U;
+
+    printf( "Requesting blocks %u-%u\n", startingBlock, startingBlock + numberOfBlocks );
 
     /*
      * MQTT streams Library:
@@ -251,12 +259,12 @@ static void requestDataBlock( void )
      * like coreMQTT are required.
      */
     getStreamRequestLength = mqttDownloader_createGetDataBlockRequest( mqttFileDownloaderContext.dataType,
-                                        currentFileId,
-                                        mqttFileDownloader_CONFIG_BLOCK_SIZE,
-                                        currentBlockOffset,
-                                        NUM_OF_BLOCKS_REQUESTED,
-                                        getStreamRequest,
-                                        GET_STREAM_REQUEST_BUFFER_SIZE );
+                                                                       currentFileId,
+                                                                       mqttFileDownloader_CONFIG_BLOCK_SIZE,
+                                                                       startingBlock,
+                                                                       numberOfBlocks,
+                                                                       getStreamRequest,
+                                                                       GET_STREAM_REQUEST_BUFFER_SIZE );
 
     mqttWrapper_publish( mqttFileDownloaderContext.topicGetStream,
                          mqttFileDownloaderContext.topicGetStreamLength,
@@ -265,112 +273,137 @@ static void requestDataBlock( void )
 }
 
 
-static void processOTAEvents() {
+static void processOTAEvents()
+{
     OtaEventMsg_t recvEvent = { 0 };
     OtaEvent_t recvEventId = 0;
     OtaEventMsg_t nextEvent = { 0 };
+    uint32_t startingBlock = 0;
+    uint32_t numberOfBlocksToRequest = 0;
+    int32_t fileId = 0;
+    int32_t blockId = 0;
+    int32_t blockSize = 0;
 
-    OtaReceiveEvent_FreeRTOS(&recvEvent);
+    OtaReceiveEvent_FreeRTOS( &recvEvent );
     recvEventId = recvEvent.eventId;
-    printf("Received Event is %d \n", recvEventId);
+    printf( "Received Event is %d \n", recvEventId );
 
-    switch (recvEventId)
+    switch( recvEventId )
     {
-    case OtaAgentEventRequestJobDocument:
-        printf("Request Job Document event Received \n");
-        printf("-------------------------------------\n");
-        requestJobDocumentHandler();
-        otaAgentState = OtaAgentStateRequestingJob;
-        break;
-    case OtaAgentEventReceivedJobDocument:
-        printf("Received Job Document event Received \n");
-        printf("-------------------------------------\n");
-
-        if (otaAgentState == OtaAgentStateSuspended)
-        {
-            printf("OTA-Agent is in Suspend State. Hence dropping Job Document. \n");
+        case OtaAgentEventRequestJobDocument:
+            printf( "Request Job Document event Received \n" );
+            printf( "-------------------------------------\n" );
+            requestJobDocumentHandler();
+            otaAgentState = OtaAgentStateRequestingJob;
             break;
-        }
 
-        if ( receivedJobDocumentHandler(recvEvent.jobEvent) )
-        {
-            printf( "Received OTA Job. \n" );
-            nextEvent.eventId = OtaAgentEventRequestFileBlock;
-            OtaSendEvent_FreeRTOS( &nextEvent );
-        }
-        else
-        {
-            printf("This is not an OTA job \n");
-        }
-        otaAgentState = OtaAgentStateCreatingFile;
-        break;
-    case OtaAgentEventRequestFileBlock:
-        otaAgentState = OtaAgentStateRequestingFileBlock;
-        printf("Request File Block event Received \n");
-        printf("-----------------------------------\n");
-        if (currentBlockOffset == 0)
-        {
-            printf( "Starting The Download. \n" );
-        }
-        requestDataBlock();
-        break;
-    case OtaAgentEventReceivedFileBlock:
-        printf("Received File Block event Received \n");
-        printf("---------------------------------------\n");
-        if (otaAgentState == OtaAgentStateSuspended)
-        {
-            printf("OTA-Agent is in Suspend State. Hence dropping File Block. \n");
-            freeOtaDataEventBuffer(recvEvent.dataEvent);
+        case OtaAgentEventReceivedJobDocument:
+            printf( "Received Job Document event Received \n" );
+            printf( "-------------------------------------\n" );
+
+            if( otaAgentState == OtaAgentStateSuspended )
+            {
+                printf( "OTA-Agent is in Suspend State. Hence dropping Job Document. \n" );
+                break;
+            }
+
+            if( receivedJobDocumentHandler( recvEvent.jobEvent ) )
+            {
+                printf( "Received OTA Job. \n" );
+                nextEvent.eventId = OtaAgentEventRequestFileBlock;
+                OtaSendEvent_FreeRTOS( &nextEvent );
+            }
+            else
+            {
+                printf( "This is not an OTA job \n" );
+            }
+
+            otaAgentState = OtaAgentStateCreatingFile;
             break;
-        }
-        uint8_t decodedData[ mqttFileDownloader_CONFIG_BLOCK_SIZE ];
-        size_t decodedDataLength = 0;
-        /*
-         * MQTT streams Library:
-         * Extracting and decoding the received data block from the incoming MQTT message.
-         */
-        mqttDownloader_processReceivedDataBlock(
-            &mqttFileDownloaderContext,
-            recvEvent.dataEvent->data,
-            recvEvent.dataEvent->dataLength,
-            decodedData,
-            &decodedDataLength );
-        handleMqttStreamsBlockArrived(decodedData, decodedDataLength);
-        freeOtaDataEventBuffer(recvEvent.dataEvent);
-        numOfBlocksRemaining--;
-        currentBlockOffset++;
 
-        if( numOfBlocksRemaining == 0 )
-        {
-            nextEvent.eventId = OtaAgentEventCloseFile;
+        case OtaAgentEventRequestFileBlock:
+            otaAgentState = OtaAgentStateRequestingFileBlock;
+            printf( "Request File Block event Received \n" );
+            printf( "-----------------------------------\n" );
+            /* Find the block to request in the bitmap */
+            startingBlock = findNextBlockToRequest();
+            /* Find any other blocks after that starting block which can be requested (up to the configured number of blocks). */
+            numberOfBlocksToRequest = findSuccessiveBlocksToRequest( startingBlock );
+
+            if( startingBlock == 0 )
+            {
+                printf( "Starting The Download. \n" );
+            }
+
+            requestDataBlock( startingBlock, numberOfBlocksToRequest );
+            break;
+
+        case OtaAgentEventReceivedFileBlock:
+            printf( "Received File Block event Received \n" );
+            printf( "---------------------------------------\n" );
+
+            if( otaAgentState == OtaAgentStateSuspended )
+            {
+                printf( "OTA-Agent is in Suspend State. Hence dropping File Block. \n" );
+                freeOtaDataEventBuffer( recvEvent.dataEvent );
+                break;
+            }
+
+            uint8_t decodedData[ mqttFileDownloader_CONFIG_BLOCK_SIZE ];
+            size_t decodedDataLength = 0;
+
+            /*
+             * MQTT streams Library:
+             * Extracting and decoding the received data block from the incoming MQTT message.
+             */
+            mqttDownloader_processReceivedDataBlock(
+                &mqttFileDownloaderContext,
+                recvEvent.dataEvent->data,
+                recvEvent.dataEvent->dataLength,
+                &fileId,
+                &blockId,
+                &blockSize,
+                decodedData,
+                &decodedDataLength );
+            handleMqttStreamsBlockArrived( blockId, decodedData, decodedDataLength );
+            freeOtaDataEventBuffer( recvEvent.dataEvent );
+
+            if( numOfBlocksRemaining == 0 )
+            {
+                nextEvent.eventId = OtaAgentEventCloseFile;
+                OtaSendEvent_FreeRTOS( &nextEvent );
+            }
+            else
+            {
+                nextEvent.eventId = OtaAgentEventRequestFileBlock;
+                OtaSendEvent_FreeRTOS( &nextEvent );
+            }
+
+            break;
+
+        case OtaAgentEventCloseFile:
+            printf( "Close file event Received \n" );
+            printf( "-----------------------\n" );
+            printf( "Downloaded Data %s \n", ( char * ) downloadedData );
+            finishDownload();
+            otaAgentState = OtaAgentStateStopped;
+            break;
+
+        case OtaAgentEventSuspend:
+            printf( "Suspend Event Received \n" );
+            printf( "-----------------------\n" );
+            otaAgentState = OtaAgentStateSuspended;
+            break;
+
+        case OtaAgentEventResume:
+            printf( "Resume Event Received \n" );
+            printf( "---------------------\n" );
+            otaAgentState = OtaAgentStateRequestingJob;
+            nextEvent.eventId = OtaAgentEventRequestJobDocument;
             OtaSendEvent_FreeRTOS( &nextEvent );
-        }
-        else
-        {
-            nextEvent.eventId = OtaAgentEventRequestFileBlock;
-            OtaSendEvent_FreeRTOS( &nextEvent );
-        }
-        break;
-    case OtaAgentEventCloseFile:
-        printf("Close file event Received \n");
-        printf("-----------------------\n");
-        printf( "Downloaded Data %s \n", ( char * ) downloadedData );
-        finishDownload();
-        otaAgentState = OtaAgentStateStopped;
-        break;
-    case OtaAgentEventSuspend:
-        printf("Suspend Event Received \n");
-        printf("-----------------------\n");
-        otaAgentState = OtaAgentStateSuspended;
-        break;
-    case OtaAgentEventResume:
-        printf("Resume Event Received \n");
-        printf("---------------------\n");
-        otaAgentState = OtaAgentStateRequestingJob;
-        nextEvent.eventId = OtaAgentEventRequestJobDocument;
-        OtaSendEvent_FreeRTOS( &nextEvent );
-    default:
-        break;
+
+        default:
+            break;
     }
 }
 
@@ -384,7 +417,7 @@ bool otaDemo_handleIncomingMQTTMessage( char * topic,
     char thingName[ MAX_THING_NAME_SIZE + 1 ] = { 0 };
     size_t thingNameLength = 0U;
 
-    mqttWrapper_getThingName(thingName, &thingNameLength);
+    mqttWrapper_getThingName( thingName, &thingNameLength );
 
     /*
      * AWS IoT Jobs library:
@@ -397,7 +430,7 @@ bool otaDemo_handleIncomingMQTTMessage( char * topic,
 
     if( handled )
     {
-        memcpy(jobDocBuffer.jobData, message, messageLength);
+        memcpy( jobDocBuffer.jobData, message, messageLength );
         nextEvent.jobEvent = &jobDocBuffer;
         jobDocBuffer.jobDataLength = messageLength;
         nextEvent.eventId = OtaAgentEventReceivedJobDocument;
@@ -410,12 +443,13 @@ bool otaDemo_handleIncomingMQTTMessage( char * topic,
          * Checks if the incoming message contains the requested data block. It is performed by
          * comparing the incoming MQTT message topic with MQTT streams topics.
          */
-        handled = mqttDownloader_isDataBlockReceived(&mqttFileDownloaderContext, topic, topicLength);
-        if (handled)
+        handled = mqttDownloader_isDataBlockReceived( &mqttFileDownloaderContext, topic, topicLength );
+
+        if( handled )
         {
             nextEvent.eventId = OtaAgentEventReceivedFileBlock;
             OtaDataEvent_t * dataBuf = getOtaDataEventBuffer();
-            memcpy(dataBuf->data, message, messageLength);
+            memcpy( dataBuf->data, message, messageLength );
             nextEvent.dataEvent = dataBuf;
             dataBuf->dataLength = messageLength;
             OtaSendEvent_FreeRTOS( &nextEvent );
@@ -431,10 +465,13 @@ bool otaDemo_handleIncomingMQTTMessage( char * topic,
                 ( unsigned int ) messageLength,
                 ( char * ) message );
     }
+
     return handled;
 }
 
-static bool jobDocumentParser( char * message, size_t messageLength, AfrOtaJobDocumentFields_t *jobFields )
+static bool jobDocumentParser( char * message,
+                               size_t messageLength,
+                               AfrOtaJobDocumentFields_t * jobFields )
 {
     char * jobDoc;
     size_t jobDocLength = 0U;
@@ -444,7 +481,7 @@ static bool jobDocumentParser( char * message, size_t messageLength, AfrOtaJobDo
      * AWS IoT Jobs library:
      * Extracting the OTA job document from the jobs message recevied from AWS IoT core.
      */
-    jobDocLength = Jobs_GetJobDocument( message, messageLength, &jobDoc );
+    jobDocLength = Jobs_GetJobDocument( message, messageLength, ( const char ** ) &jobDoc );
 
     if( jobDocLength != 0U )
     {
@@ -456,32 +493,40 @@ static bool jobDocumentParser( char * message, size_t messageLength, AfrOtaJobDo
              * the new firmware.
              */
             fileIndex = otaParser_parseJobDocFile( jobDoc,
-                                                jobDocLength,
-                                                fileIndex,
-                                                jobFields );
+                                                   jobDocLength,
+                                                   fileIndex,
+                                                   jobFields );
         } while( fileIndex > 0 );
     }
 
-    // File index will be -1 if an error occured, and 0 if all files were
-    // processed
+    /* File index will be -1 if an error occured, and 0 if all files were
+     * processed */
     return fileIndex == 0;
 }
 
 /* Stores the received data blocks in the flash partition reserved for OTA */
-static void handleMqttStreamsBlockArrived(
-    uint8_t *data, size_t dataLength )
+static void handleMqttStreamsBlockArrived( int32_t blockId,
+                                           uint8_t * data,
+                                           size_t dataLength )
 {
     assert( ( totalBytesReceived + dataLength ) <
             CONFIG_MAX_FILE_SIZE );
 
-    printf( "Downloaded block %u of %u. \n", currentBlockOffset, (currentBlockOffset + numOfBlocksRemaining) );
+    /* Check the bitmap and copy it into the correct position in the file if it is not already there */
+    if( isBlockNeeded( blockId ) )
+    {
+        printf( "Downloaded block %u. Remaining blocks to download: %u. \n", blockId, numOfBlocksRemaining );
 
-    memcpy( downloadedData + totalBytesReceived,
-            data,
-            dataLength );
+        memcpy( downloadedData + ( blockId * mqttFileDownloader_CONFIG_BLOCK_SIZE ), data, dataLength );
 
-    totalBytesReceived += dataLength;
-
+        totalBytesReceived += dataLength;
+        markBlockDownloaded( blockId );
+        numOfBlocksRemaining--;
+    }
+    else
+    {
+        printf( "Received already downloaded block: %u\n", blockId );
+    }
 }
 
 static void finishDownload()
@@ -500,29 +545,70 @@ static void finishDownload()
      * AWS IoT Jobs library:
      * Creating the MQTT topic to update the status of OTA job.
      */
-    Jobs_Update(topicBuffer,
-                TOPIC_BUFFER_SIZE,
-                thingName,
-                thingNameLength,
-                globalJobId,
-                strnlen( globalJobId, 1000U ),
-                &topicBufferLength);
+    Jobs_Update( topicBuffer,
+                 TOPIC_BUFFER_SIZE,
+                 thingName,
+                 thingNameLength,
+                 globalJobId,
+                 strnlen( globalJobId, 1000U ),
+                 &topicBufferLength );
 
     /*
      * AWS IoT Jobs library:
      * Creating the message which contains the status of OTA job.
      * It will be published on the topic created in the previous step.
      */
-    size_t messageBufferLength = Jobs_UpdateMsg(Succeeded,
-                                                "2",
-                                                1U,
-                                                messageBuffer,
-                                                UPDATE_JOB_MSG_LENGTH );
+    size_t messageBufferLength = Jobs_UpdateMsg( Succeeded,
+                                                 "2",
+                                                 1U,
+                                                 messageBuffer,
+                                                 UPDATE_JOB_MSG_LENGTH );
 
-    mqttWrapper_publish(topicBuffer,
-                        topicBufferLength,
-                        ( uint8_t * ) messageBuffer,
-                        messageBufferLength);
+    mqttWrapper_publish( topicBuffer,
+                         topicBufferLength,
+                         ( uint8_t * ) messageBuffer,
+                         messageBufferLength );
     printf( "\033[1;32mOTA Completed successfully!\033[0m\n" );
     globalJobId[ 0 ] = 0U;
+}
+
+static bool isBlockNeeded( uint32_t blockId )
+{
+    uint32_t byteIndex = blockId >> 3;
+    uint32_t bitIndex = blockId & 0x7;
+
+    return ( blockBitmap[ byteIndex ] & ( 1 << bitIndex ) ) == 0;
+}
+static void markBlockDownloaded( uint32_t blockId )
+{
+    uint32_t byteIndex = blockId / 8;
+    uint32_t bitIndex = blockId % 8;
+
+    blockBitmap[ byteIndex ] |= ( 1 << bitIndex );
+}
+
+static uint32_t findNextBlockToRequest()
+{
+    uint32_t blockId = 0;
+
+    while( blockId <= totalBlocks && !isBlockNeeded( blockId ) )
+    {
+        blockId++;
+    }
+
+    return blockId;
+}
+
+static uint32_t findSuccessiveBlocksToRequest( uint32_t startingBlock )
+{
+    uint32_t blockId = startingBlock;
+    uint32_t blocksToRequest = 0;
+
+    while( blockId <= totalBlocks && blocksToRequest < NUM_OF_BLOCKS_REQUESTED && isBlockNeeded( blockId ) )
+    {
+        blocksToRequest++;
+        blockId++;
+    }
+
+    return blocksToRequest;
 }
