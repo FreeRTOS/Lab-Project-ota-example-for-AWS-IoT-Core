@@ -10,3 +10,6 @@
 [submodule "lib/tinycbor"]
 	path = lib/tinycbor
 	url = https://github.com/intel/tinycbor.git
+[submodule "lib/Jobs-for-AWS-IoT-embedded-sdk"]
+	path = lib/Jobs-for-AWS-IoT-embedded-sdk
+	url = https://github.com/aws/Jobs-for-AWS-IoT-embedded-sdk
