@@ -1,3 +1,5 @@
+> ⚠️ **Disclaimer:** This repository is a FreeRTOS Labs reference project, provided for demonstration and evaluation purposes only, and should not be used in production.
+
 # FreeRTOS Labs - OTA Example for AWS IoT Core
 
 AWS IoT CoreOTA enables simple Over-The-Air (OTA) updates through an extensible
